@@ -45,4 +45,4 @@ npx tauri dev       # kör lokalt
 npx tauri build     # bygger installationsfil för din plattform
 ```
 
-Ny release: höj `version` i `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` och `package.json`, och pusha en tagg (`git tag v1.0.1 && git push --tags`). GitHub Actions bygger `.exe`, `.msi`, `.dmg` och lägger till `lararbordet.html`.
+Ny release: höj `version` i `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` och `package.json` och pusha till `main`. GitHub Actions bygger `.exe`, `.msi`, `.dmg` och lägger till `lararbordet.html`.

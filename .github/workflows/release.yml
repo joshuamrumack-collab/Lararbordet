@@ -1,10 +1,12 @@
 name: Bygg och släpp
 
 # Bygger Windows (.exe/.msi) och macOS (.dmg) och lägger dem, plus HTML-versionen,
-# i en release. Körs när en tagg som v1.0.0 pushas, eller manuellt under Actions.
+# i en release som heter som versionen i src-tauri/tauri.conf.json (t.ex. v1.0.0).
+# Körs vid varje push till main, eller manuellt under Actions.
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths-ignore: ["README.md"]
   workflow_dispatch:
 
 permissions:
