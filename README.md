@@ -1,8 +1,13 @@
-# Lärarbordet
+<img src="assets/logo.png" alt="Lärarbordet" width="420">
+
 
 Planering, årshjul, täckning av centralt innehåll i Lgr22 och lokalt bedömningsverktyg för lärare. All data stannar på lärarens egen dator.
 
 Av **DorkTeach**.
+
+## Testa direkt i webbläsaren
+
+**https://joshuamrumack-collab.github.io/Lararbordet/** – öppnas med exempeldata. Vill du spara på riktigt, ladda ner en version nedan.
 
 ## Ladda ner
 

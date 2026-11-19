@@ -66,3 +66,17 @@ jobs:
           TAG="v$(jq -r .version src-tauri/tauri.conf.json)"
           cp dist/index.html lararbordet.html
           gh release upload "$TAG" lararbordet.html --clobber
+
+  pages:
+    # Webbversionen att testa direkt: joshuamrumack-collab.github.io/Lararbordet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Publicera på GitHub Pages (gren gh-pages)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir site && cp dist/index.html site/index.html && cp assets/ikon.png site/ikon.png && touch site/.nojekyll
+          cd site && git init -q -b gh-pages && git add -A
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -qm "Webbversion $(jq -r .version ../src-tauri/tauri.conf.json)"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" gh-pages
