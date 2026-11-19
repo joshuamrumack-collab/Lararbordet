@@ -39,7 +39,7 @@ Formuleringarna för Svenska, Matematik, Engelska och Teknik 7–9 är förkorta
 Appen är en enda fil: `dist/index.html`. Skrivbordsversionerna byggs med [Tauri 2](https://tauri.app) runt samma fil.
 
 ```bash
-npm ci
+npm install
 npx tauri icon app-icon.png   # bara om du byter ikon
 npx tauri dev       # kör lokalt
 npx tauri build     # bygger installationsfil för din plattform
