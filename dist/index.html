@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lärarbordet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout: app shell — topbar + tabbar (bottom on phone), each view a stack of panels; årshjulet är sidans signatur */
+:root{
+  --paper:#eef2f5; --surface:#ffffff; --ink:#16212c; --muted:#5a6977; --line:#d8e0e8;
+  --accent:#24548a; --accent-ink:#ffffff; --soft:#e2ebf4;
+  --ok:#2d7a4c; --ok-bg:#dcefe3; --warn:#9a6a12; --warn-bg:#f6ebd2; --bad:#ad3b33; --bad-bg:#f6dedb; --info:#24548a; --info-bg:#dde8f4;
+  --gl:86%; --gink:#16212c;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --r:10px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0f151b; --surface:#17202a; --ink:#e6edf3; --muted:#98a7b5; --line:#283443;
+  --accent:#86b4e6; --accent-ink:#0c1620; --soft:#1c2a39;
+  --ok:#7cc89a; --ok-bg:#183326; --warn:#e0b35a; --warn-bg:#33290f; --bad:#ec8b82; --bad-bg:#3a1d1a; --info:#86b4e6; --info-bg:#1a2b3e;
+  --gl:30%; --gink:#eef3f7; color-scheme:dark; }}
+:root[data-theme="dark"]{
+  --paper:#0f151b; --surface:#17202a; --ink:#e6edf3; --muted:#98a7b5; --line:#283443;
+  --accent:#86b4e6; --accent-ink:#0c1620; --soft:#1c2a39;
+  --ok:#7cc89a; --ok-bg:#183326; --warn:#e0b35a; --warn-bg:#33290f; --bad:#ec8b82; --bad-bg:#3a1d1a; --info:#86b4e6; --info-bg:#1a2b3e;
+  --gl:30%; --gink:#eef3f7; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 var(--body);-webkit-text-size-adjust:100%;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:1.6rem;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.2rem;font-weight:700}
+h3{font-size:1rem;font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left))}
+.topin{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:8px}
+.brand svg{flex:none}
+.sync{margin-left:auto;border:0;cursor:pointer;font-size:.8rem;padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.sync.err{background:var(--bad-bg);color:var(--bad)}
+.sync.ok{background:var(--ok-bg);color:var(--ok)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+nav.tabs a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:.72rem;padding:4px 2px;border-radius:8px;min-width:0}
+nav.tabs a svg{width:22px;height:22px}
+nav.tabs a[aria-current="page"]{color:var(--accent);font-weight:700}
+@media (max-width:420px){nav.tabs a{font-size:.64rem}}
+@media (min-width:860px){
+  body{padding-bottom:24px}
+  nav.tabs{position:sticky;top:57px;bottom:auto;justify-content:flex-start;gap:4px;padding:6px max(16px,calc((100vw - 1180px)/2));border-top:0;border-bottom:1px solid var(--line);background:var(--paper)}
+  nav.tabs a{flex:none;flex-direction:row;font-size:.92rem;padding:8px 14px;gap:8px}
+  nav.tabs a svg{width:18px;height:18px}
+  nav.tabs a[aria-current="page"]{background:var(--soft)}
+}
+main{max-width:1180px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right)) 24px max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.panel-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.panel-h .sp{flex:1}
+.grid2{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:860px){.grid2{grid-template-columns:1fr 1fr}.grid2.wide-l{grid-template-columns:1.3fr 1fr}}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:.92rem;line-height:1.2;text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;cursor:pointer;font-size:.9rem;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:.76rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.p-klar,.p-covered{background:var(--ok-bg);color:var(--ok)}
+.p-pagar,.p-ongoing{background:var(--info-bg);color:var(--info)}
+.p-planerad,.p-planned{background:var(--soft);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.p-gap{background:var(--bad-bg);color:var(--bad)}
+.p-warn{background:var(--warn-bg);color:var(--warn)}
+.example{background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.92rem}
+.example .sp{flex:1;min-width:180px}
+
+/* Översikt-hjälte */
+.hero{display:grid;gap:18px;grid-template-columns:1fr;align-items:center}
+@media (min-width:860px){.hero{grid-template-columns:1.1fr 1fr}}
+.weekno{font-family:var(--display);font-weight:800;font-size:clamp(4rem,14vw,7.5rem);line-height:.85;letter-spacing:-.04em;color:var(--accent)}
+.weekno small{font-size:.32em;letter-spacing:0;color:var(--muted);font-weight:700;margin-right:.2em}
+.yearbar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin:8px 0 4px}
+.yearbar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.now-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.now{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--surface);text-align:left;width:100%}
+.now .bar{width:4px;align-self:stretch;border-radius:4px}
+.now .t{flex:1;min-width:0}
+.now .t b{display:block}
+.prog{height:4px;background:var(--soft);border-radius:4px;margin-top:6px;overflow:hidden}
+.prog i{display:block;height:100%;background:currentColor}
+
+/* täckningsstaplar */
+.cov-row{display:grid;grid-template-columns:minmax(90px,140px) 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left}
+.cov-row:last-child{border-bottom:0}
+.stack{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--bad-bg)}
+.stack i{display:block;height:100%}
+.s-c{background:var(--ok)} .s-o{background:var(--info)} .s-p{background:repeating-linear-gradient(135deg,var(--muted) 0 3px,transparent 3px 6px);opacity:.55}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* listor */
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.li:last-child{border-bottom:0}
+.li .when{min-width:58px;font-weight:700;font-size:.86rem;color:var(--muted)}
+.li .what{flex:1;min-width:0}
+.flag{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left}
+
+/* planering: veckoband */
+.strip-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.strip{position:relative}
+.wkhead{display:flex;position:sticky;top:0}
+.wk{flex:none;width:34px;text-align:center;font-size:.7rem;color:var(--muted);padding:4px 0;border-right:1px solid var(--line)}
+.wk.lov{background:repeating-linear-gradient(135deg,transparent 0 4px,color-mix(in srgb,var(--muted) 18%,transparent) 4px 6px)}
+.wk.today{color:var(--accent);font-weight:700}
+.lanes{position:relative}
+.ubar{position:absolute;height:28px;border-radius:6px;color:#fff;font-size:.78rem;font-weight:700;padding:0 8px;display:flex;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border:0}
+.ubar.planerad{background:transparent!important;border:2px dashed currentColor;color:var(--ink)}
+.todayline{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);opacity:.8}
+.units{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.ucard{border:1px solid var(--line);border-radius:8px;padding:12px;cursor:pointer;background:var(--surface);text-align:left;display:flex;flex-direction:column;gap:6px;border-left-width:5px}
+.ucard .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.82rem;color:var(--muted)}
+
+/* årshjul */
+.wheel{width:100%;max-width:560px;margin:0 auto;display:block}
+.wheel text{fill:var(--ink);font-family:var(--body)}
+.wheel .mlabel{font-size:12px;font-weight:700;fill:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.wheel .arc{cursor:pointer;transition:opacity .15s}
+.wheel .arc:hover{opacity:.8}
+.wheel .ring{fill:none;stroke:var(--line)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* centralt innehåll */
+.area{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.area:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.area-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.item{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);align-items:start}
+.item:last-child{border-bottom:0}
+.item.gap{box-shadow:inset 3px 0 0 var(--bad);padding-left:10px}
+.item .txt{min-width:0}
+.item .links{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.ulink{font-size:.76rem;border-radius:99px;padding:1px 8px;border:1px solid var(--line);background:var(--paper);cursor:pointer}
+.check{width:26px;height:26px;border-radius:6px;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;padding:0}
+.check[aria-checked="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.check svg{width:16px;height:16px}
+
+/* bedömning */
+.mx-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table.mx{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:.9rem}
+.mx th,.mx td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;text-align:center}
+.mx thead th{background:var(--paper);font-weight:700;font-size:.8rem;padding:8px 6px;vertical-align:bottom;min-width:84px;max-width:120px;cursor:pointer}
+.mx thead th .d{display:block;font-weight:400;color:var(--muted);font-size:.72rem}
+.mx th.name,.mx td.name{position:sticky;left:0;background:var(--surface);text-align:left;z-index:2;min-width:130px;max-width:170px}
+.mx thead th.name{background:var(--paper);z-index:3}
+.mx td.name button{background:none;border:0;padding:8px 10px;width:100%;text-align:left;cursor:pointer;font-weight:700}
+.cell{width:100%;min-height:40px;border:0;background:transparent;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px}
+.cell.g{background:hsl(var(--h) 52% var(--gl));color:var(--gink)}
+.cell .n{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}
+.mx tfoot td{background:var(--paper);padding:6px;vertical-align:top}
+.dist{display:flex;height:22px;align-items:flex-end;gap:2px;justify-content:center}
+.dist i{width:8px;border-radius:2px 2px 0 0;background:hsl(var(--h) 52% 50%)}
+.sum{font-weight:700;padding:6px 8px}
+.lowtag{color:var(--bad);font-weight:700}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,16,22,.5);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+@media (min-width:700px){.ov{align-items:center;padding:20px}}
+.modal{background:var(--surface);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px}
+@media (min-width:700px){.modal{border-radius:14px}}
+.modal-h{display:flex;align-items:center;gap:10px}
+.modal-h h2{flex:1}
+.x{background:none;border:0;font-size:1.6rem;line-height:1;cursor:pointer;color:var(--muted);padding:4px 8px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:.84rem;font-weight:700;color:var(--muted)}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:9px 10px;width:100%}
+.f textarea{min-height:90px;resize:vertical}
+.row{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+@media (max-width:420px){.row{grid-template-columns:1fr}}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.actions .sp{flex:1}
+.cl{border:1px solid var(--line);border-radius:8px;max-height:300px;overflow:auto;padding:4px 10px}
+.cl h4{margin:10px 0 4px;font-size:.82rem;color:var(--muted);font-family:var(--display)}
+.cl label{display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:.9rem;cursor:pointer}
+.cl input{margin-top:4px;width:18px;height:18px;flex:none}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{width:32px;height:32px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.sw[aria-pressed="true"]{border-color:var(--ink)}
+.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px}
+.lv{border:2px solid transparent;border-radius:10px;padding:12px 6px;font-weight:700;cursor:pointer;background:hsl(var(--h) 52% var(--gl));color:var(--gink);font-size:.95rem;line-height:1.2}
+.lv[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--surface) inset}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 12px;cursor:pointer;font-size:.88rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar .sp{flex:1}
+select.inline{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px}
+.kpis{display:flex;gap:22px;flex-wrap:wrap}
+.kpi b{display:block;font-family:var(--display);font-size:1.6rem;line-height:1.1}
+.kpi span{font-size:.8rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin">
+  <div class="brand"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="44 26" transform="rotate(-90 13 13)"/><circle cx="13" cy="13" r="4" fill="var(--accent)"/></svg>Lärarbordet</div>
+  <button class="sync" id="sync" data-a="save" title="Sparar all data i den här HTML-filen (Ctrl/Cmd+S)">Spara till fil</button>
+</div></header>
+<nav class="tabs" id="tabs" aria-label="Vyer"></nav>
+<main id="main"></main>
+<div id="modalroot"></div>
+<script type="application/json" id="pbdata">null</script>
+<input type="file" id="importfile" accept="application/json,.json,text/html,.html" hidden>
+
+<script>
+"use strict";
+/* ---------- hjälpfunktioner ---------- */
+const $=s=>document.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const parseD=s=>{const [y,m,d]=String(s).split("-").map(Number);return new Date(y,(m||1)-1,d||1)};
+const fmtD=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const mondayOf=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/864e5+1)/7)}
+const weekMon=(y,w)=>addDays(mondayOf(new Date(y,0,4)),(w-1)*7);
+const W=(y,w,off=0)=>fmtD(addDays(weekMon(y,w),off));
+const MON=["jan","feb","mar","apr","maj","jun","jul","aug","sep","okt","nov","dec"];
+const DAY=["söndag","måndag","tisdag","onsdag","torsdag","fredag","lördag"];
+const shortD=s=>{const d=parseD(s);return d.getDate()+" "+MON[d.getMonth()]};
+const wkRange=(a,b)=>{const wa=isoWeek(parseD(a)),wb=isoWeek(parseD(b));return wa===wb?"v."+wa:"v."+wa+"–"+wb};
+const TODAY=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
+const COLORS=["#2f6db3","#c46a2f","#2f8f62","#8a4fa8","#b8465f","#6a8a1f","#1f8ca3","#a07a1c"];
+const STATUS={planerad:"Planerad",pagar:"Pågår",klar:"Genomförd"};
+const ICON={
+ oversikt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+ planering:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h5M7 17h9"/></svg>',
+ arshjul:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M21 12h-5"/></svg>',
+ innehall:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l2 2 3-3M4 13l2 2 3-3M4 20h.01"/><path d="M12 7h8M12 14h8M12 20h8"/></svg>',
+ bedomning:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>',
+ installningar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'
+};
+const TABS=[["oversikt","Översikt"],["planering","Planering"],["arshjul","Årshjul"],["innehall","Centralt innehåll"],["bedomning","Bedömning"],["installningar","Inställningar"]];
+const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M5 12l5 5 9-10"/></svg>';
+
+/* ---------- Lgr22: centralt innehåll åk 7–9 (förkortade formuleringar) ---------- */
+const LGR22={
+ sv:{name:"Svenska",stage:"7–9",areas:[
+  ["Läsa och skriva",["Lässtrategier för att förstå, tolka och analysera texter från olika medier, samt urskilja texters budskap, tema och motiv","Strategier för att skriva olika typer av texter med anpassning till syfte, mottagare och sammanhang","Skapande av texter där ord, bild och ljud samspelar, med och utan digitala verktyg","Att ge och ta emot respons och bearbeta texter i fråga om innehåll, struktur och språk","Språkets struktur: meningsbyggnad, ordklasser, stavning och skiljetecken"]],
+  ["Tala, lyssna och samtala",["Samtal och diskussioner: formulera och bemöta argument","Muntliga presentationer och anföranden anpassade till syfte och mottagare, med stöd av digitala verktyg","Att leda ett samtal och sammanfatta huvuddragen i det som sagts"]],
+  ["Berättande texter och sakprosatexter",["Skönlitteratur för ungdomar och vuxna från olika tider, från Sverige, Norden och övriga världen","Berättartekniker och litterära stilmedel, och hur de kan användas","Några skönlitterärt betydelsefulla författare och deras verk","Sakprosatexter: beskrivande, förklarande, utredande och argumenterande texter, deras struktur och språkliga drag","Texter som kombinerar ord, bild och ljud, t.ex. webbtexter, film och tv-serier"]],
+  ["Språkbruk",["Språkliga variationer: skillnader mellan tal- och skriftspråk, dialekter och sociolekter","Ord, begrepp och uttryck, och hur de kan väljas för att nyansera texter","De nationella minoritetsspråken och språksituationen i Norden","Etiska aspekter på språkbruk, yttrandefrihet och integritet i digitala medier"]],
+  ["Informationssökning och källkritik",["Informationssökning i olika källor och digitala miljöer","Källkritik: värdera källors trovärdighet och hur budskap kan påverka","Citat, källhänvisningar och upphovsrätt"]]
+ ]},
+ ma:{name:"Matematik",stage:"7–9",areas:[
+  ["Taluppfattning och tals användning",["Reella tal och deras egenskaper","Tal i bråk-, decimal- och procentform, potenser och tal i grundpotensform","Metoder för beräkningar och rimlighetsbedömning: huvudräkning, skriftliga metoder och digitala verktyg"]],
+  ["Algebra",["Variabelbegreppet, algebraiska uttryck och formler","Ekvationer och metoder för ekvationslösning","Algoritmer och programmering i olika programmeringsmiljöer"]],
+  ["Geometri",["Geometriska objekt och deras egenskaper","Metoder för beräkning av omkrets, area och volym, samt enheter","Skala, likformighet och Pythagoras sats","Geometriska konstruktioner och avbildningar, t.ex. symmetri"]],
+  ["Sannolikhet och statistik",["Sannolikhet, chans och risk","Kombinatorik","Tabeller, diagram, läges- och spridningsmått","Att granska och tolka statistik och hur den kan användas"]],
+  ["Samband och förändring",["Procent och förändringsfaktor","Funktioner och räta linjens ekvation","Proportionalitet och linjära samband","Privatekonomi: ränta, lån och amortering"]],
+  ["Problemlösning",["Strategier för problemlösning i vardagliga och matematiska situationer","Matematisk modellering","Att formulera matematiska frågeställningar"]]
+ ]},
+ en:{name:"Engelska",stage:"7–9",areas:[
+  ["Kommunikationens innehåll",["Aktuella och välbekanta ämnen och samhällsfrågor","Intressen, åsikter, erfarenheter och etiska frågor","Levnadssätt, traditioner och kultur i områden där engelska används"]],
+  ["Lyssna och läsa – reception",["Talad engelska med viss regional och social variation","Skönlitteratur, sakprosa, film och digitala medier","Strategier för att förstå detaljer, sammanhang och dra slutsatser","Att söka, välja och värdera information från olika källor","Språkliga företeelser i texter: uttal, ordförråd och grammatik"]],
+  ["Tala, skriva och samtala – produktion och interaktion",["Muntliga och skriftliga framställningar: presentationer, instruktioner och argumentation","Strategier för att bidra till och föra samtal framåt","Bearbetning av egna framställningar för tydlighet, variation och precision","Fraser, uttryck och grammatik i egna framställningar"]]
+ ]},
+ tk:{name:"Teknik",stage:"7–9",areas:[
+  ["Tekniska lösningar",["Elektronik samt styr- och reglertekniska system","Programmering av fysiska och digitala föremål","Tekniska system och hur komponenter samverkar","Hållfasta och stabila konstruktioner och materialval","Tekniska ord och begrepp"]],
+  ["Arbetsmetoder för utveckling av tekniska lösningar",["Teknikutvecklingsarbetets faser: behov, undersökning, förslag, konstruktion och utprövning","Egna konstruktioner där styrning och reglering ingår","Dokumentation med skisser, ritningar, modeller och digitala verktyg"]],
+  ["Teknik, människa, samhälle och miljö",["Teknikens utveckling och drivkrafter","Teknikval, konsekvenser och hållbar utveckling","Risker, säkerhet och integritet vid användning av digital teknik","Tekniska system i samhället, t.ex. infrastruktur och energiförsörjning"]]
+ ]}
+};
+function buildSubjects(){const out={};for(const [sid,s] of Object.entries(LGR22)){out[sid]={id:sid,name:s.name,stage:s.stage,builtin:true,areas:s.areas.map(([n,items],ai)=>({id:sid+"-"+(ai+1),name:n,items:items.map((t,ii)=>({id:sid+"-"+(ai+1)+"-"+(ii+1),text:t}))}))}}return out}
+
+/* ---------- bedömningsskalor ---------- */
+const SCALES={
+ af:{name:"A–F (betygsstegen i Lgr22)",levels:[{k:"F",l:"F",low:1},{k:"E",l:"E"},{k:"D",l:"D"},{k:"C",l:"C"},{k:"B",l:"B"},{k:"A",l:"A"}]},
+ lokal:{name:"Lokal femgradig skala",levels:[{k:"1",l:"Ej visat",low:1},{k:"2",l:"På väg",low:1},{k:"3",l:"Godtagbart"},{k:"4",l:"Väl godtagbart"},{k:"5",l:"Mycket väl godtagbart"}]}
+};
+const scale=()=>SCALES[state.scale]||SCALES.af;
+const lvIdx=k=>scale().levels.findIndex(l=>l.k===k);
+const lvT=k=>{const i=lvIdx(k);return i<0?null:i/(scale().levels.length-1)};
+const hueT=t=>Math.round(8+t*132);
+const isLow=k=>{const l=scale().levels.find(x=>x.k===k);return !!(l&&l.low)};
+function median(arr){if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);return s[Math.floor((s.length-1)/2)]}
+
+/* ---------- exempeldata ---------- */
+function exampleState(){
+ const Y=2026,Y2=2027;
+ const subjects=buildSubjects();
+ const c=[{id:"c-sv",name:"Svenska 8B",subjectId:"sv",groupId:"g8b",color:COLORS[0]},{id:"c-ma",name:"Matematik 8B",subjectId:"ma",groupId:"g8b",color:COLORS[1]},{id:"c-en",name:"Engelska 8B",subjectId:"en",groupId:"g8b",color:COLORS[2]},{id:"c-tk",name:"Teknik 8",subjectId:"tk",groupId:"g8b",color:COLORS[3]}];
+ const U=(id,courseId,title,s,e,status,contentIds,desc="")=>({id,courseId,title,start:s,end:e,status,contentIds,desc});
+ const units=[
+  U("u1","c-sv","Novellen",W(Y,34),W(Y,39,4),"klar",["sv-1-1","sv-3-1","sv-3-2","sv-1-2"],"Läsa noveller, analysera berättartekniker, skriva egen novell."),
+  U("u2","c-sv","Debattartikel och argumentation",W(Y,40),W(Y,43,4),"klar",["sv-1-2","sv-3-4","sv-2-1","sv-1-4"],"Argumenterande text och muntlig debatt. Kamratrespons i Docs."),
+  U("u3","c-sv","Källkritik i digitala medier",W(Y,45),W(Y,48,4),"pagar",["sv-5-1","sv-5-2","sv-5-3","sv-4-4"],"Faktagranskning, källhänvisningar, AI-genererat innehåll."),
+  U("u4","c-sv","Lyrik och muntlig framställning",W(Y,49),W(Y,51,4),"planerad",["sv-3-1","sv-3-2","sv-2-2"]),
+  U("u5","c-sv","Språk i förändring",W(Y2,3),W(Y2,7,4),"planerad",["sv-4-1","sv-4-2"]),
+  U("u6","c-ma","Tal och procent",W(Y,34),W(Y,38,4),"klar",["ma-1-1","ma-1-2","ma-1-3","ma-5-1"]),
+  U("u7","c-ma","Algebra och ekvationer",W(Y,39),W(Y,48,4),"pagar",["ma-2-1","ma-2-2","ma-6-1"]),
+  U("u8","c-ma","Geometri",W(Y,49),W(Y2,6,4),"planerad",["ma-3-1","ma-3-2","ma-3-3"]),
+  U("u9","c-ma","Statistik och sannolikhet",W(Y2,9),W(Y2,13,4),"planerad",["ma-4-1","ma-4-3"]),
+  U("u10","c-en","Short stories",W(Y,35),W(Y,40,4),"klar",["en-2-2","en-2-3","en-1-1"]),
+  U("u11","c-en","Debate club",W(Y,41),W(Y,48,4),"pagar",["en-1-2","en-3-1","en-3-2"]),
+  U("u12","c-en","Travel and cultures",W(Y2,3),W(Y2,8,4),"planerad",["en-1-3","en-2-1"]),
+  U("u13","c-tk","Styr och reglering med micro:bit",W(Y,36),W(Y,50,4),"pagar",["tk-1-1","tk-1-2","tk-2-2","tk-2-3"]),
+  U("u14","c-tk","Hållbar teknik",W(Y2,4),W(Y2,10,4),"planerad",["tk-3-1","tk-3-2"])
+ ];
+ const events=[
+  {id:"e1",title:"Höstlov",start:W(Y,44),end:W(Y,44,4),type:"lov"},
+  {id:"e2",title:"Utvecklingssamtal",start:W(Y,46),end:W(Y,46,4),type:"annat"},
+  {id:"e3",title:"Betygsunderlag HT klart",start:W(Y,50,4),end:W(Y,50,4),type:"deadline"},
+  {id:"e4",title:"Jullov",start:"2026-12-21",end:"2027-01-08",type:"lov"},
+  {id:"e5",title:"Sportlov",start:W(Y2,9),end:W(Y2,9,4),type:"lov"},
+  {id:"e6",title:"Påsklov",start:W(Y2,13),end:W(Y2,13,4),type:"lov"},
+  {id:"e7",title:"Betygssättning VT",start:"2027-06-04",end:"2027-06-04",type:"deadline"}
+ ];
+ const names=["Alva","Elias","Maja","Noah","Wilma","Liam","Ella","Hugo","Saga","Omar","Freja","Leo"];
+ const base=[4,2,5,1,3,0,3,2,4,3,5,1];
+ const students=names.map((n,i)=>({id:"s"+(i+1),name:n+" "+"ABCDEFGHIJKL"[i]+"."}));
+ const assessments=[
+  {id:"a1",title:"Novellanalys",date:W(Y,39,2),courseId:"c-sv",groupId:"g8b",unitId:"u1",desc:"Skriftlig analys av två noveller."},
+  {id:"a2",title:"Muntlig debatt",date:W(Y,42,2),courseId:"c-sv",groupId:"g8b",unitId:"u2",desc:""},
+  {id:"a3",title:"Debattartikel",date:W(Y,43,4),courseId:"c-sv",groupId:"g8b",unitId:"u2",desc:""},
+  {id:"a4",title:"Diagnos procent",date:W(Y,36,3),courseId:"c-ma",groupId:"g8b",unitId:"u6",desc:""},
+  {id:"a5",title:"Prov tal och procent",date:W(Y,38,3),courseId:"c-ma",groupId:"g8b",unitId:"u6",desc:""},
+  {id:"a6",title:"Book review",date:W(Y,40,4),courseId:"c-en",groupId:"g8b",unitId:"u10",desc:""},
+  {id:"a7",title:"Styrsystem-prototyp",date:W(Y,43,3),courseId:"c-tk",groupId:"g8b",unitId:"u13",desc:"Delredovisning."}
+ ];
+ const L=["F","E","D","C","B","A"]; const grades={};
+ assessments.forEach((a,j)=>{grades[a.id]={};students.forEach((s,i)=>{if(a.id==="a3"&&i>8)return;if(a.id==="a7"&&i%4===3)return;const v=Math.max(0,Math.min(5,base[i]+((i*7+j*3)%3)-1));grades[a.id][s.id]={k:L[v],note:(a.id==="a5"&&i===5)?"Behöver extra stöd med procentuell förändring.":""}})});
+ return {v:1,example:true,updated:0,scale:"af",year:{start:"2026-08-17",end:"2027-06-11"},subjects,courses:c,units,events,manual:{},groups:[{id:"g8b",name:"8B",students}],assessments,grades};
+}
+function emptyState(){return {v:1,example:false,updated:Date.now(),scale:"af",year:{start:"2026-08-17",end:"2027-06-11"},subjects:buildSubjects(),courses:[],units:[],events:[],manual:{},groups:[],assessments:[],grades:{}}}
+function normalize(s){const e=emptyState();const o=Object.assign(e,s||{});for(const k of ["courses","units","events","groups","assessments"]) if(!Array.isArray(o[k]))o[k]=[];if(!o.grades||typeof o.grades!=="object")o.grades={};if(!o.manual)o.manual={};if(!o.subjects||!Object.keys(o.subjects).length)o.subjects=buildSubjects();return o}
+
+/* ---------- lagring ----------
+   Två lägen med samma kod:
+   - HTML-fil: datan bäddas in i själva filen (#pbdata) och sparas genom att filen skrivs om.
+   - Skrivbordsprogram (Tauri): datan sparas automatiskt i en .json-fil, som standard Dokument/Lärarbordet/lararbordet.json. */
+const TOK="__PB"+"DATA__";
+const T=window.__TAURI__||null;
+const DESKTOP=!!(T&&T.fs&&T.dialog&&T.path);
+const TEMPLATE=(()=>{const c=document.documentElement.cloneNode(true);const d=c.querySelector("#pbdata");if(d)d.textContent=TOK;["#main","#tabs","#modalroot"].forEach(q=>{const e=c.querySelector(q);if(e)e.innerHTML=""});return "<!DOCTYPE html>\n"+c.outerHTML})();
+const FILENAME=(()=>{try{const n=decodeURIComponent(location.pathname.split("/").pop()||"");if(/\.html?$/i.test(n))return n}catch(e){}return "lararbordet.html"})();
+let state=null;
+if(!DESKTOP){try{const raw=document.getElementById("pbdata").textContent.trim();if(raw&&raw!=="null"&&raw!==TOK)state=normalize(JSON.parse(raw))}catch(e){}}
+if(!state)state=exampleState();
+let ui=Object.assign({course:null,subject:"sv",subjFilter:"all",gapsOnly:false,group:null,acourse:"all",wheel:"all"},state.ui||{});
+const saveUI=()=>{};
+let fileHandle=null,filePath=null,dirty=false,savedAt=null,saveT=null,saving=false,syncMode="clean";
+const canPick=typeof window.showSaveFilePicker==="function";
+const baseName=p=>String(p||"").split(/[\\/]/).pop();
+/* läs data ur en exporterad .json eller ur en sparad lararbordet.html */
+function parsePlanbok(text){let t=String(text||"").trim();if(t.startsWith("<")){const m=t.match(/<script[^>]*id="pbdata"[^>]*>([\s\S]*?)<\/script>/i);if(!m)throw new Error("ingen data");t=m[1].trim()}const d=JSON.parse(t);if(!d||!Array.isArray(d.courses))throw new Error("fel format");return normalize(d)}
+function buildHTML(){state.ui=ui;const json=JSON.stringify(state).replace(/</g,"\\u003c");return TEMPLATE.replace(TOK,()=>json)}
+function setSync(m){if(m)syncMode=m;const el=$("#sync");if(!el)return;const hh=d=>String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+ let t,c="";
+ if(saving)t="Sparar…";
+ else if(syncMode==="error"){t="Kunde inte spara · försök igen";c="err"}
+ else if(syncMode==="readerr"){t="Kunde inte läsa filen";c="err"}
+ else if(dirty){t=DESKTOP?"Sparar strax…":"Osparade ändringar · Spara";c=DESKTOP?"":"err"}
+ else if(syncMode==="downloaded"){t="Ny fil nedladdad "+hh(savedAt);c="ok"}
+ else if(savedAt){t="Sparat "+hh(savedAt);c="ok"}
+ else t=DESKTOP?"Inte sparat än":"Spara till fil";
+ el.textContent=t;el.className="sync "+c;el.title=DESKTOP?(filePath||""):"Sparar all data i den här HTML-filen (Ctrl/Cmd+S)"}
+function commit(){state.updated=Date.now();dirty=true;render();setSync();if(DESKTOP||fileHandle){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),DESKTOP?700:1200)}}
+function downloadBlob(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}
+
+/* skrivbordsläge */
+async function rememberPath(p){try{const d=await T.path.appConfigDir();await T.fs.mkdir(d,{recursive:true});await T.fs.writeTextFile(await T.path.join(d,"senaste-fil.txt"),p)}catch(e){}}
+async function desktopWrite(){state.ui=ui;const dir=await T.path.dirname(filePath);await T.fs.mkdir(dir,{recursive:true});await T.fs.writeTextFile(filePath,JSON.stringify(state,null,1));await rememberPath(filePath)}
+async function desktopInit(){
+ try{let p=null;try{const cfg=await T.path.join(await T.path.appConfigDir(),"senaste-fil.txt");if(await T.fs.exists(cfg))p=(await T.fs.readTextFile(cfg)).trim()}catch(e){}
+  if(!p||!(await T.fs.exists(p).catch(()=>false)))p=await T.path.join(await T.path.documentDir(),"Lärarbordet","lararbordet.json");
+  filePath=p;
+  if(await T.fs.exists(p)){state=parsePlanbok(await T.fs.readTextFile(p));ui=Object.assign(ui,state.ui||{});savedAt=new Date();syncMode="file"}
+ }catch(e){syncMode="readerr"}
+ render();setSync()}
+async function desktopOpen(){try{const p=await T.dialog.open({multiple:false,directory:false,filters:[{name:"Lärarbordet",extensions:["json","html"]}]});if(!p)return;const path=typeof p==="string"?p:p.path;
+  const d=parsePlanbok(await T.fs.readTextFile(path));
+  if(/\.html?$/i.test(path)){state=d;state.example=false;filePath=path.replace(/\.html?$/i,".json");await desktopWrite()}else{state=d;filePath=path;await rememberPath(path)}
+  ui=Object.assign(ui,state.ui||{});dirty=false;savedAt=new Date();syncMode="file";render();setSync()}
+ catch(e){modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en lararbordet.json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}}
+
+async function saveFile(forcePicker){if(saving){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(forcePicker),600);return}
+ saving=true;setSync();
+ try{
+  if(DESKTOP){if(forcePicker){const p=await T.dialog.save({defaultPath:filePath,filters:[{name:"Lärarbordet",extensions:["json"]}]});if(!p)return;filePath=p}
+   await desktopWrite();dirty=false;savedAt=new Date();syncMode="file";return}
+  const html=buildHTML();
+  if(canPick){
+   try{if(!fileHandle||forcePicker)fileHandle=await window.showSaveFilePicker({suggestedName:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});
+    const w=await fileHandle.createWritable();await w.write(html);await w.close();dirty=false;savedAt=new Date();syncMode="file";return}
+   catch(e){if(e&&e.name==="AbortError")return;fileHandle=null}
+  }
+  downloadBlob(FILENAME,html,"text/html");dirty=false;savedAt=new Date();syncMode="downloaded";
+ }catch(e){syncMode="error"}
+ finally{saving=false;setSync()}}
+window.addEventListener("beforeunload",e=>{if(dirty&&!DESKTOP){e.preventDefault();e.returnValue=""}});
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveFile(false)}});
+
+/* ---------- härledda data ---------- */
+const course=id=>state.courses.find(c=>c.id===id);
+const unit=id=>state.units.find(u=>u.id===id);
+const group=id=>state.groups.find(g=>g.id===id);
+const subj=id=>state.subjects[id];
+const allItems=sid=>{const s=subj(sid);return s?s.areas.flatMap(a=>a.items):[]};
+function coverage(sid,courseFilter){
+ const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,manual:!!state.manual[i.id]});
+ const rank={gap:0,planned:1,ongoing:2,covered:3};const map={planerad:"planned",pagar:"ongoing",klar:"covered"};
+ const cs=state.courses.filter(c=>c.subjectId===sid&&(courseFilter==="all"||!courseFilter||c.id===courseFilter)).map(c=>c.id);
+ state.units.filter(u=>cs.includes(u.courseId)).forEach(u=>(u.contentIds||[]).forEach(id=>{const r=res[id];if(!r)return;r.units.push(u);const st=map[u.status]||"planned";if(rank[st]>rank[r.state])r.state=st}));
+ state.assessments.filter(a=>cs.includes(a.courseId)).forEach(a=>{const u=unit(a.unitId);(u?u.contentIds:[]).forEach(id=>{if(res[id])res[id].assessed=true})});
+ Object.values(res).forEach(r=>{if(r.manual)r.state="covered"});
+ return res}
+function covSummary(sid,cf){const c=coverage(sid,cf);const v=Object.values(c);const n=v.length||1;const k=s=>v.filter(x=>x.state===s).length;return {n:v.length,covered:k("covered"),ongoing:k("ongoing"),planned:k("planned"),gap:k("gap"),pct:Math.round(k("covered")/n*100)}}
+const usedSubjects=()=>{const s=[...new Set(state.courses.map(c=>c.subjectId))].filter(subj);return s.length?s:Object.keys(state.subjects)};
+function yearWeeks(){const out=[];let d=mondayOf(parseD(state.year.start));const end=parseD(state.year.end);while(d<=end){out.push(new Date(d));d=addDays(d,7)}return out}
+const inLov=d=>state.events.some(e=>e.type==="lov"&&parseD(e.start)<=addDays(d,4)&&parseD(e.end)>=d);
+function studentSummary(gid,sid,courseFilter){const vals=[];let low=0,missing=0;state.assessments.filter(a=>a.groupId===gid&&(courseFilter==="all"||a.courseId===courseFilter)).forEach(a=>{const g=(state.grades[a.id]||{})[sid];if(g&&lvIdx(g.k)>=0){vals.push(lvIdx(g.k));if(isLow(g.k))low++}else missing++});const m=median(vals);return {m,low,missing,count:vals.length}}
+
+/* ---------- rendering ---------- */
+function route(){const h=(location.hash||"").slice(1);return TABS.some(t=>t[0]===h)?h:"oversikt"}
+function renderTabs(){const r=route();$("#tabs").innerHTML=TABS.map(([id,l])=>`<a href="#${id}" ${r===id?'aria-current="page"':""}>${ICON[id]}<span>${l==="Centralt innehåll"?'<span class="lg">Centralt innehåll</span>':l}</span></a>`).join("")}
+function exampleBanner(){return state.example?`<div class="example"><span class="sp"><b>Exempeldata.</b> Kurserna, eleverna och omdömena här är påhittade så att du ser hur allt hänger ihop.</span><button class="btn" data-a="clear-example">Börja med tomt bord</button></div>`:""}
+function render(){renderTabs();const r=route();const m=$("#main");
+ const v={oversikt:vOverview,planering:vPlanning,arshjul:vWheel,innehall:vContent,bedomning:vAssess,installningar:vSettings}[r];
+ m.innerHTML=exampleBanner()+v();}
+
+function vOverview(){
+ const ys=parseD(state.year.start),ye=parseD(state.year.end);const pct=Math.max(0,Math.min(100,Math.round((TODAY-ys)/(ye-ys)*100)));
+ const active=state.units.filter(u=>parseD(u.start)<=TODAY&&parseD(u.end)>=TODAY||u.status==="pagar").filter((u,i,a)=>a.indexOf(u)===i);
+ const nowHtml=active.length?active.map(u=>{const c=course(u.courseId)||{};const s=parseD(u.start),e=parseD(u.end);const p=Math.max(0,Math.min(100,Math.round((TODAY-s)/(e-s||1)*100)));
+   return `<button class="now" data-a="edit-unit" data-id="${u.id}"><span class="bar" style="background:${c.color}"></span><span class="t"><span class="small muted">${esc(c.name||"")} · ${wkRange(u.start,u.end)}</span><b>${esc(u.title)}</b><span class="prog" style="color:${c.color}"><i style="width:${p}%"></i></span></span><span class="pill p-${u.status}">${STATUS[u.status]}</span></button>`}).join(""):`<div class="empty">Inget arbetsområde pågår just nu. <a href="#planering">Planera ett</a>.</div>`;
+ const cov=usedSubjects().map(sid=>{const s=covSummary(sid,"all");const n=s.n||1;return `<button class="cov-row" data-a="goto-subject" data-id="${sid}"><b>${esc(subj(sid).name)} <span class="muted small">${esc(subj(sid).stage||"")}</span></b><span class="stack" role="img" aria-label="${s.covered} av ${s.n} täckta"><i class="s-c" style="width:${s.covered/n*100}%"></i><i class="s-o" style="width:${s.ongoing/n*100}%"></i><i class="s-p" style="width:${s.planned/n*100}%"></i></span><span class="num small">${s.pct} % ${s.gap?`<span class="pill p-gap">${s.gap} luckor</span>`:""}</span></button>`}).join("");
+ const horizon=addDays(TODAY,35);
+ const up=[...state.events.filter(e=>parseD(e.end)>=TODAY&&parseD(e.start)<=horizon).map(e=>({d:e.start,t:e.title,k:e.type==="lov"?"Lov":e.type==="deadline"?"Deadline":"Händelse",c:"var(--muted)"})),
+  ...state.units.filter(u=>parseD(u.start)>TODAY&&parseD(u.start)<=horizon).map(u=>({d:u.start,t:u.title,k:"Startar · "+((course(u.courseId)||{}).name||""),c:(course(u.courseId)||{}).color})),
+  ...state.assessments.filter(a=>parseD(a.date)>=TODAY&&parseD(a.date)<=horizon).map(a=>({d:a.date,t:a.title,k:"Bedömning · "+((course(a.courseId)||{}).name||""),c:(course(a.courseId)||{}).color}))].sort((a,b)=>a.d<b.d?-1:1);
+ const upHtml=up.length?`<div class="list">${up.map(x=>`<div class="li"><span class="when num">v.${isoWeek(parseD(x.d))}<br><span class="small">${shortD(x.d)}</span></span><span class="what"><b>${esc(x.t)}</b><br><span class="small muted"><span class="dot" style="background:${x.c}"></span> ${esc(x.k)}</span></span></div>`).join("")}</div>`:`<div class="empty">Inget inplanerat de närmaste fem veckorna.</div>`;
+ const flags=[];state.groups.forEach(g=>g.students.forEach(s=>{const sm=studentSummary(g.id,s.id,"all");if(sm.low>=2)flags.push({g,s,sm})}));
+ let ungraded=0,cells=0;state.assessments.filter(a=>parseD(a.date)<=TODAY).forEach(a=>{const g=group(a.groupId);if(!g)return;g.students.forEach(s=>{cells++;if(!((state.grades[a.id]||{})[s.id]))ungraded++})});
+ const flagHtml=flags.length?flags.map(f=>`<button class="flag" data-a="student" data-g="${f.g.id}" data-id="${f.s.id}"><span class="pill p-gap">${f.sm.low} låga</span><b style="flex:1">${esc(f.s.name)}</b><span class="small muted">${esc(f.g.name)}</span></button>`).join(""):`<p class="muted small">Ingen elev har två eller fler omdömen under godtagbar nivå.</p>`;
+ return `<section class="panel hero">
+  <div><div class="weekno num"><small>v.</small>${isoWeek(TODAY)}</div>
+   <p style="margin:10px 0 0"><b>${DAY[TODAY.getDay()][0].toUpperCase()+DAY[TODAY.getDay()].slice(1)} ${TODAY.getDate()} ${MON[TODAY.getMonth()]}</b> <span class="muted">· läsår ${state.year.start.slice(2,4)}/${state.year.end.slice(2,4)}</span></p>
+   <div class="yearbar" aria-label="${pct} procent av läsåret"><i style="width:${pct}%"></i></div><span class="small muted num">${pct} % av läsåret har gått</span>
+   <h2 style="margin-top:18px">Just nu</h2><div class="now-list">${nowHtml}</div></div>
+  <div><a href="#arshjul" aria-label="Öppna årshjulet" style="display:block">${wheelSVG("all",true)}</a></div>
+ </section>
+ <div class="grid2">
+  <section class="panel"><div class="panel-h"><h2>Täckning av centralt innehåll</h2><span class="sp"></span><a class="btn ghost" href="#innehall">Visa luckor</a></div>${cov}
+   <div class="legend"><span><i class="s-c"></i>Genomfört</span><span><i class="s-o"></i>Pågår</span><span><i class="s-p"></i>Planerat</span><span><i style="background:var(--bad-bg)"></i>Lucka</span></div></section>
+  <section class="panel"><div class="panel-h"><h2>Kommande fem veckor</h2></div>${upHtml}</section>
+ </div>
+ <section class="panel"><div class="panel-h"><h2>Bedömning</h2><span class="sp"></span><a class="btn ghost" href="#bedomning">Öppna matrisen</a></div>
+  <div class="kpis" style="margin-bottom:12px"><div class="kpi"><b class="num">${state.assessments.length}</b><span>bedömningar</span></div><div class="kpi"><b class="num">${state.groups.reduce((n,g)=>n+g.students.length,0)}</b><span>elever</span></div><div class="kpi"><b class="num" style="color:${ungraded?"var(--warn)":"inherit"}">${ungraded}</b><span>saknade omdömen av ${cells}</span></div><div class="kpi"><b class="num" style="color:${flags.length?"var(--bad)":"inherit"}">${flags.length}</b><span>elever att uppmärksamma</span></div></div>
+  ${flagHtml}</section>`;
+}
+
+function vPlanning(){
+ if(!state.courses.length)return `<section class="panel"><div class="empty"><p>Du har inga kurser ännu.</p><button class="btn pri" data-a="new-course">Skapa första kursen</button></div></section>`;
+ if(!course(ui.course))ui.course=state.courses[0].id;const c=course(ui.course);
+ const chips=state.courses.map(x=>`<button class="chip" aria-pressed="${x.id===c.id}" data-a="sel-course" data-id="${x.id}"><span class="dot" style="background:${x.color}"></span>${esc(x.name)}</button>`).join("");
+ const weeks=yearWeeks();const CW=34;const us=state.units.filter(u=>u.courseId===c.id).sort((a,b)=>a.start<b.start?-1:1);
+ const lanes=[];const placed=us.map(u=>{const si=Math.max(0,weeks.findIndex(w=>addDays(w,6)>=parseD(u.start)));let ei=weeks.findIndex(w=>addDays(w,6)>=parseD(u.end));if(ei<0)ei=weeks.length-1;let lane=lanes.findIndex(l=>l<si);if(lane<0){lane=lanes.length;lanes.push(ei)}else lanes[lane]=ei;return {u,si,ei,lane}});
+ const ti=weeks.findIndex(w=>w<=TODAY&&addDays(w,7)>TODAY);
+ const strip=`<div class="strip-wrap" id="stripwrap"><div class="strip" style="width:${weeks.length*CW}px"><div class="wkhead">${weeks.map((w,i)=>`<div class="wk ${inLov(w)?"lov":""} ${i===ti?"today":""}">${isoWeek(w)}</div>`).join("")}</div>
+  <div class="lanes" style="height:${Math.max(1,lanes.length)*34+8}px">${placed.map(p=>`<button class="ubar ${p.u.status}" data-a="edit-unit" data-id="${p.u.id}" style="left:${p.si*CW+2}px;width:${(p.ei-p.si+1)*CW-4}px;top:${p.lane*34+4}px;background:${c.color};color:${p.u.status==="planerad"?c.color:"#fff"}" title="${esc(p.u.title)}">${esc(p.u.title)}</button>`).join("")}${ti>=0?`<span class="todayline" style="left:${ti*CW+CW/2}px"></span>`:""}</div></div></div>`;
+ const g=group(c.groupId);
+ const cards=us.length?`<div class="units">${us.map(u=>{const na=state.assessments.filter(a=>a.unitId===u.id).length;return `<button class="ucard" data-a="edit-unit" data-id="${u.id}" style="border-left-color:${c.color}"><span class="meta"><span class="pill p-${u.status}">${STATUS[u.status]}</span><span class="num">${wkRange(u.start,u.end)}</span></span><b>${esc(u.title)}</b>${u.desc?`<span class="small muted">${esc(u.desc)}</span>`:""}<span class="meta"><span>${(u.contentIds||[]).length} delar av centralt innehåll</span>${na?`<span>· ${na} bedömning${na>1?"ar":""}</span>`:""}</span></button>`}).join("")}</div>`:`<div class="empty">Inga arbetsområden ännu.</div>`;
+ const sum=covSummary(c.subjectId,c.id);
+ return `<section class="panel"><div class="toolbar"><div class="chips">${chips}</div><span class="sp"></span><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>
+ <section class="panel"><div class="panel-h"><span class="dot" style="background:${c.color};width:14px;height:14px"></span><h1>${esc(c.name)}</h1><span class="sp"></span><button class="btn" data-a="edit-course" data-id="${c.id}">Redigera kurs</button><button class="btn pri" data-a="new-unit">+ Arbetsområde</button></div>
+  <p class="muted small" style="margin:-4px 0 14px">${esc((subj(c.subjectId)||{}).name||"Inget ämne")} ${esc((subj(c.subjectId)||{}).stage||"")} · ${g?esc(g.name)+", "+g.students.length+" elever":"ingen elevgrupp"} · <b>${sum.pct} %</b> av centralt innehåll genomfört, ${sum.gap} luckor</p>
+  ${strip}<p class="small muted" style="margin:6px 0 16px">Veckonummer. Randiga veckor är lov. Streckade staplar är planerade.</p>${cards}</section>`;
+}
+
+function arcPath(r1,r2,a1,a2){const p=(r,a)=>[(r*Math.cos(a)).toFixed(2),(r*Math.sin(a)).toFixed(2)];const large=a2-a1>Math.PI?1:0;const [x1,y1]=p(r2,a1),[x2,y2]=p(r2,a2),[x3,y3]=p(r1,a2),[x4,y4]=p(r1,a1);return `M${x1} ${y1}A${r2} ${r2} 0 ${large} 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 ${large} 0 ${x4} ${y4}Z`}
+function wheelSVG(filter,mini){
+ const y0=parseD(state.year.start).getFullYear();const anchor=new Date(y0,7,1);const span=new Date(y0+1,7,1)-anchor;
+ const ang=d=>((parseD(typeof d==="string"?d:fmtD(d))-anchor)/span)*Math.PI*2-Math.PI/2;
+ const cs=state.courses.filter(c=>filter==="all"||c.id===filter);const R0=78,R1=196;const n=Math.max(cs.length,1);const rw=(R1-R0)/n;
+ let s=`<svg class="wheel" viewBox="-250 -250 500 500" role="img" aria-label="Årshjul för läsåret">`;
+ for(let m=0;m<12;m++){const a=((new Date(y0,7+m,1)-anchor)/span)*Math.PI*2-Math.PI/2;const am=((new Date(y0,7+m,15)-anchor)/span)*Math.PI*2-Math.PI/2;
+  s+=`<line x1="${(R0-6)*Math.cos(a)}" y1="${(R0-6)*Math.sin(a)}" x2="${222*Math.cos(a)}" y2="${222*Math.sin(a)}" stroke="var(--line)"/>`;
+  s+=`<text class="mlabel" x="${(234*Math.cos(am)).toFixed(1)}" y="${(234*Math.sin(am)).toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${MON[(7+m)%12]}</text>`}
+ cs.forEach((c,i)=>{const r1=R0+i*rw+2,r2=R0+(i+1)*rw-2;s+=`<circle class="ring" r="${(r1+r2)/2}" stroke-width="${r2-r1}" style="stroke:var(--soft)"/>`;
+  state.units.filter(u=>u.courseId===c.id).forEach(u=>{const a1=ang(u.start),a2=ang(fmtD(addDays(parseD(u.end),1)));if(a2<=a1)return;
+   const op=u.status==="planerad"?.45:u.status==="pagar"?.85:1;s+=`<path class="arc" ${mini?"":`data-a="edit-unit" data-id="${u.id}" tabindex="0"`} d="${arcPath(r1,r2,a1,a2-0.004)}" fill="${c.color}" opacity="${op}"><title>${esc(c.name)}: ${esc(u.title)} (${wkRange(u.start,u.end)})</title></path>`})});
+ state.events.forEach(e=>{const a1=ang(e.start),a2=ang(fmtD(addDays(parseD(e.end),1)));const col=e.type==="lov"?"var(--muted)":e.type==="deadline"?"var(--bad)":"var(--warn)";
+  if(a2-a1>0.03)s+=`<path d="${arcPath(201,211,a1,a2)}" fill="${col}" opacity=".7"><title>${esc(e.title)}</title></path>`;else s+=`<circle cx="${206*Math.cos(a1)}" cy="${206*Math.sin(a1)}" r="5" fill="${col}"><title>${esc(e.title)} ${shortD(e.start)}</title></circle>`});
+ const at=ang(TODAY);s+=`<line x1="${(R0-10)*Math.cos(at)}" y1="${(R0-10)*Math.sin(at)}" x2="${216*Math.cos(at)}" y2="${216*Math.sin(at)}" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/><circle cx="${216*Math.cos(at)}" cy="${216*Math.sin(at)}" r="5" fill="var(--ink)"/>`;
+ s+=`<text x="0" y="-8" text-anchor="middle" style="font-family:var(--display);font-weight:800;font-size:30px">v.${isoWeek(TODAY)}</text><text x="0" y="18" text-anchor="middle" style="font-size:12px;fill:var(--muted)">läsår ${state.year.start.slice(2,4)}/${state.year.end.slice(2,4)}</text></svg>`;
+ return s}
+function vWheel(){
+ const chips=`<button class="chip" aria-pressed="${ui.wheel==="all"}" data-a="wheel" data-id="all">Alla kurser</button>`+state.courses.map(c=>`<button class="chip" aria-pressed="${ui.wheel===c.id}" data-a="wheel" data-id="${c.id}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join("");
+ if(ui.wheel!=="all"&&!course(ui.wheel))ui.wheel="all";
+ const ev=[...state.events].sort((a,b)=>a.start<b.start?-1:1);
+ const tl={lov:"Lov",deadline:"Deadline",annat:"Händelse"};
+ return `<section class="panel"><div class="toolbar"><div class="chips">${chips}</div></div></section>
+ <div class="grid2 wide-l"><section class="panel">${wheelSVG(ui.wheel,false)}
+  <div class="legend" style="justify-content:center">${state.courses.filter(c=>ui.wheel==="all"||c.id===ui.wheel).map((c,i)=>`<span><i style="background:${c.color}"></i>${i===0?"Inre ring: ":""}${esc(c.name)}</span>`).join("")}<span><i style="background:var(--muted)"></i>Lov (yttersta ringen)</span><span><i style="background:var(--bad)"></i>Deadline</span></div>
+  <p class="small muted" style="text-align:center;margin:8px 0 0">Starka färger är genomförda, ljusa är planerade. Tryck på en båge för att öppna arbetsområdet.</p></section>
+ <section class="panel"><div class="panel-h"><h2>Händelser och lov</h2><span class="sp"></span><button class="btn pri" data-a="new-event">+ Händelse</button></div>
+  ${ev.length?`<div class="list">${ev.map(e=>`<div class="li" style="cursor:pointer" data-a="edit-event" data-id="${e.id}"><span class="when num">${wkRange(e.start,e.end)}</span><span class="what"><b>${esc(e.title)}</b><br><span class="small muted">${shortD(e.start)}${e.end!==e.start?" – "+shortD(e.end):""}</span></span><span class="pill ${e.type==="lov"?"p-planerad":e.type==="deadline"?"p-gap":"p-warn"}">${tl[e.type]||"Händelse"}</span></div>`).join("")}</div>`:`<div class="empty">Inga händelser ännu.</div>`}</section></div>`;
+}
+
+function vContent(){
+ const subs=Object.values(state.subjects);if(!subj(ui.subject))ui.subject=subs[0].id;const s=subj(ui.subject);
+ const cs=state.courses.filter(c=>c.subjectId===s.id);if(ui.subjFilter!=="all"&&!cs.some(c=>c.id===ui.subjFilter))ui.subjFilter="all";
+ const cov=coverage(s.id,ui.subjFilter);const sum=covSummary(s.id,ui.subjFilter);
+ const chips=subs.map(x=>{const g=covSummary(x.id,"all").gap;return `<button class="chip" aria-pressed="${x.id===s.id}" data-a="sel-subject" data-id="${x.id}">${esc(x.name)} ${esc(x.stage||"")}</button>`}).join("");
+ const notAssessed=Object.values(cov).filter(r=>r.state==="covered"&&!r.assessed&&!r.manual).length;
+ const areas=s.areas.map(a=>{const items=a.items.filter(i=>!ui.gapsOnly||cov[i.id].state==="gap");const ac=a.items.filter(i=>cov[i.id].state==="covered").length;
+  if(ui.gapsOnly&&!items.length)return "";
+  return `<div class="area"><div class="area-h"><h3>${esc(a.name)}</h3><span class="small muted num">${ac}/${a.items.length} genomförda</span><span class="sp" style="flex:1"></span><button class="btn ghost small" data-a="add-item" data-area="${a.id}">+ Eget innehåll</button></div>
+  ${items.map(i=>{const r=cov[i.id];const lab={covered:"Genomfört",ongoing:"Pågår",planned:"Planerat",gap:"Lucka"}[r.state];
+   return `<div class="item ${r.state==="gap"?"gap":""}"><button class="check" role="checkbox" aria-checked="${r.manual}" aria-label="Markera som täckt utanför planeringen" title="Markera som täckt utanför planeringen" data-a="toggle-manual" data-id="${i.id}">${r.manual?CHECK:""}</button>
+   <div class="txt">${esc(i.text)}${i.custom?' <span class="small muted">(eget)</span>':""}<div class="links"><span class="pill p-${r.state}">${lab}</span>${r.manual?'<span class="pill p-covered">Manuellt avbockat</span>':""}${r.assessed?'<span class="pill p-warn">Bedömt</span>':""}${r.units.map(u=>`<button class="ulink" data-a="edit-unit" data-id="${u.id}"><span class="dot" style="background:${(course(u.courseId)||{}).color};width:7px;height:7px"></span> ${esc(u.title)}</button>`).join("")}${i.custom?`<button class="ulink" data-a="del-item" data-id="${i.id}">Ta bort</button>`:""}</div></div></div>`}).join("")}</div>`}).join("");
+ return `<section class="panel"><div class="chips">${chips}</div></section>
+ <section class="panel"><div class="panel-h"><h1>${esc(s.name)} <span class="muted" style="font-weight:500">${esc(s.stage||"")}</span></h1><span class="sp"></span>
+  ${cs.length>1?`<select class="inline" id="subjfilter" aria-label="Filtrera på kurs"><option value="all">Alla kurser i ämnet</option>${cs.map(c=>`<option value="${c.id}" ${ui.subjFilter===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>`:""}
+  <div class="seg"><button aria-pressed="${!ui.gapsOnly}" data-a="gaps" data-v="0">Allt</button><button aria-pressed="${ui.gapsOnly}" data-a="gaps" data-v="1">Bara luckor</button></div></div>
+  <div class="kpis" style="margin-bottom:10px"><div class="kpi"><b class="num">${sum.pct} %</b><span>genomfört</span></div><div class="kpi"><b class="num">${sum.ongoing+sum.planned}</b><span>pågår eller planerat</span></div><div class="kpi"><b class="num" style="color:${sum.gap?"var(--bad)":"inherit"}">${sum.gap}</b><span>luckor</span></div><div class="kpi"><b class="num">${notAssessed}</b><span>genomfört men ej bedömt</span></div></div>
+  <span class="stack" style="margin-bottom:16px"><i class="s-c" style="width:${sum.covered/(sum.n||1)*100}%"></i><i class="s-o" style="width:${sum.ongoing/(sum.n||1)*100}%"></i><i class="s-p" style="width:${sum.planned/(sum.n||1)*100}%"></i></span>
+  ${cs.length?"":`<p class="example" style="margin-bottom:12px">Ingen kurs är kopplad till ${esc(s.name)} ännu, så allt räknas som lucka. Skapa en kurs under Planering.</p>`}
+  ${areas||'<div class="empty">Inga luckor. Allt centralt innehåll är planerat eller genomfört.</div>'}
+  <p class="small muted" style="margin-top:16px">Formuleringarna är förkortade. Kontrollera alltid mot kursplanen på skolverket.se. Bocka i rutan när innehållet täckts utanför planeringen, t.ex. i ett ämnesövergripande projekt.</p></section>`;
+}
+
+function vAssess(){
+ if(!state.groups.length)return `<section class="panel"><div class="empty"><p>Lägg till en elevgrupp för att börja bedöma.</p><button class="btn pri" data-a="edit-group">+ Elevgrupp</button></div></section>`;
+ if(!group(ui.group))ui.group=state.groups[0].id;const g=group(ui.group);
+ const gcourses=state.courses.filter(c=>c.groupId===g.id||state.assessments.some(a=>a.groupId===g.id&&a.courseId===c.id));
+ if(ui.acourse!=="all"&&!gcourses.some(c=>c.id===ui.acourse))ui.acourse="all";
+ const as=state.assessments.filter(a=>a.groupId===g.id&&(ui.acourse==="all"||a.courseId===ui.acourse)).sort((a,b)=>(a.courseId+a.date)<(b.courseId+b.date)?-1:1);
+ const sc=scale();
+ const head=as.map(a=>{const c=course(a.courseId)||{};return `<th data-a="edit-assess" data-id="${a.id}" style="box-shadow:inset 0 3px 0 ${c.color||"transparent"}" title="${esc(c.name||"")}">${esc(a.title)}<span class="d">${shortD(a.date)}${ui.acourse==="all"?" · "+esc((c.name||"").split(" ")[0]):""}</span></th>`}).join("");
+ const rows=g.students.map(s=>{const sm=studentSummary(g.id,s.id,ui.acourse);const mk=sm.m==null?null:sc.levels[sm.m];
+  return `<tr><td class="name"><button data-a="student" data-g="${g.id}" data-id="${s.id}">${esc(s.name)}</button></td>${as.map(a=>{const v=(state.grades[a.id]||{})[s.id];const t=v?lvT(v.k):null;
+   return `<td><button class="cell ${t!=null?"g":""}" style="${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${s.id}" aria-label="${esc(s.name)}, ${esc(a.title)}: ${v?esc(v.k):"ej bedömt"}">${v?esc(v.k):'<span class="muted">·</span>'}${v&&v.note?'<span class="n" title="Anteckning"></span>':""}</button></td>`}).join("")}
+   <td class="sum ${mk&&mk.low?"lowtag":""}">${mk?esc(mk.k):"–"}</td><td class="sum">${sm.low?`<span class="lowtag">${sm.low}</span>`:"0"}</td></tr>`}).join("");
+ const foot=as.map(a=>{const counts=sc.levels.map(l=>g.students.filter(s=>((state.grades[a.id]||{})[s.id]||{}).k===l.k).length);const mx=Math.max(1,...counts);const done=counts.reduce((x,y)=>x+y,0);
+  return `<td><div class="dist" title="${sc.levels.map((l,i)=>l.k+": "+counts[i]).join(", ")}">${counts.map((n,i)=>`<i style="height:${Math.max(2,n/mx*22)}px;--h:${hueT(i/(sc.levels.length-1))}"></i>`).join("")}</div><span class="small muted num">${done}/${g.students.length}</span></td>`}).join("");
+ const total=as.length*g.students.length;const done=as.reduce((n,a)=>n+g.students.filter(s=>(state.grades[a.id]||{})[s.id]).length,0);
+ return `<section class="panel"><div class="toolbar"><div class="chips">${state.groups.map(x=>`<button class="chip" aria-pressed="${x.id===g.id}" data-a="sel-group" data-id="${x.id}">${esc(x.name)}</button>`).join("")}</div><button class="btn" data-a="edit-group">+ Elevgrupp</button><span class="sp"></span>
+  <select class="inline" id="acourse" aria-label="Filtrera på kurs"><option value="all">Alla kurser</option>${gcourses.map(c=>`<option value="${c.id}" ${ui.acourse===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div></section>
+ <section class="panel"><div class="panel-h"><h1>${esc(g.name)}</h1><span class="muted small num">${g.students.length} elever · ${done}/${total} omdömen · skala: ${esc(sc.name)}</span><span class="sp"></span>
+  <button class="btn" data-a="edit-group" data-id="${g.id}">Elever</button><button class="btn" data-a="export-csv">Exportera CSV</button><button class="btn pri" data-a="new-assess">+ Bedömning</button></div>
+  ${!g.students.length?`<div class="empty">Gruppen har inga elever. Tryck på Elever och klistra in namnen.</div>`:!as.length?`<div class="empty">Inga bedömningar ännu för det här urvalet.</div>`:
+  `<div class="mx-wrap"><table class="mx"><thead><tr><th class="name">Elev</th>${head}<th title="Medianen av elevens omdömen">Typnivå</th><th title="Antal omdömen under godtagbar nivå">Låga</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td class="name small muted" style="padding:8px 10px">Fördelning</td>${foot}<td></td><td></td></tr></tfoot></table></div>
+  <p class="small muted" style="margin:8px 0 0">Tryck på en ruta för att sätta omdöme och anteckning. Typnivå är medianen av elevens omdömen och ersätter inte en samlad bedömning mot betygskriterierna. En prick betyder att det finns en anteckning.</p>`}</section>`;
+}
+
+function vSettings(){
+ const subs=Object.values(state.subjects);
+ return `<div class="grid2"><section class="panel"><div class="panel-h"><h2>Läsår</h2></div>
+  <div class="row"><div class="f"><label for="ys">Första skoldag</label><input type="date" id="ys" value="${state.year.start}"></div><div class="f"><label for="ye">Sista skoldag</label><input type="date" id="ye" value="${state.year.end}"></div></div>
+  <div class="actions" style="margin-top:12px"><button class="btn pri" data-a="save-year">Spara läsår</button></div></section>
+ <section class="panel"><div class="panel-h"><h2>Bedömningsskala</h2></div>
+  ${Object.entries(SCALES).map(([k,v])=>`<label style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;cursor:pointer"><input type="radio" name="scale" value="${k}" ${state.scale===k?"checked":""} data-a="scale" style="margin-top:5px"><span><b>${esc(v.name)}</b><br><span class="small muted">${v.levels.map(l=>esc(l.l)).join(" · ")}</span></span></label>`).join("")}
+  <p class="small muted">Byter du skala räknas befintliga omdömen om till närmaste steg på den nya skalan.</p></section></div>
+ <section class="panel"><div class="panel-h"><h2>Ämnen och centralt innehåll</h2><span class="sp"></span><button class="btn pri" data-a="new-subject">+ Eget ämne</button></div>
+  <div class="list">${subs.map(s=>`<div class="li"><span class="what"><b>${esc(s.name)} ${esc(s.stage||"")}</b><br><span class="small muted">${s.areas.length} områden · ${s.areas.reduce((n,a)=>n+a.items.length,0)} punkter${s.builtin?" · förifyllt från Lgr22":""}</span></span>${s.builtin?"":`<button class="btn danger" data-a="del-subject" data-id="${s.id}">Ta bort</button>`}</div>`).join("")}</div></section>
+ <section class="panel"><div class="panel-h"><h2>Din data</h2></div>
+  ${DESKTOP?`<p class="small" style="margin-top:0">All planering, alla elever och omdömen sparas automatiskt i en fil på din dator. Inget skickas till någon server.</p>
+  <p class="small" style="word-break:break-all"><b>Fil:</b> ${esc(filePath||"")}</p>
+  <div class="actions" style="justify-content:flex-start"><button class="btn pri" data-a="save">Spara nu</button><button class="btn" data-a="save-as">Spara som…</button><button class="btn" data-a="open-file">Öppna annan fil…</button>`
+  :`<p class="small" style="margin-top:0">All planering, alla elever och omdömen sparas <b>inuti den här HTML-filen</b> (${esc(FILENAME)}) på din dator. Inget skickas till någon server och inget sparas i webbläsaren.</p>
+  <p class="small">${canPick?`<b>Chrome och Edge:</b> första gången du trycker Spara väljer du den här filen för att skriva över den. Därefter sparas ändringar automatiskt tills du stänger fliken.`:`<b>Den här webbläsaren</b> kan inte skriva direkt till filen. Spara laddar ner en uppdaterad kopia. Ersätt den gamla filen med den nya. Chrome eller Edge gör det smidigare.`} Spara också med Ctrl/Cmd+S.</p>
+  <div class="actions" style="justify-content:flex-start"><button class="btn pri" data-a="save">Spara</button>${canPick?'<button class="btn" data-a="save-as">Spara som ny fil</button>':""}<button class="btn" data-a="export-json">Exportera data (JSON)</button><button class="btn" data-a="import-json">Importera data</button>`}
+  ${state.example?'<button class="btn" data-a="clear-example">Ta bort exempeldata</button>':'<button class="btn" data-a="load-example">Visa exempeldata</button>'}<button class="btn danger" data-a="wipe">Radera allt</button></div>
+  <p class="small muted">${DESKTOP?"Flyttar du från HTML-versionen: välj Öppna annan fil och sedan din sparade lararbordet.html. ":""}Elevnamn och omdömen är personuppgifter. Spara filen där skolan tillåter, t.ex. på en krypterad dator eller i skolans godkända lagring.</p></section>
+ <p class="small muted" style="text-align:center">Byggd av DorkTeach</p>`;
+}
+
+/* ---------- modaler ---------- */
+let onClose=null;
+function modal(title,body,mount){$("#modalroot").innerHTML=`<div class="ov" data-a="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-h"><h2>${esc(title)}</h2><button class="x" data-a="close" aria-label="Stäng">×</button></div>${body}</div></div>`;const f=$("#modalroot .modal input, #modalroot .modal select, #modalroot .modal textarea");if(f&&window.innerWidth>700)f.focus();mount&&mount($("#modalroot .modal"))}
+function closeModal(){$("#modalroot").innerHTML=""}
+function confirmBox(text,yes,label="Ta bort"){modal("Är du säker?",`<p style="margin:0">${text}</p><div class="actions"><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="cy" style="background:var(--bad);border-color:var(--bad)">${esc(label)}</button></div>`,m=>m.querySelector("#cy").onclick=()=>{closeModal();yes()})}
+const val=id=>($("#"+id)||{}).value||"";
+
+function contentChecklist(sid,selected){const s=subj(sid);if(!s)return `<p class="small muted">Kursen saknar ämne.</p>`;const cov=coverage(sid,"all");
+ return `<div class="cl">${s.areas.map(a=>`<h4>${esc(a.name)}</h4>${a.items.map(i=>`<label><input type="checkbox" value="${i.id}" ${selected.includes(i.id)?"checked":""}><span>${esc(i.text)} ${cov[i.id].state==="gap"&&!selected.includes(i.id)?'<span class="pill p-gap">lucka</span>':""}</span></label>`).join("")}`).join("")}</div>`}
+
+function unitModal(id){const u=id?unit(id):null;const c=course(u?u.courseId:ui.course);if(!c)return;
+ const ws=fmtD(mondayOf(TODAY));
+ const d=u||{title:"",start:ws,end:fmtD(addDays(parseD(ws),25)),status:"planerad",contentIds:[],desc:""};
+ const asl=u?state.assessments.filter(a=>a.unitId===u.id):[];
+ modal(u?"Arbetsområde":"Nytt arbetsområde",`<p class="small muted" style="margin:-8px 0 0"><span class="dot" style="background:${c.color}"></span> ${esc(c.name)}</p>
+ <div class="f"><label for="ut">Namn</label><input id="ut" value="${esc(d.title)}" placeholder="t.ex. Novellen"></div>
+ <div class="row"><div class="f"><label for="us">Start</label><input type="date" id="us" value="${d.start}"></div><div class="f"><label for="ue">Slut</label><input type="date" id="ue" value="${d.end}"></div></div>
+ <div class="f"><label for="ust">Status</label><select id="ust">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${d.status===k?"selected":""}>${l}</option>`).join("")}</select></div>
+ <div class="f"><label for="ud">Beskrivning, syfte och arbetssätt</label><textarea id="ud">${esc(d.desc||"")}</textarea></div>
+ <div class="f"><label>Centralt innehåll som arbetsområdet täcker</label>${contentChecklist(c.subjectId,d.contentIds||[])}</div>
+ ${asl.length?`<p class="small">Bedömningar: ${asl.map(a=>esc(a.title)).join(", ")}</p>`:""}
+ <div class="actions">${u?'<button class="btn danger" id="udel">Ta bort</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="usave">Spara</button></div>`,m=>{
+  m.querySelector("#usave").onclick=()=>{const t=val("ut").trim();if(!t){$("#ut").focus();return}let s=val("us"),e=val("ue");if(e<s)[s,e]=[e,s];
+   const ids=[...m.querySelectorAll(".cl input:checked")].map(x=>x.value);const o={title:t,start:s,end:e,status:val("ust"),desc:val("ud"),contentIds:ids};
+   if(u)Object.assign(u,o);else state.units.push(Object.assign({id:uid(),courseId:c.id},o));closeModal();commit()};
+  const del=m.querySelector("#udel");if(del)del.onclick=()=>confirmBox(`Ta bort “${esc(u.title)}”? Kopplade bedömningar finns kvar.`,()=>{state.units=state.units.filter(x=>x!==u);commit()})})}
+
+function courseModal(id){const c=id?course(id):null;const d=c||{name:"",subjectId:Object.keys(state.subjects)[0],groupId:(state.groups[0]||{}).id||"",color:COLORS[state.courses.length%COLORS.length]};let color=d.color;
+ modal(c?"Redigera kurs":"Ny kurs",`<div class="f"><label for="cn">Kursnamn</label><input id="cn" value="${esc(d.name)}" placeholder="t.ex. Svenska 8B"></div>
+ <div class="row"><div class="f"><label for="cs">Ämne</label><select id="cs">${Object.values(state.subjects).map(s=>`<option value="${s.id}" ${d.subjectId===s.id?"selected":""}>${esc(s.name)} ${esc(s.stage||"")}</option>`).join("")}</select></div>
+ <div class="f"><label for="cg">Elevgrupp</label><select id="cg"><option value="">Ingen</option>${state.groups.map(g=>`<option value="${g.id}" ${d.groupId===g.id?"selected":""}>${esc(g.name)}</option>`).join("")}<option value="__new">+ Ny grupp…</option></select></div></div>
+ <div class="f" id="cgnw" hidden><label for="cgn">Namn på ny grupp</label><input id="cgn" placeholder="t.ex. 9A"></div>
+ <div class="f"><label>Färg</label><div class="swatches">${COLORS.map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Färg ${x}"></button>`).join("")}</div></div>
+ <div class="actions">${c?'<button class="btn danger" id="cdel">Ta bort kurs</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="csave">Spara</button></div>`,m=>{
+  m.querySelectorAll(".sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;m.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+  m.querySelector("#cg").onchange=e=>{m.querySelector("#cgnw").hidden=e.target.value!=="__new"};
+  m.querySelector("#csave").onclick=()=>{const n=val("cn").trim();if(!n){$("#cn").focus();return}let gid=val("cg");
+   if(gid==="__new"){const gn=val("cgn").trim()||"Ny grupp";gid=uid();state.groups.push({id:gid,name:gn,students:[]})}
+   const o={name:n,subjectId:val("cs"),groupId:gid,color};if(c)Object.assign(c,o);else{const nc=Object.assign({id:uid()},o);state.courses.push(nc);ui.course=nc.id;saveUI()}closeModal();commit()};
+  const del=m.querySelector("#cdel");if(del)del.onclick=()=>confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden och bedömningar?`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);ui.course=null;commit()})})}
+
+function eventModal(id){const e=id?state.events.find(x=>x.id===id):null;const d=e||{title:"",start:fmtD(TODAY),end:fmtD(TODAY),type:"annat"};
+ modal(e?"Händelse":"Ny händelse",`<div class="f"><label for="et">Namn</label><input id="et" value="${esc(d.title)}" placeholder="t.ex. Nationella prov svenska"></div>
+ <div class="row"><div class="f"><label for="es">Från</label><input type="date" id="es" value="${d.start}"></div><div class="f"><label for="ee">Till</label><input type="date" id="ee" value="${d.end}"></div></div>
+ <div class="f"><label for="ety">Typ</label><select id="ety"><option value="annat" ${d.type==="annat"?"selected":""}>Händelse (prov, samtal, studiedag)</option><option value="lov" ${d.type==="lov"?"selected":""}>Lov</option><option value="deadline" ${d.type==="deadline"?"selected":""}>Deadline (betyg, inlämning)</option></select></div>
+ <div class="actions">${e?'<button class="btn danger" id="edel">Ta bort</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="esave">Spara</button></div>`,m=>{
+  m.querySelector("#esave").onclick=()=>{const t=val("et").trim();if(!t){$("#et").focus();return}let s=val("es"),en=val("ee")||s;if(en<s)[s,en]=[en,s];const o={title:t,start:s,end:en,type:val("ety")};if(e)Object.assign(e,o);else state.events.push(Object.assign({id:uid()},o));closeModal();commit()};
+  const del=m.querySelector("#edel");if(del)del.onclick=()=>{state.events=state.events.filter(x=>x!==e);closeModal();commit()}})}
+
+function groupModal(id){const g=id?group(id):null;
+ modal(g?"Elever i "+g.name:"Ny elevgrupp",`<div class="f"><label for="gn">Gruppens namn</label><input id="gn" value="${esc(g?g.name:"")}" placeholder="t.ex. 8B"></div>
+ <div class="f"><label for="gs">Elever, en per rad</label><textarea id="gs" style="min-height:200px" placeholder="Klistra in från klasslistan">${g?esc(g.students.map(s=>s.name).join("\n")):""}</textarea></div>
+ <p class="small muted" style="margin:0">Tar du bort ett namn försvinner elevens rad ur matrisen.</p>
+ <div class="actions">${g?'<button class="btn danger" id="gdel">Ta bort grupp</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="gsave">Spara</button></div>`,m=>{
+  m.querySelector("#gsave").onclick=()=>{const n=val("gn").trim()||"Grupp";const names=val("gs").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+   const old=g?g.students:[];const used=new Set();const students=names.map(nm=>{const ex=old.find(s=>s.name===nm&&!used.has(s.id));if(ex){used.add(ex.id);return ex}return {id:uid(),name:nm}});
+   if(g){g.name=n;g.students=students}else{const ng={id:uid(),name:n,students};state.groups.push(ng);ui.group=ng.id;saveUI()}closeModal();commit()};
+  const del=m.querySelector("#gdel");if(del)del.onclick=()=>confirmBox(`Ta bort gruppen “${esc(g.name)}” och alla dess omdömen?`,()=>{state.assessments.filter(a=>a.groupId===g.id).forEach(a=>delete state.grades[a.id]);state.assessments=state.assessments.filter(a=>a.groupId!==g.id);state.groups=state.groups.filter(x=>x!==g);state.courses.forEach(c=>{if(c.groupId===g.id)c.groupId=""});ui.group=null;commit()})})}
+
+function assessModal(id){const a=id?state.assessments.find(x=>x.id===id):null;const g=group(ui.group);
+ const cs=state.courses;const d=a||{title:"",date:fmtD(TODAY),courseId:ui.acourse!=="all"?ui.acourse:((cs.find(c=>c.groupId===(g||{}).id)||cs[0]||{}).id||""),unitId:"",desc:""};
+ const unitOpts=cid=>`<option value="">Inget</option>`+state.units.filter(u=>u.courseId===cid).map(u=>`<option value="${u.id}" ${d.unitId===u.id?"selected":""}>${esc(u.title)}</option>`).join("");
+ modal(a?"Bedömning":"Ny bedömning",`<div class="f"><label for="at">Namn</label><input id="at" value="${esc(d.title)}" placeholder="t.ex. Skriftligt prov algebra"></div>
+ <div class="row"><div class="f"><label for="ad">Datum</label><input type="date" id="ad" value="${d.date}"></div><div class="f"><label for="ac">Kurs</label><select id="ac">${cs.map(c=>`<option value="${c.id}" ${d.courseId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div></div>
+ <div class="f"><label for="au">Arbetsområde</label><select id="au">${unitOpts(d.courseId)}</select><span class="small muted">Kopplingen gör att innehållet räknas som bedömt.</span></div>
+ <div class="f"><label for="ade">Uppgift och bedömningsaspekter</label><textarea id="ade" placeholder="Vad bedöms? Vilka delar av betygskriterierna?">${esc(d.desc||"")}</textarea></div>
+ <div class="actions">${a?'<button class="btn danger" id="adel">Ta bort</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="asave">Spara</button></div>`,m=>{
+  m.querySelector("#ac").onchange=e=>{d.unitId="";m.querySelector("#au").innerHTML=unitOpts(e.target.value)};
+  m.querySelector("#asave").onclick=()=>{const t=val("at").trim();if(!t){$("#at").focus();return}if(!val("ac"))return;const o={title:t,date:val("ad"),courseId:val("ac"),unitId:val("au"),desc:val("ade")};
+   if(a)Object.assign(a,o);else state.assessments.push(Object.assign({id:uid(),groupId:g.id},o));closeModal();commit()};
+  const del=m.querySelector("#adel");if(del)del.onclick=()=>confirmBox(`Ta bort “${esc(a.title)}” och alla omdömen på den?`,()=>{delete state.grades[a.id];state.assessments=state.assessments.filter(x=>x!==a);commit()})})}
+
+function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const g=group(a.groupId);const s=g.students.find(x=>x.id===sid);if(!a||!s)return;
+ const cur=(state.grades[aid]||{})[sid]||{k:"",note:""};let pick=cur.k;const sc=scale();const idx=g.students.indexOf(s);const next=g.students[idx+1];
+ modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(a.title)} · ${shortD(a.date)} · ${esc((course(a.courseId)||{}).name||"")}</p>
+ <div class="levels">${sc.levels.map((l,i)=>`<button class="lv" style="--h:${hueT(i/(sc.levels.length-1))}" aria-pressed="${pick===l.k}" data-k="${l.k}">${esc(l.l)}</button>`).join("")}</div>
+ <div class="f"><label for="gnote">Anteckning till eleven eller dig själv</label><textarea id="gnote" placeholder="Styrkor, nästa steg, anpassningar…">${esc(cur.note||"")}</textarea></div>
+ <div class="actions">${cur.k?'<button class="btn danger" id="gclr">Rensa</button>':""}<span class="sp"></span>${next?'<button class="btn" id="gnext">Spara och nästa elev</button>':""}<button class="btn pri" id="gsave">Spara</button></div>`,m=>{
+  m.querySelectorAll(".lv").forEach(b=>b.onclick=()=>{pick=pick===b.dataset.k?"":b.dataset.k;m.querySelectorAll(".lv").forEach(x=>x.setAttribute("aria-pressed",x.dataset.k===pick))});
+  const save=()=>{state.grades[aid]=state.grades[aid]||{};const note=val("gnote").trim();if(pick||note)state.grades[aid][sid]={k:pick,note};else delete state.grades[aid][sid];commit()};
+  m.querySelector("#gsave").onclick=()=>{closeModal();save()};
+  const nx=m.querySelector("#gnext");if(nx)nx.onclick=()=>{save();gradeModal(aid,next.id)};
+  const cl=m.querySelector("#gclr");if(cl)cl.onclick=()=>{delete state.grades[aid][sid];closeModal();commit()}})}
+
+function studentModal(gid,sid){const g=group(gid);const s=g&&g.students.find(x=>x.id===sid);if(!s)return;
+ const as=state.assessments.filter(a=>a.groupId===gid).sort((a,b)=>a.date<b.date?-1:1);const byC={};as.forEach(a=>(byC[a.courseId]=byC[a.courseId]||[]).push(a));const sc=scale();
+ const body=Object.entries(byC).map(([cid,list])=>{const c=course(cid)||{name:"Okänd kurs"};const sm=studentSummary(gid,sid,cid);const mk=sm.m==null?null:sc.levels[sm.m];
+  return `<div><div class="area-h"><span class="dot" style="background:${c.color}"></span><h3>${esc(c.name)}</h3><span class="sp" style="flex:1"></span><span class="small">Typnivå <b class="${mk&&mk.low?"lowtag":""}">${mk?esc(mk.l):"–"}</b></span></div>
+  <div class="list">${list.map(a=>{const v=(state.grades[a.id]||{})[sid];const t=v?lvT(v.k):null;return `<div class="li"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b>${v&&v.note?`<br><span class="small muted">${esc(v.note)}</span>`:""}</span><button class="cell ${t!=null?"g":""}" style="width:auto;min-width:52px;border-radius:8px;${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${sid}">${v&&v.k?esc(v.k):'<span class="muted small">Ej bedömt</span>'}</button></div>`}).join("")}</div></div>`}).join("");
+ const all=studentSummary(gid,sid,"all");
+ modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)} · ${all.count} omdömen · ${all.low} under godtagbar nivå · ${all.missing} saknas</p>${body||'<div class="empty">Inga bedömningar ännu.</div>'}`)}
+
+function subjectModal(){modal("Eget ämne",`<div class="row"><div class="f"><label for="sn">Ämne</label><input id="sn" placeholder="t.ex. Bild"></div><div class="f"><label for="sst">Stadium</label><input id="sst" value="7–9"></div></div>
+ <div class="f"><label for="sc">Centralt innehåll</label><textarea id="sc" style="min-height:220px" placeholder="# Bildframställning&#10;Framställning av berättande och informativa bilder&#10;Tekniker för teckning och måleri&#10;# Redskap för bildframställning&#10;..."></textarea><span class="small muted">Rader som börjar med # blir kunskapsområden. Övriga rader blir punkter. Kopiera gärna från kursplanen på skolverket.se.</span></div>
+ <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="ssave">Spara</button></div>`,m=>m.querySelector("#ssave").onclick=()=>{const n=val("sn").trim();if(!n){$("#sn").focus();return}const sid="x"+uid();const areas=[];let cur=null;
+  val("sc").split(/\r?\n/).map(l=>l.trim().replace(/^[-•*]\s*/,"")).filter(Boolean).forEach(l=>{if(l.startsWith("#")){cur={id:sid+"-"+(areas.length+1),name:l.replace(/^#+\s*/,""),items:[]};areas.push(cur)}else{if(!cur){cur={id:sid+"-1",name:"Centralt innehåll",items:[]};areas.push(cur)}cur.items.push({id:cur.id+"-"+(cur.items.length+1),text:l})}});
+  state.subjects[sid]={id:sid,name:n,stage:val("sst"),areas};ui.subject=sid;saveUI();closeModal();commit()})}
+
+function addItemModal(areaId){const s=subj(ui.subject);const a=s.areas.find(x=>x.id===areaId);modal("Eget innehåll",`<p class="small muted" style="margin:-8px 0 0">${esc(s.name)} · ${esc(a.name)}</p><div class="f"><label for="it">Formulering</label><textarea id="it" placeholder="t.ex. Lokalt mål: digital kompetens i skrivprocessen"></textarea></div><div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="isave">Lägg till</button></div>`,m=>m.querySelector("#isave").onclick=()=>{const t=val("it").trim();if(!t)return;a.items.push({id:a.id+"-c"+uid(),text:t,custom:true});closeModal();commit()})}
+
+/* ---------- export / import ---------- */
+async function offerFile(filename,data,mime){
+ if(DESKTOP){try{const ext=filename.split(".").pop();const p=await T.dialog.save({defaultPath:await T.path.join(await T.path.documentDir(),filename),filters:[{name:ext.toUpperCase(),extensions:[ext]}]});if(p)await T.fs.writeTextFile(p,data)}catch(e){modal("Kunde inte spara",`<p style="margin:0">Filen kunde inte skrivas. Välj en annan mapp och försök igen.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}return}
+ try{downloadBlob(filename,data,mime)}catch(e){modal("Kopiera data",`<p class="small" style="margin:0">Nedladdning gick inte. Kopiera texten och spara den som <b>${esc(filename)}</b>.</p><div class="f"><textarea id="cp" style="min-height:220px" readonly>${esc(data)}</textarea></div>`)}}
+function csv(){const g=group(ui.group);const as=state.assessments.filter(a=>a.groupId===g.id&&(ui.acourse==="all"||a.courseId===ui.acourse));const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+ return [["Elev",...as.map(a=>a.title+" ("+a.date+")")].map(q).join(";"),...g.students.map(s=>[s.name,...as.map(a=>((state.grades[a.id]||{})[s.id]||{}).k||"")].map(q).join(";"))].join("\r\n")}
+
+/* ---------- händelser ---------- */
+const A={
+ close:()=>closeModal(), ov:(el,e)=>{if(e.target===el)closeModal()},
+ "clear-example":()=>confirmBox("Exempelkurserna, eleverna och omdömena tas bort. Läsåret och Lgr22-innehållet finns kvar.",()=>{const y=state.year;state=emptyState();state.year=y;ui={...ui,course:null,group:null,subjFilter:"all",acourse:"all",wheel:"all"};saveUI();commit()},"Töm Lärarbordet"),
+ "load-example":()=>confirmBox("Exempeldata ersätter allt du har lagt in. Exportera först om du vill spara något.",()=>{state=exampleState();state.example=true;commit()},"Visa exempel"),
+ wipe:()=>confirmBox("Allt raderas: kurser, planering, händelser, elever och omdömen.",()=>{state=emptyState();commit()},"Radera allt"),
+ "sel-course":el=>{ui.course=el.dataset.id;saveUI();render()},
+ "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
+ "new-unit":()=>unitModal(), "edit-unit":el=>unitModal(el.dataset.id),
+ wheel:el=>{ui.wheel=el.dataset.id;saveUI();render()},
+ "new-event":()=>eventModal(), "edit-event":el=>eventModal(el.dataset.id),
+ "goto-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter="all";ui.gapsOnly=true;saveUI();location.hash="innehall"},
+ "sel-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter="all";saveUI();render()},
+ gaps:el=>{ui.gapsOnly=el.dataset.v==="1";saveUI();render()},
+ "toggle-manual":el=>{const id=el.dataset.id;if(state.manual[id])delete state.manual[id];else state.manual[id]=true;commit()},
+ "add-item":el=>addItemModal(el.dataset.area),
+ "del-item":el=>{const s=subj(ui.subject);s.areas.forEach(a=>a.items=a.items.filter(i=>i.id!==el.dataset.id));commit()},
+ "sel-group":el=>{ui.group=el.dataset.id;saveUI();render()},
+ "edit-group":el=>groupModal(el.dataset.id),
+ "new-assess":()=>{if(!state.courses.length){modal("Skapa en kurs först",`<p style="margin:0">En bedömning hör till en kurs.</p><div class="actions"><a class="btn pri" href="#planering" data-a="close">Till planeringen</a></div>`);return}assessModal()},
+ "edit-assess":el=>assessModal(el.dataset.id),
+ grade:el=>gradeModal(el.dataset.as,el.dataset.st),
+ student:el=>studentModal(el.dataset.g,el.dataset.id),
+ "export-csv":()=>offerFile("omdomen-"+(group(ui.group)||{name:"grupp"}).name+".csv","﻿"+csv(),"text/csv"),
+ "export-json":()=>offerFile("lararbordet-"+fmtD(TODAY)+".json",JSON.stringify(state,null,1),"application/json"),
+ "import-json":()=>$("#importfile").click(),
+ save:()=>saveFile(false), "save-as":()=>saveFile(true), "open-file":()=>desktopOpen(),
+ "new-subject":()=>subjectModal(),
+ "del-subject":el=>confirmBox("Ämnet och dess innehåll tas bort. Kurser i ämnet blir utan ämne.",()=>{delete state.subjects[el.dataset.id];commit()}),
+ "save-year":()=>{const s=val("ys"),e=val("ye");if(s&&e&&e>s){state.year={start:s,end:e};commit()}},
+ scale:el=>{const from=scale();const to=SCALES[el.value];if(!to||el.value===state.scale)return;
+  Object.values(state.grades).forEach(m=>Object.values(m).forEach(v=>{const i=from.levels.findIndex(l=>l.k===v.k);if(i>=0)v.k=to.levels[Math.round(i/(from.levels.length-1)*(to.levels.length-1))].k}));state.scale=el.value;commit()}
+};
+document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const f=A[el.dataset.a];if(!f)return;if(el.dataset.a==="scale")return;if(el.dataset.a==="ov"){if(e.target===el)closeModal();return}if(el.tagName!=="A")e.preventDefault();f(el,e)});
+document.addEventListener("change",e=>{if(e.target.id==="subjfilter"){ui.subjFilter=e.target.value;saveUI();render()}if(e.target.id==="acourse"){ui.acourse=e.target.value;saveUI();render()}if(e.target.dataset.a==="scale")A.scale(e.target)});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();if((e.key==="Enter"||e.key===" ")&&e.target.matches(".arc,[data-a='edit-event']")){e.preventDefault();e.target.dispatchEvent(new MouseEvent("click",{bubbles:true}))}});
+$("#importfile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{state=parsePlanbok(await f.text());state.example=false;commit();modal("Importerat",`<p style="margin:0">Datan är inläst: ${state.courses.length} kurser, ${state.units.length} arbetsområden, ${state.assessments.length} bedömningar.</p><div class="actions"><button class="btn pri" data-a="close">Klart</button></div>`)}catch(err){modal("Kunde inte importera",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en exporterad .json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}e.target.value=""});
+window.addEventListener("hashchange",()=>{closeModal();render();window.scrollTo(0,0)});
+
+render();setSync();if(DESKTOP)desktopInit();
+</script>
+</body>
+</html>
