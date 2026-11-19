@@ -1,0 +1,96 @@
+/* ---------- lagring ----------
+   Två lägen med samma kod:
+   - HTML-fil: datan bäddas in i själva filen (#pbdata) och sparas genom att filen skrivs om.
+   - Skrivbordsprogram (Tauri): datan sparas automatiskt i en .json-fil, som standard Dokument/Lärarbordet/lararbordet.json. */
+const TOK="__PB"+"DATA__";
+const T=window.__TAURI__||null;
+const DESKTOP=!!(T&&T.fs&&T.dialog&&T.path);
+const TEMPLATE=(()=>{const c=document.documentElement.cloneNode(true);const d=c.querySelector("#pbdata");if(d)d.textContent=TOK;["#main","#tabs","#modalroot"].forEach(q=>{const e=c.querySelector(q);if(e)e.innerHTML=""});return "<!DOCTYPE html>\n"+c.outerHTML})();
+const FILENAME=(()=>{try{const n=decodeURIComponent(location.pathname.split("/").pop()||"");if(/\.html?$/i.test(n))return n}catch(e){}return "lararbordet.html"})();
+let state=null;
+if(!DESKTOP){try{const raw=document.getElementById("pbdata").textContent.trim();if(raw&&raw!=="null"&&raw!==TOK)state=normalize(JSON.parse(raw))}catch(e){}}
+let FIRST=!state;
+if(!state)state=exampleState();
+let ui=Object.assign({course:null,subject:"sv",subjFilter:"all",gapsOnly:false,group:null,acourse:"all",wheel:"all"},state.ui||{});
+const saveUI=()=>{};
+let fileHandle=null,filePath=null,dirty=false,savedAt=null,saveT=null,saving=false,syncMode="clean";
+const canPick=typeof window.showSaveFilePicker==="function";
+const baseName=p=>String(p||"").split(/[\\/]/).pop();
+/* läs data ur en exporterad .json eller ur en sparad lararbordet.html */
+function buildHTML(){state.ui=ui;const json=JSON.stringify(state).replace(/</g,"\\u003c");return TEMPLATE.replace(TOK,()=>json)}
+function setSync(m){if(m)syncMode=m;const el=$("#sync");if(!el)return;const hh=d=>String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+ let t,c="";
+ if(saving)t="Sparar…";
+ else if(syncMode==="error"){t="Kunde inte spara · försök igen";c="err"}
+ else if(syncMode==="readerr"){t="Kunde inte läsa filen";c="err"}
+ else if(dirty){t=DESKTOP?"Sparar strax…":"Osparade ändringar · Spara";c=DESKTOP?"":"err"}
+ else if(syncMode==="downloaded"){t="Ny fil nedladdad "+hh(savedAt);c="ok"}
+ else if(savedAt){t="Sparat "+hh(savedAt);c="ok"}
+ else t=DESKTOP?"Inte sparat än":"Spara till fil";
+ el.textContent=t;el.className="sync "+c;updateBar();el.title=DESKTOP?(filePath||""):"Sparar all data i den här HTML-filen (Ctrl/Cmd+S)"}
+/* Spara-uppmaning i HTML-versionen: kommer ihåg vilken fil du sparade i (bara själva filhänvisningen, ingen data) */
+let storedHandle=null;
+const HKEY="fil:"+location.pathname;
+const IDB={open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("lararbordet",1);r.onupgradeneeded=()=>r.result.createObjectStore("h");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
+ async get(k){const db=await this.open();return new Promise(res=>{const t=db.transaction("h").objectStore("h").get(k);t.onsuccess=()=>res(t.result||null);t.onerror=()=>res(null)})},
+ async set(k,v){const db=await this.open();return new Promise(res=>{const t=db.transaction("h","readwrite").objectStore("h").put(v,k);t.onsuccess=()=>res();t.onerror=()=>res()})}};
+if(!DESKTOP&&canPick){IDB.get(HKEY).then(h=>{storedHandle=h;updateBar()}).catch(()=>{})}
+function updateBar(){const b=document.getElementById("savebar");if(!b)return;
+ if(DESKTOP||!dirty||saving||fileHandle){b.hidden=true;return}
+ let msg,btn;
+ if(canPick&&storedHandle){msg=`Du har ändringar som inte är sparade. Spara dem i <b>${esc(storedHandle.name)}</b>?`;btn="Spara i filen"}
+ else if(canPick){msg=`Du har ändringar som inte är sparade. Välj <b>${esc(FILENAME)}</b> för att spara direkt i filen. Sedan sparas allt automatiskt.`;btn="Spara i filen…"}
+ else{msg=`Du har ändringar som inte är sparade. Ladda ner den uppdaterade filen och ersätt den gamla med den.`;btn="Ladda ner filen"}
+ b.innerHTML=`<span>${msg}</span><button class="btn pri" data-a="bar-save">${btn}</button>`;b.hidden=false}
+async function barSave(){if(canPick&&storedHandle&&!fileHandle){try{const st=await storedHandle.requestPermission({mode:"readwrite"});if(st==="granted")fileHandle=storedHandle}catch(e){}}saveFile(false)}
+async function tryStored(){if(fileHandle||!storedHandle)return false;try{if((await storedHandle.queryPermission({mode:"readwrite"}))==="granted"){fileHandle=storedHandle;return true}}catch(e){}return false}
+function commit(){state.updated=Date.now();dirty=true;render();setSync();
+ if(DESKTOP||fileHandle){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),DESKTOP?700:1200);return}
+ tryStored().then(ok=>{if(ok){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),600)}})}
+function downloadBlob(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}
+
+/* skrivbordsläge */
+async function rememberPath(p){try{const d=await T.path.appConfigDir();await T.fs.mkdir(d,{recursive:true});await T.fs.writeTextFile(await T.path.join(d,"senaste-fil.txt"),p)}catch(e){}}
+async function desktopWrite(){state.ui=ui;const dir=await T.path.dirname(filePath);await T.fs.mkdir(dir,{recursive:true});await T.fs.writeTextFile(filePath,JSON.stringify(state,null,1));await rememberPath(filePath)}
+async function desktopInit(){
+ try{let p=null;try{const cfg=await T.path.join(await T.path.appConfigDir(),"senaste-fil.txt");if(await T.fs.exists(cfg))p=(await T.fs.readTextFile(cfg)).trim()}catch(e){}
+  if(!p||!(await T.fs.exists(p).catch(()=>false)))p=await T.path.join(await T.path.documentDir(),"Lärarbordet","lararbordet.json");
+  filePath=p;
+  if(await T.fs.exists(p)){state=parsePlanbok(await T.fs.readTextFile(p));ui=Object.assign(ui,state.ui||{});savedAt=new Date();syncMode="file";FIRST=false}else FIRST=true;
+ }catch(e){syncMode="readerr"}
+ render();setSync();if(FIRST)welcomeModal()}
+async function desktopOpen(){try{const p=await T.dialog.open({multiple:false,directory:false,filters:[{name:"Lärarbordet",extensions:["json","html"]}]});if(!p)return;const path=typeof p==="string"?p:p.path;
+  const d=parsePlanbok(await T.fs.readTextFile(path));
+  if(/\.html?$/i.test(path)){state=d;state.example=false;filePath=path.replace(/\.html?$/i,".json");await desktopWrite()}else{state=d;filePath=path;await rememberPath(path)}
+  ui=Object.assign(ui,state.ui||{});dirty=false;savedAt=new Date();syncMode="file";render();setSync()}
+ catch(e){modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en lararbordet.json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}}
+
+async function saveFile(forcePicker){if(saving){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(forcePicker),600);return}
+ saving=true;setSync();
+ try{
+  if(DESKTOP){if(forcePicker){const p=await T.dialog.save({defaultPath:filePath,filters:[{name:"Lärarbordet",extensions:["json"]}]});if(!p)return;filePath=p}
+   await desktopWrite();dirty=false;savedAt=new Date();syncMode="file";return}
+  const html=buildHTML();
+  if(canPick){
+   try{if(!fileHandle||forcePicker){fileHandle=await window.showSaveFilePicker({suggestedName:storedHandle?storedHandle.name:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});storedHandle=fileHandle;IDB.set(HKEY,fileHandle).catch(()=>{})}
+    const w=await fileHandle.createWritable();await w.write(html);await w.close();dirty=false;savedAt=new Date();syncMode="file";return}
+   catch(e){if(e&&e.name==="AbortError")return;fileHandle=null}
+  }
+  downloadBlob(FILENAME,html,"text/html");dirty=false;savedAt=new Date();syncMode="downloaded";
+ }catch(e){syncMode="error"}
+ finally{saving=false;setSync()}}
+window.addEventListener("beforeunload",e=>{if(dirty&&!DESKTOP){e.preventDefault();e.returnValue=""}});
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveFile(false)}});
+
+/* Öppna en textfil: dialog i skrivbordsappen, filväljare i webbläsaren */
+function pickTextFile(exts){if(DESKTOP)return T.dialog.open({multiple:false,directory:false,filters:[{name:"Lärarbordet",extensions:exts}]}).then(p=>p?T.fs.readTextFile(typeof p==="string"?p:p.path):null);
+ return new Promise(res=>{const inp=document.createElement("input");inp.type="file";inp.accept=exts.map(e=>"."+e).join(",");inp.onchange=async()=>{const f=inp.files&&inp.files[0];res(f?await f.text():null)};inp.click()})}
+function openExternal(url){if(DESKTOP&&T.opener&&T.opener.openUrl){T.opener.openUrl(url).catch(()=>{});return}const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove()}
+
+/* ---------- uppdateringar ---------- */
+let UPDATE=null;
+const RELEASES_URL="https://github.com/joshuamrumack-collab/Lararbordet/releases/latest";
+const verGt=(a,b)=>{const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number);for(let i=0;i<3;i++){const p=x[i]||0,q=y[i]||0;if(p!==q)return p>q}return false};
+async function checkUpdate(){if(state.checkUpdates===false||APP_VERSION.includes("@@")||location.hostname.endsWith("github.io"))return;
+ try{const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),6000);const r=await fetch("https://api.github.com/repos/joshuamrumack-collab/Lararbordet/releases/latest",{signal:ctl.signal,headers:{Accept:"application/vnd.github+json"}});clearTimeout(t);if(!r.ok)return;
+  const j=await r.json();const v=String(j.tag_name||"").replace(/^v/,"");if(v&&verGt(v,APP_VERSION)){UPDATE={version:v,url:j.html_url||RELEASES_URL};render()}}catch(e){}}

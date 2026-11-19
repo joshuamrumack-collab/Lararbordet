@@ -27,7 +27,14 @@ Alla versioner använder samma data. Du kan flytta mellan dem med *Inställninga
 
 **Mac:** öppna `.dmg`-filen och dra *Lärarbordet* till Program. Första gången: högerklicka på appen → **Öppna** → **Öppna**. Står det att appen ”inte kan öppnas”: gå till **Systeminställningar → Integritet och säkerhet** och klicka **Öppna ändå**.
 
-Varningarna visas för att programmet inte är signerat med ett betalt utvecklarcertifikat.
+Varningarna visas för att programmet inte är signerat med ett utvecklarcertifikat.
+
+## Signering
+
+Bygget signerar automatiskt så fort certifikaten finns som hemligheter i repot (*Settings → Secrets and variables → Actions*):
+
+- **Mac:** kräver Apples utvecklarprogram (Apple Developer Program, årsavgift). Lägg in `APPLE_CERTIFICATE` (Developer ID Application-certifikat som .p12 i base64), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` (appspecifikt lösenord) och `APPLE_TEAM_ID`. Appen signeras och notariseras då, och varningen försvinner.
+- **Windows:** lägg in `WINDOWS_CERTIFICATE` (kodsigneringscertifikat som .pfx i base64) och `WINDOWS_CERTIFICATE_PASSWORD`. Gratisalternativ för öppen källkod: [SignPath Foundation](https://signpath.org) – kräver att repot har en godkänd öppen licens, till exempel MIT.
 
 **HTML:** dubbelklicka på `lararbordet.html`. När du ändrar något dyker en fråga upp om att spara. I Chrome och Edge väljer du `lararbordet.html` en gång, sedan sparas varje ändring direkt i filen. Nästa gång du öppnar filen räcker ett klick på *Spara i filen*. I Safari och Firefox laddas en uppdaterad kopia ner som du ersätter den gamla med. Filen fungerar inte inbäddad på en webbsida, bara nedladdad.
 
@@ -47,19 +54,34 @@ Allt centralt innehåll finns inbyggt, ordagrant från Skolverkets kurs- och äm
 
 Välj vilka ämnen och årskurser eller nivåer du undervisar i under *Inställningar → Mina ämnen* eller *Centralt innehåll → Välj ämnen*. Egna ämnen och eget innehåll kan läggas till. Se `tools/skolverket` för hur katalogen uppdateras.
 
+## Det här kan Lärarbordet
+
+- **Planering:** kurser, arbetsområden på ett veckoband och lektioner med upplägg, anteckningar och genomförd-bock. Skapa en hel lektionsserie på en gång, lov hoppas över.
+- **Årshjul:** hela läsåret med kurser, lov och deadlines.
+- **Centralt innehåll:** se vad som är genomfört, planerat och var luckorna finns.
+- **Bedömning:** matris per elevgrupp. Bedöm mot Skolverkets betygskriterier, del för del, och se underlaget per kriterium för varje elev.
+- **Nytt läsår:** kopiera kurser, arbetsområden och lektioner till nästa läsår med datumen flyttade. Tidigare läsår sparas och kan öppnas igen.
+- **Dela i arbetslaget:** exportera en kurs som fil, utan elever och omdömen, och importera kollegors kurser.
+
+## Uppdateringar
+
+Appen kollar vid start om det finns en ny version och visar i så fall en ruta (går att stänga av under *Inställningar → Om Lärarbordet*). Inga uppgifter om dig eller eleverna skickas. Skrivbordsappen behåller datan i Dokument/Lärarbordet när du installerar en ny version. I HTML-versionen öppnar du den nya filen och väljer *Inställningar → Importera data*.
+
 ## Börja från början
 
 *Inställningar → Rensa allt* tar bort allt, även exempeldatan, och ger ett helt tomt Lärarbordet.
 
 ## För utvecklare
 
-Appen är en enda fil: `dist/index.html`. Skrivbordsversionerna byggs med [Tauri 2](https://tauri.app) runt samma fil.
+Källkoden ligger i `src/`: `template.html`, `styles.css` och JavaScript-moduler i `src/js/` som läses in i nummerordning. Skolverkets data ligger komprimerad i `data/`. Byggskriptet sätter ihop allt till en enda fil, `dist/index.html`, som är HTML-versionen och som skrivbordsversionerna ([Tauri 2](https://tauri.app)) byggs runt.
 
 ```bash
 npm install
-npx tauri icon app-icon.png   # bara om du byter ikon
-npx tauri dev       # kör lokalt
+npm run build       # bygger dist/index.html
+npm test            # testar logiken (läsår, delning, lektioner, kriterier, inläsning av gamla filer)
+npx tauri dev       # kör skrivbordsappen lokalt
 npx tauri build     # bygger installationsfil för din plattform
+npx tauri icon app-icon.png   # bara om du byter ikon
 ```
 
 Ny release: höj `version` i `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` och `package.json` och pusha till `main`. GitHub Actions bygger `.exe`, `.msi`, `.dmg` och lägger till `lararbordet.html`.

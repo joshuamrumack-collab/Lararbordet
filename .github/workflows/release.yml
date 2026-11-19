@@ -1,19 +1,32 @@
 name: Bygg och släpp
 
-# Bygger Windows (.exe/.msi) och macOS (.dmg) och lägger dem, plus HTML-versionen,
-# i en release som heter som versionen i src-tauri/tauri.conf.json (t.ex. v1.0.0).
-# Körs vid varje push till main, eller manuellt under Actions.
+# Testar, bygger Windows (.exe/.msi) och macOS (.dmg) och lägger dem, plus HTML-versionen,
+# i en release som heter som versionen i src-tauri/tauri.conf.json (t.ex. v1.2.0).
+# Signering slås på automatiskt när hemligheterna nedan finns i repot (Settings → Secrets → Actions):
+#   Mac:     APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY, APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
+#   Windows: WINDOWS_CERTIFICATE (pfx som base64), WINDOWS_CERTIFICATE_PASSWORD
 on:
   push:
     branches: [main]
-    paths-ignore: ["README.md"]
+    paths-ignore: ["README.md", "tools/skolverket/**"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm run build
+      - run: npm test
+
   desktop:
+    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -37,6 +50,50 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
       - run: npm install --no-audit --no-fund
+      - run: npm run build
+
+      - name: Mac-signering (om certifikat finns)
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ]; then
+            for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+              if [ -n "${!v}" ]; then echo "$v=${!v}" >> "$GITHUB_ENV"; fi
+            done
+            echo "Mac-appen signeras och notariseras."
+          else
+            echo "Inga Apple-certifikat: appen signeras ad hoc (osignerad för Gatekeeper)."
+          fi
+
+      - name: Windows-signering (om certifikat finns)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          if ($env:WINDOWS_CERTIFICATE) {
+            $pfx = Join-Path $env:RUNNER_TEMP "cert.pfx"
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+            $pw = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText
+            $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $pw
+            $conf = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+            $conf.bundle.windows | Add-Member -NotePropertyName certificateThumbprint -NotePropertyValue $cert.Thumbprint -Force
+            $conf.bundle.windows | Add-Member -NotePropertyName digestAlgorithm -NotePropertyValue "sha256" -Force
+            $conf.bundle.windows | Add-Member -NotePropertyName timestampUrl -NotePropertyValue "http://timestamp.digicert.com" -Force
+            $conf | ConvertTo-Json -Depth 20 | Set-Content src-tauri/tauri.conf.json -Encoding utf8
+            Write-Host "Windows-installationen signeras."
+          } else {
+            Write-Host "Inget Windows-certifikat: installationen blir osignerad."
+          }
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,8 +105,9 @@ jobs:
             - **Windows:** filen som slutar på `x64-setup.exe`
             - **Mac:** filen som slutar på `universal.dmg`
             - **Webbläsare / Chromebook:** `lararbordet.html`
+            - **Testa direkt utan nedladdning:** https://joshuamrumack-collab.github.io/Lararbordet/
 
-            Se README för installation och vad du gör om datorn varnar för okänd utgivare. Av DorkTeach.
+            Din data följer med när du uppdaterar. Se README för installation och vad du gör om datorn varnar för okänd utgivare. Av DorkTeach.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -59,6 +117,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm run build
       - name: Lägg till HTML-versionen i releasen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,9 +131,14 @@ jobs:
 
   pages:
     # Webbversionen att testa direkt: joshuamrumack-collab.github.io/Lararbordet
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm run build
       - name: Publicera på GitHub Pages (gren gh-pages)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

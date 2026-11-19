@@ -1,11 +1,14 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Läsa och skriva Lärarbordets datafil, och visa öppna/spara-dialoger",
-  "windows": ["main"],
+  "description": "Läsa och skriva Lärarbordets datafil, öppna/spara-dialoger och öppna länkar i webbläsaren",
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "dialog:default",
+    "opener:default",
     "fs:default",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
@@ -14,9 +17,24 @@
     {
       "identifier": "fs:scope",
       "allow": [
-        { "path": "$HOME" }, { "path": "$HOME/**" },
-        { "path": "$DOCUMENT" }, { "path": "$DOCUMENT/**" },
-        { "path": "$APPCONFIG" }, { "path": "$APPCONFIG/**" }
+        {
+          "path": "$HOME"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DOCUMENT"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$APPCONFIG"
+        },
+        {
+          "path": "$APPCONFIG/**"
+        }
       ]
     }
   ]
