@@ -40,7 +40,7 @@ Appen är en enda fil: `dist/index.html`. Skrivbordsversionerna byggs med [Tauri
 
 ```bash
 npm ci
-npx tauri icon app-icon.png
+npx tauri icon app-icon.png   # bara om du byter ikon
 npx tauri dev       # kör lokalt
 npx tauri build     # bygger installationsfil för din plattform
 ```
