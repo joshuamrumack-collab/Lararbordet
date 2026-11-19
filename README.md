@@ -29,15 +29,27 @@ Alla versioner använder samma data. Du kan flytta mellan dem med *Inställninga
 
 Varningarna visas för att programmet inte är signerat med ett betalt utvecklarcertifikat.
 
-**HTML:** dubbelklicka på `lararbordet.html`. Tryck **Spara** uppe till höger (eller Ctrl/Cmd+S). I Chrome och Edge väljer du `lararbordet.html` en gång, sedan sparas allt automatiskt. I Safari och Firefox laddas en ny kopia ner som du ersätter den gamla med. Filen fungerar inte inbäddad på en webbsida, bara nedladdad.
+**HTML:** dubbelklicka på `lararbordet.html`. När du ändrar något dyker en fråga upp om att spara. I Chrome och Edge väljer du `lararbordet.html` en gång, sedan sparas varje ändring direkt i filen. Nästa gång du öppnar filen räcker ett klick på *Spara i filen*. I Safari och Firefox laddas en uppdaterad kopia ner som du ersätter den gamla med. Filen fungerar inte inbäddad på en webbsida, bara nedladdad.
 
 ## Personuppgifter
 
 Elevnamn och omdömen är personuppgifter. Inget skickas till någon server, men filen ska ligga där skolan tillåter. Använd gärna initialer eller elevnummer.
 
-## Centralt innehåll
+## Ämnen och centralt innehåll
 
-Formuleringarna för Svenska, Matematik, Engelska och Teknik 7–9 är förkortade. Kontrollera mot kursplanerna på skolverket.se. Egna ämnen kan läggas till under *Inställningar*.
+Allt centralt innehåll finns inbyggt, ordagrant från Skolverkets kurs- och ämnesplaner:
+
+- Grundskolan, alla ämnen (åk 1–3, 4–6, 7–9)
+- Anpassade grundskolan, ämnen
+- Anpassade grundskolan, ämnesområden
+- Gymnasieskolan, ämnen med nivåer (från ht 2025)
+- Gymnasieskolan, kurser enligt äldre ämnesplaner
+
+Välj vilka ämnen och årskurser eller nivåer du undervisar i under *Inställningar → Mina ämnen* eller *Centralt innehåll → Välj ämnen*. Egna ämnen och eget innehåll kan läggas till. Se `tools/skolverket` för hur katalogen uppdateras.
+
+## Börja från början
+
+*Inställningar → Rensa allt* tar bort allt, även exempeldatan, och ger ett helt tomt Lärarbordet.
 
 ## För utvecklare
 
