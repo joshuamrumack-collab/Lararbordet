@@ -20,6 +20,7 @@ const A={
  "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
  "new-unit":()=>unitModal(), "edit-unit":el=>unitModal(el.dataset.id),
  wheel:el=>{ui.wheel=el.dataset.id;saveUI();render()},
+ wheelmode:el=>{ui.wheelMode=el.dataset.v;render()},
  "new-event":()=>eventModal(), "edit-event":el=>eventModal(el.dataset.id),
  "goto-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter="all";ui.gapsOnly=true;saveUI();location.hash="innehall"},
  "sel-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter="all";saveUI();render()},

@@ -72,25 +72,73 @@ function wheelSVG(filter,mini){
   s+=`<line x1="${(R0-6)*Math.cos(a)}" y1="${(R0-6)*Math.sin(a)}" x2="${222*Math.cos(a)}" y2="${222*Math.sin(a)}" stroke="var(--line)"/>`;
   s+=`<text class="mlabel" x="${(234*Math.cos(am)).toFixed(1)}" y="${(234*Math.sin(am)).toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${MON[(7+m)%12]}</text>`}
  cs.forEach((c,i)=>{const r1=R0+i*rw+2,r2=R0+(i+1)*rw-2;s+=`<circle class="ring" r="${(r1+r2)/2}" stroke-width="${r2-r1}" style="stroke:var(--soft)"/>`;
+
   state.units.filter(u=>u.courseId===c.id).forEach(u=>{const a1=ang(u.start),a2=ang(fmtD(addDays(parseD(u.end),1)));if(a2<=a1)return;
    const op=u.status==="planerad"?.45:u.status==="pagar"?.85:1;s+=`<path class="arc" ${mini?"":`data-a="edit-unit" data-id="${u.id}" tabindex="0"`} d="${arcPath(r1,r2,a1,a2-0.004)}" fill="${c.color}" opacity="${op}"><title>${esc(c.name)}: ${esc(u.title)} (${wkRange(u.start,u.end)})</title></path>`})});
+ if(!mini)cs.forEach((c,i)=>{const r=R0+(i+.5)*rw;s+=`<text class="rlabel" x="-8" y="${(-r+4).toFixed(1)}" text-anchor="end" style="font-size:${Math.max(10,Math.min(13,rw*.5)).toFixed(0)}px">${esc(c.name)}</text>`});
  state.events.forEach(e=>{const a1=ang(e.start),a2=ang(fmtD(addDays(parseD(e.end),1)));const col=e.type==="lov"?"var(--muted)":e.type==="deadline"?"var(--bad)":"var(--warn)";
   if(a2-a1>0.03)s+=`<path d="${arcPath(201,211,a1,a2)}" fill="${col}" opacity=".7"><title>${esc(e.title)}</title></path>`;else s+=`<circle cx="${206*Math.cos(a1)}" cy="${206*Math.sin(a1)}" r="5" fill="${col}"><title>${esc(e.title)} ${shortD(e.start)}</title></circle>`});
  const at=ang(TODAY);s+=`<line x1="${(R0-10)*Math.cos(at)}" y1="${(R0-10)*Math.sin(at)}" x2="${216*Math.cos(at)}" y2="${216*Math.sin(at)}" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/><circle cx="${216*Math.cos(at)}" cy="${216*Math.sin(at)}" r="5" fill="var(--ink)"/>`;
- s+=`<text x="0" y="-8" text-anchor="middle" style="font-family:var(--display);font-weight:800;font-size:30px">v.${isoWeek(TODAY)}</text><text x="0" y="18" text-anchor="middle" style="font-size:12px;fill:var(--muted)">läsår ${state.year.start.slice(2,4)}/${state.year.end.slice(2,4)}</text></svg>`;
+ s+=`<text x="0" y="-8" text-anchor="middle" style="font-family:var(--display);font-weight:800;font-size:30px">v.${isoWeek(TODAY)}</text>${mini?"":(()=>{const n=activeUnits(cs,TODAY,TODAY).length;return `<text x="0" y="36" text-anchor="middle" style="font-size:12px;fill:var(--muted)">${n?"nu: "+n+" område"+(n>1?"n":""):"inget pågår nu"}</text>`})()}<text x="0" y="18" text-anchor="middle" style="font-size:12px;fill:var(--muted)">läsår ${state.year.start.slice(2,4)}/${state.year.end.slice(2,4)}</text></svg>`;
  return s}
+/* ---------- läsåret: fyra visningar ---------- */
+const MONTH_FULL=["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"];
+const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
+function activeUnits(cs,a,b){const ids=new Set(cs.map(c=>c.id));return state.units.filter(u=>ids.has(u.courseId)&&parseD(u.start)<=b&&parseD(u.end)>=a)}
+const unitBtn=(u,extra="")=>{const c=course(u.courseId)||{};return `<button class="uchip ${u.status}" data-a="edit-unit" data-id="${u.id}" style="--cc:${c.color}"><span class="dot" style="background:${c.color}"></span>${esc(u.title)}${extra}</button>`};
+function eventsIn(a,b){return state.events.filter(e=>parseD(e.start)<=b&&parseD(e.end)>=a).sort((x,y)=>x.start<y.start?-1:1)}
+const evTag=e=>`<span class="evtag ${e.type}" data-a="edit-event" data-id="${e.id}">${esc(e.title)}</span>`;
+
+function yearBand(cs){
+ const t0=mondayOf(parseD(state.year.start)),t1=addDays(parseD(state.year.end),1);const span=t1-t0;const pct=d=>Math.max(0,Math.min(100,(d-t0)/span*100));
+ const months=[];for(let d=new Date(t0.getFullYear(),t0.getMonth(),1);d<t1;d=new Date(d.getFullYear(),d.getMonth()+1,1)){const a=d<t0?t0:d;const b=new Date(d.getFullYear(),d.getMonth()+1,1);months.push({l:MON[d.getMonth()],x:pct(a),w:pct(b>t1?t1:b)-pct(a)})}
+ const lov=state.events.filter(e=>e.type==="lov").map(e=>`<span class="band-lov" style="left:${pct(parseD(e.start))}%;width:${pct(addDays(parseD(e.end),1))-pct(parseD(e.start))}%" title="${esc(e.title)}"></span>`).join("");
+ const today=TODAY>=t0&&TODAY<t1?`<span class="band-today" style="left:${pct(TODAY)}%"></span>`:"";
+ const rows=cs.map(c=>{const us=state.units.filter(u=>u.courseId===c.id).sort((a,b)=>a.start<b.start?-1:1);const lanes=[];
+  const bars=us.map(u=>{const a=parseD(u.start),b=addDays(parseD(u.end),1);let l=lanes.findIndex(x=>x<=a);if(l<0){l=lanes.length;lanes.push(b)}else lanes[l]=b;
+   return `<button class="band-bar ${u.status}" data-a="edit-unit" data-id="${u.id}" style="left:${pct(a)}%;width:calc(${pct(b)-pct(a)}% - 3px);top:${l*30+4}px;--cc:${c.color}" title="${esc(u.title)} (${wkRange(u.start,u.end)})">${esc(u.title)}</button>`}).join("");
+  return `<div class="band-row"><div class="band-name"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</div><div class="band-track" style="height:${Math.max(1,lanes.length)*30+8}px">${lov}${bars||'<span class="small muted" style="position:absolute;left:8px;top:9px">Inga arbetsområden</span>'}${today}</div></div>`}).join("");
+ const evs=state.events.filter(e=>e.type!=="lov").map(e=>`<button class="band-ev ${e.type}" data-a="edit-event" data-id="${e.id}" style="left:${pct(parseD(e.start))}%" title="${esc(e.title)} ${shortD(e.start)}"></button>`).join("");
+ return `<div class="band-wrap"><div class="band">
+  <div class="band-row band-head"><div class="band-name"></div><div class="band-track band-months">${months.map(m=>`<span style="left:${m.x}%;width:${m.w}%">${m.l}</span>`).join("")}</div></div>
+  ${rows||`<div class="empty">Inga kurser att visa.</div>`}
+  <div class="band-row"><div class="band-name small muted">Händelser</div><div class="band-track" style="height:26px">${lov}${evs}${today}</div></div>
+ </div></div>
+ <div class="legend"><span><i style="background:var(--accent)"></i>Genomförd eller pågår</span><span><i style="border:2px dashed var(--muted);background:none"></i>Planerad</span><span><i class="s-p"></i>Lov</span><span><i style="background:var(--ink);width:3px"></i>Idag</span></div>`}
+
+function yearMonths(cs){const out=[];const t0=parseD(state.year.start),t1=parseD(state.year.end);
+ for(let d=new Date(t0.getFullYear(),t0.getMonth(),1);d<=t1;d=new Date(d.getFullYear(),d.getMonth()+1,1)){const a=d,b=new Date(d.getFullYear(),d.getMonth()+1,0);
+  const now=TODAY>=a&&TODAY<=b;const us=activeUnits(cs,a,b);
+  const lines=cs.map(c=>{const u=us.filter(x=>x.courseId===c.id);return u.length?`<div class="mrow"><span class="small muted mcourse">${esc(c.name)}</span><div class="chips">${u.map(x=>unitBtn(x)).join("")}</div></div>`:""}).join("");
+  const ev=eventsIn(a,b);
+  out.push(`<div class="mcell ${now?"cur":""}"><div class="mhead"><b>${cap(MONTH_FULL[d.getMonth()])}</b>${now?'<span class="pill p-pagar">Nu</span>':""}<span class="sp"></span><span class="small muted">v.${isoWeek(a<t0?t0:a)}–${isoWeek(b>t1?t1:b)}</span></div>${lines||'<span class="small muted">Inget planerat</span>'}${ev.length?`<div class="mev">${ev.map(evTag).join("")}</div>`:""}</div>`)}
+ return `<div class="mgrid">${out.join("")}</div>`}
+
+function yearWeekList(cs){const rows=yearWeeks().map(w=>{const e=addDays(w,4);const now=w<=TODAY&&addDays(w,7)>TODAY;const us=activeUnits(cs,w,e);
+  const starts=us.filter(u=>parseD(u.start)>=w),ends=us.filter(u=>parseD(u.end)<=addDays(w,6));const ev=eventsIn(w,addDays(w,6));const lov=inLov(w);
+  return `<div class="wrow ${now?"cur":""} ${lov?"lov":""}" ${now?'id="thisweek"':""}><div class="wnum"><b>v.${isoWeek(w)}</b><span class="small muted">${w.getDate()} ${MON[w.getMonth()]}</span></div>
+   <div class="wbody">${us.length?`<div class="chips">${us.map(u=>unitBtn(u,starts.includes(u)?' <span class="wflag">startar</span>':ends.includes(u)?' <span class="wflag">slutar</span>':"")).join("")}</div>`:`<span class="small muted">${lov?"":"Inget planerat"}</span>`}${ev.length?`<div class="mev">${ev.map(evTag).join("")}</div>`:""}</div></div>`}).join("");
+ return `<div class="wlist" id="weekbox">${rows}</div>`}
+
 function vWheel(){
- const chips=`<button class="chip" aria-pressed="${ui.wheel==="all"}" data-a="wheel" data-id="all">Alla kurser</button>`+state.courses.map(c=>`<button class="chip" aria-pressed="${ui.wheel===c.id}" data-a="wheel" data-id="${c.id}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join("");
  if(ui.wheel!=="all"&&!course(ui.wheel))ui.wheel="all";
+ const mode=["hjul","band","manader","veckor"].includes(ui.wheelMode)?ui.wheelMode:"hjul";
+ const cs=state.courses.filter(c=>ui.wheel==="all"||c.id===ui.wheel);
+ const chips=`<button class="chip" aria-pressed="${ui.wheel==="all"}" data-a="wheel" data-id="all">Alla kurser</button>`+state.courses.map(c=>`<button class="chip" aria-pressed="${ui.wheel===c.id}" data-a="wheel" data-id="${c.id}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join("");
+ const modes=[["hjul","Hjul","arshjul"],["band","Band",""],["manader","Månader",""],["veckor","Veckor",""]];
+ const seg=`<div class="seg" role="group" aria-label="Visa läsåret som">${modes.map(([k,l])=>`<button aria-pressed="${mode===k}" data-a="wheelmode" data-v="${k}">${l}</button>`).join("")}</div>`;
  const ev=[...state.events].sort((a,b)=>a.start<b.start?-1:1);
  const tl={lov:"Lov",deadline:"Deadline",annat:"Händelse"};
- return `<section class="panel"><div class="toolbar"><div class="chips">${chips}</div></div></section>
- <div class="grid2 wide-l"><section class="panel">${wheelSVG(ui.wheel,false)}
-  <div class="legend" style="justify-content:center">${state.courses.filter(c=>ui.wheel==="all"||c.id===ui.wheel).map((c,i)=>`<span><i style="background:${c.color}"></i>${i===0?"Inre ring: ":""}${esc(c.name)}</span>`).join("")}<span><i style="background:var(--muted)"></i>Lov (yttersta ringen)</span><span><i style="background:var(--bad)"></i>Deadline</span></div>
-  <p class="small muted" style="text-align:center;margin:8px 0 0">Starka färger är genomförda, ljusa är planerade. Tryck på en båge för att öppna arbetsområdet.</p></section>
- <section class="panel"><div class="panel-h"><h2>Händelser och lov</h2><span class="sp"></span><button class="btn pri" data-a="new-event">+ Händelse</button></div>
-  ${ev.length?`<div class="list">${ev.map(e=>`<div class="li" style="cursor:pointer" data-a="edit-event" data-id="${e.id}"><span class="when num">${wkRange(e.start,e.end)}</span><span class="what"><b>${esc(e.title)}</b><br><span class="small muted">${shortD(e.start)}${e.end!==e.start?" – "+shortD(e.end):""}</span></span><span class="pill ${e.type==="lov"?"p-planerad":e.type==="deadline"?"p-gap":"p-warn"}">${tl[e.type]||"Händelse"}</span></div>`).join("")}</div>`:`<div class="empty">Inga händelser ännu.</div>`}</section></div>`;
-}
+ const evPanel=`<section class="panel"><div class="panel-h"><h2>Händelser och lov</h2><span class="sp"></span><button class="btn pri" data-a="new-event">+ Händelse</button></div>
+  ${ev.length?`<div class="list">${ev.map(e=>`<div class="li" style="cursor:pointer" data-a="edit-event" data-id="${e.id}"><span class="when num">${wkRange(e.start,e.end)}</span><span class="what"><b>${esc(e.title)}</b><br><span class="small muted">${shortD(e.start)}${e.end!==e.start?" – "+shortD(e.end):""}</span></span><span class="pill ${e.type==="lov"?"p-planerad":e.type==="deadline"?"p-gap":"p-warn"}">${tl[e.type]||"Händelse"}</span></div>`).join("")}</div>`:`<div class="empty">Inga händelser ännu.</div>`}</section>`;
+ const head=`<section class="panel"><div class="toolbar">${seg}<span class="sp"></span><div class="chips">${chips}</div></div></section>`;
+ if(mode==="hjul")return head+`<div class="grid2 wide-l"><section class="panel">${wheelSVG(ui.wheel,false)}
+  <div class="legend" style="justify-content:center"><span><i style="background:var(--muted)"></i>Lov (yttersta ringen)</span><span><i style="background:var(--bad)"></i>Deadline</span><span><i style="background:var(--warn)"></i>Händelse</span></div>
+  <p class="small muted" style="text-align:center;margin:8px 0 0">Kursens namn står vid ringen. Starka färger är genomförda, ljusa är planerade. Tryck på en båge för att öppna arbetsområdet.</p></section>${evPanel}</div>`;
+ const body=mode==="band"?yearBand(cs):mode==="manader"?yearMonths(cs):yearWeekList(cs);
+ const hint={band:"En rad per kurs. Tryck på ett arbetsområde för att öppna det.",manader:"Vad som pågår varje månad, som en väggkalender.",veckor:"Läsåret vecka för vecka. Den här veckan är markerad."}[mode];
+ if(mode==="veckor")setTimeout(()=>{const el=document.getElementById("thisweek"),box=document.getElementById("weekbox");if(el&&box)box.scrollTop=el.offsetTop-box.offsetTop-60},0);
+ return head+`<section class="panel"><p class="small muted" style="margin:0 0 12px">${hint}</p>${body}</section>${evPanel}`}
 
 function vContent(){
  const subs=usedSubjects().map(subj);

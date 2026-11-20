@@ -57,7 +57,7 @@ Välj vilka ämnen och årskurser eller nivåer du undervisar i under *Inställn
 ## Det här kan Lärarbordet
 
 - **Planering:** kurser, arbetsområden på ett veckoband och lektioner med upplägg, anteckningar och genomförd-bock. Skapa en hel lektionsserie på en gång, lov hoppas över.
-- **Årshjul:** hela läsåret med kurser, lov och deadlines.
+- **Läsåret i fyra vyer:** årshjul, band (en rad per kurs), månader (som en väggkalender) och veckor (vecka för vecka). Välj den du gillar under Årshjul.
 - **Centralt innehåll:** se vad som är genomfört, planerat och var luckorna finns.
 - **Bedömning:** matris per elevgrupp. Bedöm mot Skolverkets betygskriterier, del för del, och se underlaget per kriterium för varje elev.
 - **Nytt läsår:** kopiera kurser, arbetsområden och lektioner till nästa läsår med datumen flyttade. Tidigare läsår sparas och kan öppnas igen.
