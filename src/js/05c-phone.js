@@ -23,7 +23,7 @@ function pDay(date,emptyText){const occ=(state.schedule||[]).length?dayOccurrenc
 function pToday(){const t=fmtD(TODAY);const tm=fmtD(addDays(TODAY,TODAY.getDay()===5?3:TODAY.getDay()===6?2:1));
  const now=new Date();const hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
  const occ=(state.schedule||[]).length?dayOccurrences(t).filter(o=>!o.cancel):[];const next=occ.find(o=>o.slot.end>hm);
- return `<header class="p-hero"><span class="p-date">${cap(DAY[TODAY.getDay()])} ${TODAY.getDate()} ${MONTH_FULL[TODAY.getMonth()]}</span><span class="p-week">Vecka ${isoWeek(TODAY)}</span></header>
+ return `${UPDATE?pUpdateCard():""}<header class="p-hero"><span class="p-date">${cap(DAY[TODAY.getDay()])} ${TODAY.getDate()} ${MONTH_FULL[TODAY.getMonth()]}</span><span class="p-week">Vecka ${isoWeek(TODAY)}</span></header>
  ${next?`<div class="p-next" style="--cc:${next.course.color}"><span class="p-label">${next.slot.start<=hm?"Pågår nu":"Nästa lektion"}</span><b>${esc(next.course.name)}</b><span>${esc(next.slot.start)}–${esc(next.slot.end)}${next.slot.room?" · "+esc(next.slot.room):""}</span>${next.lesson?`<span class="p-title">${esc(next.lesson.title)}</span>`:""}</div>`:""}
  <h2 class="p-h">Idag</h2>${pDay(t,TODAY.getDay()===0||TODAY.getDay()===6?"Helg. Inga lektioner.":"Inga lektioner idag.")}
  <h2 class="p-h">${parseD(tm).getDay()===1&&TODAY.getDay()>=5?"Måndag":"Imorgon"} <span class="p-muted">${parseD(tm).getDate()}/${parseD(tm).getMonth()+1}</span></h2>${pDay(tm,"Inga lektioner.")}`}
@@ -64,6 +64,17 @@ function pStudent(g,s){const as=state.assessments.filter(a=>a.groupId===g.id).so
  ${per?pSec("Per kurs",per):""}
  ${pSec("Alla omdömen",as.length?as.map(a=>{const v=(state.grades[a.id]||{})[s.id];const c=course(a.courseId)||{};
   return goBtn("grade",a.id+"|"+s.id,`<span class="p-what"><b>${esc(a.title)}</b><span class="p-sub">${esc(c.name||"")} · ${shortD(a.date)}</span>${v&&v.note?`<span class="p-note">${esc(v.note.length>70?v.note.slice(0,70)+"…":v.note)}</span>`:""}</span>${v?gradeChip(v.k):`<span class="p-muted">–</span>`}`,"p-row",`--cc:${c.color||"var(--line)"}`)}).join(""):`<p class="p-empty">Inga bedömningar ännu.</p>`)}`}
+/* uppdateringar i telefonen */
+let PUPD={state:"",msg:""};
+function pUpdateCard(compact){if(!UPDATE)return "";return `<div class="p-card p-upd"><span class="p-label">Ny version</span><b>Lärarbordet ${esc(UPDATE.version)} finns</b><span class="p-sub">Du har ${esc(APP_VERSION)}.${IS_MOBILE_APP?" Telefonen läser bara din fil, så ingenting försvinner när du uppdaterar.":""}</span><button class="p-big" data-a="p-update-go">${IS_MOBILE_APP?"Ladda ner och installera":"Uppdatera nu"}</button></div>`}
+async function pCheckUpdate(){PUPD={state:"busy",msg:"Söker efter uppdatering…"};render();
+ if(IS_MOBILE_APP){UPDATE=null;await checkUpdate(true);PUPD=UPDATE?{state:"",msg:""}:{state:"ok",msg:"Du har den senaste versionen."};render();return}
+ try{const r=await fetch(WEB_URL+"?v="+Date.now(),{cache:"no-store"});const t=await r.text();const m=t.match(/APP_VERSION="([^"]+)"/);const v=m?m[1]:null;
+  if(v&&verGt(v,APP_VERSION)){UPDATE={version:v,url:WEB_URL};PUPD={state:"",msg:""}}else PUPD={state:"ok",msg:"Du har den senaste versionen."}}
+ catch(e){PUPD={state:"err",msg:"Kunde inte nå internet. Försök igen senare."}}render()}
+async function pUpdateGo(){if(IS_MOBILE_APP){PUPD={state:"busy",msg:"Öppnar nedladdningen… Tryck sedan på filen och välj Installera. Första gången kan Android fråga om du tillåter installation från den här källan."};render();await downloadInstaller();return}
+ try{const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg)await reg.update();if(window.caches){for(const k of await caches.keys())await caches.delete(k)}}catch(e){}
+ location.reload()}
 function pFile(){return `<h2 class="p-h">Fil</h2>
  <div class="p-card">${READONLY?`<span class="p-label">Öppen i läsläge</span><b>${esc(RO_NAME||"Fil")}</b><span class="p-sub">Läsår ${esc(yearLabel(state.year))} · ${state.courses.length} kurser</span>`:`<span class="p-label">Ingen fil öppen</span><b>${state.example?"Exempeldata":"Lärarbordet"}</b>`}</div>
  <button class="p-big" data-a="open-ro">${READONLY?"Öppna en nyare fil":"Öppna min fil"}</button>
@@ -71,4 +82,8 @@ function pFile(){return `<h2 class="p-h">Fil</h2>
  ${!READONLY?`<button class="p-big secondary" data-a="p-example">Titta på exempeldata</button>`:""}
  <button class="p-link" data-a="sync-guide">Så får du filen till telefonen</button>
  ${IS_MOBILE_APP?"":`<button class="p-link" data-a="p-full">Visa hela appen i stället</button>`}
+ <h2 class="p-h">Uppdateringar</h2>
+ ${pUpdateCard()||`<div class="p-card"><span class="p-label">Version</span><b>Lärarbordet ${esc(APP_VERSION)}</b>${PUPD.msg?`<span class="p-sub ${PUPD.state==="err"?"p-cancel":""}">${esc(PUPD.msg)}</span>`:""}</div>
+ <button class="p-big secondary" data-a="p-update-check" ${PUPD.state==="busy"?"disabled":""}>${PUPD.state==="busy"?"Söker…":"Sök efter uppdatering"}</button>`}
+ ${IS_MOBILE_APP&&PUPD.state==="busy"&&UPDATE?`<p class="p-muted">${esc(PUPD.msg)}</p>`:""}
  <p class="p-muted" style="margin-top:24px">Lärarbordet ${esc(APP_VERSION)} · © 2026 DorkTeach · AGPL-3.0 · <a href="https://github.com/joshuamrumack-collab/Lararbordet" target="_blank" rel="noopener">Källkod</a></p>`}

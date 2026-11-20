@@ -7,6 +7,8 @@ const A={
  picker:()=>pickerModal(),
  "open-ro":()=>pickReadOnly(),
  "p-go":el=>pGo(el.dataset.t,el.dataset.id),
+ "p-update-check":()=>pCheckUpdate(),
+ "p-update-go":()=>pUpdateGo(),
  "p-back":()=>{if(PH.nav.length)history.back();else location.hash=PH.tab||"idag"},
  "p-toggle":el=>{const k=el.dataset.k;PH.open[k]=!PH.open[k];render()},
  "p-week":el=>{const v=+el.dataset.v;PH.week=v===0?0:PH.week+v;render();window.scrollTo(0,0)},

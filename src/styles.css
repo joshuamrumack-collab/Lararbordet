@@ -390,3 +390,5 @@ body.phone{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .p-state.covered{color:var(--ok)}.p-state.ongoing{color:var(--info)}.p-state.gap{color:var(--bad)}
 button.evtag{border:0;font:inherit;font-size:.82rem;padding:6px 12px;cursor:pointer}
 .p-det p b,.p-det summary b,.p-card p b{font-family:inherit;font-size:inherit;font-weight:800}
+.p-upd{border:2px solid var(--accent);background:var(--info-bg)}
+.p-upd .p-big{margin-top:10px}

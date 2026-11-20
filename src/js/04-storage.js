@@ -104,18 +104,18 @@ function openExternal(url){if(DESKTOP&&T.opener&&T.opener.openUrl){T.opener.open
 let UPDATE=null;
 const RELEASES_URL="https://github.com/joshuamrumack-collab/Lararbordet/releases/latest";
 const verGt=(a,b)=>{const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number);for(let i=0;i<3;i++){const p=x[i]||0,q=y[i]||0;if(p!==q)return p>q}return false};
-async function checkUpdate(){if(state.checkUpdates===false||APP_VERSION.includes("@@")||location.hostname.endsWith("github.io"))return;
+async function checkUpdate(force){if(!force&&(state.checkUpdates===false||APP_VERSION.includes("@@")||location.hostname.endsWith("github.io")))return;
  try{const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),6000);const r=await fetch("https://api.github.com/repos/joshuamrumack-collab/Lararbordet/releases/latest",{signal:ctl.signal,headers:{Accept:"application/vnd.github+json"}});clearTimeout(t);if(!r.ok)return;
   const j=await r.json();const v=String(j.tag_name||"").replace(/^v/,"");if(v&&verGt(v,APP_VERSION)){UPDATE={version:v,url:j.html_url||RELEASES_URL};render()}}catch(e){}}
 
 /* ---------- ladda ner senaste versionen ---------- */
 const WEB_URL="https://joshuamrumack-collab.github.io/Lararbordet/";
 const isWebCopy=()=>location.hostname.endsWith("github.io");
-const OS=(()=>{const u=(navigator.userAgent||"")+" "+(navigator.platform||"");return /Win/i.test(u)?"windows":/Mac/i.test(u)?"mac":"other"})();
+const OS=(()=>{const u=(navigator.userAgent||"")+" "+(navigator.platform||"");return /Android/i.test(u)?"android":/iPhone|iPad|iPod/i.test(u)?"ios":/Win/i.test(u)?"windows":/Mac/i.test(u)?"mac":"other"})();
 async function latestRelease(){const r=await fetch("https://api.github.com/repos/joshuamrumack-collab/Lararbordet/releases/latest",{headers:{Accept:"application/vnd.github+json"}});if(!r.ok)throw new Error("GitHub svarade inte");return r.json()}
 /* Skrivbordsappen: öppna rätt installationsfil i webbläsaren */
 async function downloadInstaller(){const st=$("#dlstatus");if(st)st.textContent="Hämtar…";
- try{const j=await latestRelease();const pat=OS==="windows"?/x64-setup\.exe$/:OS==="mac"?/universal\.dmg$/:null;const a=pat&&(j.assets||[]).find(x=>pat.test(x.name));
+ try{const j=await latestRelease();const pat=OS==="android"?/android\.apk$/:OS==="windows"?/x64-setup\.exe$/:OS==="mac"?/universal\.dmg$/:null;const a=pat&&(j.assets||[]).find(x=>pat.test(x.name));
   openExternal(a?a.browser_download_url:(j.html_url||RELEASES_URL));if(st)st.textContent=a?`Laddar ner ${a.name}. Installera den som vanligt, din data ligger kvar.`:"Nedladdningssidan öppnades."}
  catch(e){openExternal(RELEASES_URL);if(st)st.textContent="Nedladdningssidan öppnades."}}
 /* HTML-versionen: hämta den nya filen, lägg in all data och spara */
