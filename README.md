@@ -94,3 +94,18 @@ npx tauri icon app-icon.png   # bara om du byter ikon
 ```
 
 Ny release: höj `version` i `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` och `package.json` och pusha till `main`. GitHub Actions bygger `.exe`, `.msi`, `.dmg` och lägger till `lararbordet.html`.
+
+## Licens
+
+Copyright © 2026 DorkTeach
+
+Lärarbordet är fri programvara: du får sprida och ändra den enligt villkoren i GNU Affero General Public License, version 3 eller (om du vill) senare, som publicerats av Free Software Foundation. Se [LICENSE](LICENSE).
+
+Programmet distribueras i hopp om att det ska vara användbart, men UTAN NÅGON GARANTI, inte ens underförstådd garanti om SÄLJBARHET eller LÄMPLIGHET FÖR ETT VISST ÄNDAMÅL.
+
+Kort sagt: du får använda, ändra och sprida Lärarbordet, även kommersiellt. Om du sprider en ändrad version, eller låter andra använda en ändrad version som en tjänst på nätet, måste du göra källkoden till din version tillgänglig under samma licens.
+
+Övrigt innehåll:
+- Centralt innehåll och betygskriterier kommer från Skolverkets kurs- och ämnesplaner via Skolverkets öppna API.
+- fflate (MIT-licens, © Arjun Barrett) används för att packa upp den inbyggda datan.
+- Skrivbordsapparna byggs med Tauri (MIT- eller Apache-2.0-licens).

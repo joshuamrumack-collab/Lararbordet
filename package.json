@@ -1,7 +1,7 @@
 {
   "name": "lararbordet",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.6.1",
   "scripts": {
     "build": "node tools/build/build.mjs",
     "test": "node --test tests/logic.test.mjs",
@@ -9,5 +9,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.4"
-  }
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "DorkTeach"
 }

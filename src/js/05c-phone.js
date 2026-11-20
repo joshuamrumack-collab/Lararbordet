@@ -74,4 +74,4 @@ function pFile(){return `<h2 class="p-h">Fil</h2>
  ${!READONLY?`<button class="p-big secondary" data-a="p-example">Titta på exempeldata</button>`:""}
  <button class="p-link" data-a="sync-guide">Så får du filen till telefonen</button>
  ${IS_MOBILE_APP?"":`<button class="p-link" data-a="p-full">Visa hela appen i stället</button>`}
- <p class="p-muted" style="margin-top:24px">Lärarbordet ${esc(APP_VERSION)} · DorkTeach</p>`}
+ <p class="p-muted" style="margin-top:24px">Lärarbordet ${esc(APP_VERSION)} · © 2026 DorkTeach · AGPL-3.0 · <a href="https://github.com/joshuamrumack-collab/Lararbordet" target="_blank" rel="noopener">Källkod</a></p>`}

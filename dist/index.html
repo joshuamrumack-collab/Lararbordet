@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Lärarbordet · Copyright © 2026 DorkTeach · SPDX-License-Identifier: AGPL-3.0-or-later · Källkod: https://github.com/joshuamrumack-collab/Lararbordet -->
 <html lang="sv">
 <head>
 <meta charset="utf-8">
@@ -389,7 +390,7 @@ body.phone{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 "use strict";
 /* ===== 01-helpers.js ===== */
 /* ---------- hjälpfunktioner ---------- */
-const APP_VERSION="1.5.0";
+const APP_VERSION="1.6.1";
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1100,7 +1101,7 @@ function vSettings(){
   ${isWebCopy()?`<p class="small muted">Det här är webbversionen, som alltid är senaste versionen. Vill du spara på riktigt: ladda ner Lärarbordet nedan.</p><div class="actions" style="justify-content:flex-start"><button class="btn pri" data-a="open-update">Ladda ner Lärarbordet</button></div>`
   :`<div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn pri" data-a="download-latest">${DESKTOP?"Ladda ner senaste versionen":"Uppdatera till senaste versionen"}</button><button class="btn" data-a="open-update">Nedladdningssidan</button></div>
   <p class="small muted" id="dlstatus" style="margin:8px 0 0">${DESKTOP?(OS==="windows"?"Laddar ner installationsfilen för Windows.":OS==="mac"?"Laddar ner installationsfilen för Mac.":"Öppnar nedladdningssidan."):"Hämtar den nya versionen och sparar den med all din data i den här filen."}</p>`}</section>
- <p class="small muted" style="text-align:center">Byggd av DorkTeach · Centralt innehåll och betygskriterier från Skolverket</p>`;
+ <p class="small muted" style="text-align:center">© 2026 DorkTeach · Fri programvara under <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPL-3.0</a> · <a href="https://github.com/joshuamrumack-collab/Lararbordet" target="_blank" rel="noopener">Källkod</a><br>Centralt innehåll och betygskriterier från Skolverket</p>`;
 }
 
 /* ===== 05b-schedule.js ===== */
@@ -1245,7 +1246,7 @@ function pFile(){return `<h2 class="p-h">Fil</h2>
  ${!READONLY?`<button class="p-big secondary" data-a="p-example">Titta på exempeldata</button>`:""}
  <button class="p-link" data-a="sync-guide">Så får du filen till telefonen</button>
  ${IS_MOBILE_APP?"":`<button class="p-link" data-a="p-full">Visa hela appen i stället</button>`}
- <p class="p-muted" style="margin-top:24px">Lärarbordet ${esc(APP_VERSION)} · DorkTeach</p>`}
+ <p class="p-muted" style="margin-top:24px">Lärarbordet ${esc(APP_VERSION)} · © 2026 DorkTeach · AGPL-3.0 · <a href="https://github.com/joshuamrumack-collab/Lararbordet" target="_blank" rel="noopener">Källkod</a></p>`}
 
 /* ===== 06-modals.js ===== */
 /* ---------- modaler ---------- */
