@@ -114,8 +114,9 @@ jobs:
           args: ${{ matrix.args }}
 
   android:
-    # Android-appen (APK) i läsläge. Signeras med ANDROID_KEYSTORE (base64), ANDROID_KEYSTORE_PASSWORD
-    # och ANDROID_KEY_ALIAS om de finns; annars med en tillfällig nyckel (då måste appen avinstalleras före uppdatering).
+    # Android-appen (APK) i läsläge. Signeras med hemligheten ANDROID_KEYSTORE (nyckelfilen i base64).
+    # Lösenord och alias kan anges med ANDROID_KEYSTORE_PASSWORD och ANDROID_KEY_ALIAS, annars används standardvärdena.
+    # Utan ANDROID_KEYSTORE används en tillfällig nyckel, och då måste appen avinstalleras före varje uppdatering.
     needs: desktop
     runs-on: ubuntu-latest
     steps:
@@ -155,7 +156,7 @@ jobs:
           echo "APK: $APK"
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           if [ -n "$ANDROID_KEYSTORE" ]; then
-            echo "$ANDROID_KEYSTORE" | base64 -d > ks.jks; PASS="$ANDROID_KEYSTORE_PASSWORD"; ALIAS="$ANDROID_KEY_ALIAS"
+            echo "$ANDROID_KEYSTORE" | base64 -d > ks.jks; PASS="${ANDROID_KEYSTORE_PASSWORD:-lararbordet-android}"; ALIAS="${ANDROID_KEY_ALIAS:-lararbordet}"; echo "Signerar med den permanenta nyckeln."
           else
             echo "::warning::Ingen ANDROID_KEYSTORE: signerar med tillfällig nyckel."
             PASS=lararbordet; ALIAS=lararbordet
