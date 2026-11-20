@@ -94,3 +94,29 @@ const verGt=(a,b)=>{const x=String(a).split(".").map(Number),y=String(b).split("
 async function checkUpdate(){if(state.checkUpdates===false||APP_VERSION.includes("@@")||location.hostname.endsWith("github.io"))return;
  try{const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),6000);const r=await fetch("https://api.github.com/repos/joshuamrumack-collab/Lararbordet/releases/latest",{signal:ctl.signal,headers:{Accept:"application/vnd.github+json"}});clearTimeout(t);if(!r.ok)return;
   const j=await r.json();const v=String(j.tag_name||"").replace(/^v/,"");if(v&&verGt(v,APP_VERSION)){UPDATE={version:v,url:j.html_url||RELEASES_URL};render()}}catch(e){}}
+
+/* ---------- ladda ner senaste versionen ---------- */
+const WEB_URL="https://joshuamrumack-collab.github.io/Lararbordet/";
+const isWebCopy=()=>location.hostname.endsWith("github.io");
+const OS=(()=>{const u=(navigator.userAgent||"")+" "+(navigator.platform||"");return /Win/i.test(u)?"windows":/Mac/i.test(u)?"mac":"other"})();
+async function latestRelease(){const r=await fetch("https://api.github.com/repos/joshuamrumack-collab/Lararbordet/releases/latest",{headers:{Accept:"application/vnd.github+json"}});if(!r.ok)throw new Error("GitHub svarade inte");return r.json()}
+/* Skrivbordsappen: öppna rätt installationsfil i webbläsaren */
+async function downloadInstaller(){const st=$("#dlstatus");if(st)st.textContent="Hämtar…";
+ try{const j=await latestRelease();const pat=OS==="windows"?/x64-setup\.exe$/:OS==="mac"?/universal\.dmg$/:null;const a=pat&&(j.assets||[]).find(x=>pat.test(x.name));
+  openExternal(a?a.browser_download_url:(j.html_url||RELEASES_URL));if(st)st.textContent=a?`Laddar ner ${a.name}. Installera den som vanligt, din data ligger kvar.`:"Nedladdningssidan öppnades."}
+ catch(e){openExternal(RELEASES_URL);if(st)st.textContent="Nedladdningssidan öppnades."}}
+/* HTML-versionen: hämta den nya filen, lägg in all data och spara */
+async function updateHtmlFile(){const st=$("#dlstatus");const say=t=>{if(st)st.innerHTML=t};say("Hämtar senaste versionen…");
+ let html;try{const r=await fetch(WEB_URL+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;html=await r.text()}catch(e){say("Kunde inte nå GitHub. Kontrollera internet och försök igen.");return}
+ const m=html.match(/APP_VERSION="([^"]+)"/);const ver=m?m[1]:"?";
+ if(!/id="pbdata"/.test(html)){say("Den hämtade filen ser inte ut som Lärarbordet. Ladda ner den från nedladdningssidan i stället.");return}
+ state.ui=ui;const json=JSON.stringify(state).replace(/</g,"\\u003c");
+ const out=html.replace(/(<script type="application\/json" id="pbdata">)[\s\S]*?(<\/script>)/,(x,a,b)=>a+json+b);
+ if(canPick){try{if(!fileHandle&&storedHandle){try{if((await storedHandle.requestPermission({mode:"readwrite"}))==="granted")fileHandle=storedHandle}catch(e){}}
+   if(!fileHandle){fileHandle=await window.showSaveFilePicker({suggestedName:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});storedHandle=fileHandle;IDB.set(HKEY,fileHandle).catch(()=>{})}
+   const w=await fileHandle.createWritable();await w.write(out);await w.close();dirty=false;savedAt=new Date();setSync("file");
+   say(`Klart! <b>${esc(fileHandle.name)}</b> är nu version ${esc(ver)} med all din data. <button class="btn pri" data-a="reload">Öppna nya versionen</button>`);return}
+  catch(e){if(e&&e.name==="AbortError"){say("Avbrutet. Inget ändrades.");return}}}
+ downloadBlob(FILENAME,out,"text/html");dirty=false;savedAt=new Date();setSync("downloaded");
+ say(`Version ${esc(ver)} med all din data laddades ner som <b>${esc(FILENAME)}</b>. Ersätt den gamla filen med den nya och öppna den.`)}
+function downloadLatest(){return DESKTOP?downloadInstaller():updateHtmlFile()}

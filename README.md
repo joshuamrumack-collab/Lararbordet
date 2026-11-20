@@ -65,7 +65,7 @@ Välj vilka ämnen och årskurser eller nivåer du undervisar i under *Inställn
 
 ## Uppdateringar
 
-Appen kollar vid start om det finns en ny version och visar i så fall en ruta (går att stänga av under *Inställningar → Om Lärarbordet*). Inga uppgifter om dig eller eleverna skickas. Skrivbordsappen behåller datan i Dokument/Lärarbordet när du installerar en ny version. I HTML-versionen öppnar du den nya filen och väljer *Inställningar → Importera data*.
+Appen kollar vid start om det finns en ny version och visar i så fall en ruta (går att stänga av under *Inställningar → Om Lärarbordet*). Inga uppgifter om dig eller eleverna skickas. Under *Inställningar → Om Lärarbordet* finns en knapp för att hämta senaste versionen. I skrivbordsappen laddar den ner rätt installationsfil för datorn (Windows eller Mac), och datan i Dokument/Lärarbordet ligger kvar. I HTML-versionen hämtar knappen den nya versionen, lägger in all din data i den och sparar den i samma fil (Chrome och Edge) eller som en nedladdning (Safari och Firefox).
 
 ## Börja från början
 

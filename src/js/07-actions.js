@@ -8,6 +8,8 @@ const A={
  "open-update":()=>{const v=UPDATE?UPDATE.version:"";modal(v?"Uppdatera till "+v:"Ladda ner Lärarbordet",DESKTOP?`<p style="margin:0">Ladda ner den nya installationsfilen och installera den som vanligt. Din data ligger kvar i <b>Dokument/Lärarbordet</b> och följer med automatiskt.</p><div class="actions"><span class="sp"></span><button class="btn pri" id="upgo">Öppna nedladdningssidan</button></div>`
   :`<ol style="margin:0;padding-left:20px;display:grid;gap:6px"><li>Spara dina ändringar i den här filen först.</li><li>Ladda ner den nya <b>lararbordet.html</b> från nedladdningssidan.</li><li>Öppna den nya filen och välj <b>Inställningar → Importera data</b>.</li><li>Välj din gamla lararbordet.html. All data flyttas över.</li></ol><div class="actions"><span class="sp"></span><button class="btn pri" id="upgo">Öppna nedladdningssidan</button></div>`,m=>m.querySelector("#upgo").onclick=()=>openExternal(UPDATE?UPDATE.url:RELEASES_URL))},
  "new-year":()=>newYearModal(),
+ "download-latest":()=>downloadLatest(),
+ reload:()=>location.reload(),
  "switch-year":el=>{const a=state.archive.find(x=>x.id===el.dataset.id);if(!a)return;confirmBox(`Öppna läsår ${esc(a.label)}? Läsår ${esc(yearLabel(state.year))} sparas under Tidigare läsår så att du kan byta tillbaka.`,()=>{switchYear(state,a.id);ui=Object.assign(ui,{course:null,group:null,acourse:"all",wheel:"all"});commit()},"Öppna")},
  "del-year":el=>{const a=state.archive.find(x=>x.id===el.dataset.id);if(!a)return;confirmBox(`Ta bort läsår ${esc(a.label)} med alla kurser, elever och omdömen? Det går inte att ångra. Exportera gärna en säkerhetskopia först.`,()=>{state.archive=state.archive.filter(x=>x!==a);commit()})},
  "share-course":el=>shareCourse(el.dataset.id),

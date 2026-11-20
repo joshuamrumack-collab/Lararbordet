@@ -299,7 +299,7 @@ select.inline{border:1px solid var(--line);background:var(--surface);border-radi
 "use strict";
 /* ===== 01-helpers.js ===== */
 /* ---------- hjälpfunktioner ---------- */
-const APP_VERSION="1.3.0";
+const APP_VERSION="1.4.0";
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -625,6 +625,32 @@ async function checkUpdate(){if(state.checkUpdates===false||APP_VERSION.includes
  try{const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),6000);const r=await fetch("https://api.github.com/repos/joshuamrumack-collab/Lararbordet/releases/latest",{signal:ctl.signal,headers:{Accept:"application/vnd.github+json"}});clearTimeout(t);if(!r.ok)return;
   const j=await r.json();const v=String(j.tag_name||"").replace(/^v/,"");if(v&&verGt(v,APP_VERSION)){UPDATE={version:v,url:j.html_url||RELEASES_URL};render()}}catch(e){}}
 
+/* ---------- ladda ner senaste versionen ---------- */
+const WEB_URL="https://joshuamrumack-collab.github.io/Lararbordet/";
+const isWebCopy=()=>location.hostname.endsWith("github.io");
+const OS=(()=>{const u=(navigator.userAgent||"")+" "+(navigator.platform||"");return /Win/i.test(u)?"windows":/Mac/i.test(u)?"mac":"other"})();
+async function latestRelease(){const r=await fetch("https://api.github.com/repos/joshuamrumack-collab/Lararbordet/releases/latest",{headers:{Accept:"application/vnd.github+json"}});if(!r.ok)throw new Error("GitHub svarade inte");return r.json()}
+/* Skrivbordsappen: öppna rätt installationsfil i webbläsaren */
+async function downloadInstaller(){const st=$("#dlstatus");if(st)st.textContent="Hämtar…";
+ try{const j=await latestRelease();const pat=OS==="windows"?/x64-setup\.exe$/:OS==="mac"?/universal\.dmg$/:null;const a=pat&&(j.assets||[]).find(x=>pat.test(x.name));
+  openExternal(a?a.browser_download_url:(j.html_url||RELEASES_URL));if(st)st.textContent=a?`Laddar ner ${a.name}. Installera den som vanligt, din data ligger kvar.`:"Nedladdningssidan öppnades."}
+ catch(e){openExternal(RELEASES_URL);if(st)st.textContent="Nedladdningssidan öppnades."}}
+/* HTML-versionen: hämta den nya filen, lägg in all data och spara */
+async function updateHtmlFile(){const st=$("#dlstatus");const say=t=>{if(st)st.innerHTML=t};say("Hämtar senaste versionen…");
+ let html;try{const r=await fetch(WEB_URL+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;html=await r.text()}catch(e){say("Kunde inte nå GitHub. Kontrollera internet och försök igen.");return}
+ const m=html.match(/APP_VERSION="([^"]+)"/);const ver=m?m[1]:"?";
+ if(!/id="pbdata"/.test(html)){say("Den hämtade filen ser inte ut som Lärarbordet. Ladda ner den från nedladdningssidan i stället.");return}
+ state.ui=ui;const json=JSON.stringify(state).replace(/</g,"\\u003c");
+ const out=html.replace(/(<script type="application\/json" id="pbdata">)[\s\S]*?(<\/script>)/,(x,a,b)=>a+json+b);
+ if(canPick){try{if(!fileHandle&&storedHandle){try{if((await storedHandle.requestPermission({mode:"readwrite"}))==="granted")fileHandle=storedHandle}catch(e){}}
+   if(!fileHandle){fileHandle=await window.showSaveFilePicker({suggestedName:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});storedHandle=fileHandle;IDB.set(HKEY,fileHandle).catch(()=>{})}
+   const w=await fileHandle.createWritable();await w.write(out);await w.close();dirty=false;savedAt=new Date();setSync("file");
+   say(`Klart! <b>${esc(fileHandle.name)}</b> är nu version ${esc(ver)} med all din data. <button class="btn pri" data-a="reload">Öppna nya versionen</button>`);return}
+  catch(e){if(e&&e.name==="AbortError"){say("Avbrutet. Inget ändrades.");return}}}
+ downloadBlob(FILENAME,out,"text/html");dirty=false;savedAt=new Date();setSync("downloaded");
+ say(`Version ${esc(ver)} med all din data laddades ner som <b>${esc(FILENAME)}</b>. Ersätt den gamla filen med den nya och öppna den.`)}
+function downloadLatest(){return DESKTOP?downloadInstaller():updateHtmlFile()}
+
 /* ===== 05-views.js ===== */
 /* ---------- rendering ---------- */
 function route(){const h=(location.hash||"").slice(1);return TABS.some(t=>t[0]===h)?h:"oversikt"}
@@ -639,7 +665,7 @@ function weekPanel(){const mon=mondayOf(TODAY);const ls=lessonsInWeek(state,mon)
   return `<div class="day ${ds===fmtD(TODAY)?"today":""}"><div class="dh"><b>${DAY[d.getDay()].slice(0,3)}</b> <span class="muted small">${d.getDate()}/${d.getMonth()+1}</span></div>${l.map(x=>{const u=unit(x.unitId)||{};const c=course(u.courseId)||{};return `<button class="lesson ${x.done?"done":""}" data-a="edit-lesson" data-id="${x.id}" style="border-left-color:${c.color||"var(--line)"}"><span class="small muted">${esc(c.name||"")}</span><b>${esc(x.title||"Lektion")}</b>${x.done?'<span class="small" style="color:var(--ok)">Genomförd</span>':""}</button>`}).join("")||'<span class="small muted">–</span>'}</div>`}).join("");
  return `<section class="panel"><div class="panel-h"><h2>Den här veckan</h2><span class="muted small">v.${isoWeek(TODAY)}</span><span class="sp"></span>${ls.length?`<span class="small muted">${ls.filter(x=>x.done).length} av ${ls.length} lektioner genomförda</span>`:""}</div>
   ${ls.length?`<div class="week">${days}</div>`:`<div class="empty">Inga lektioner planerade den här veckan. Öppna ett arbetsområde under Planering och lägg till lektioner.</div>`}</section>`}
-function updateBanner(){return UPDATE?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Version ${esc(UPDATE.version)} finns.</b> Du har ${esc(APP_VERSION)}. Din data följer med när du uppdaterar.</span><button class="btn" data-a="open-update">Visa hur du uppdaterar</button></div>`:""}
+function updateBanner(){return UPDATE?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Version ${esc(UPDATE.version)} finns.</b> Du har ${esc(APP_VERSION)}. Din data följer med när du uppdaterar.</span><button class="btn pri" data-a="download-latest">${DESKTOP?"Ladda ner":"Uppdatera nu"}</button><button class="btn" data-a="open-update">Visa hur</button><span id="dlstatus" class="small" style="flex-basis:100%"></span></div>`:""}
 function vOverview(){
  const ys=parseD(state.year.start),ye=parseD(state.year.end);const pct=Math.max(0,Math.min(100,Math.round((TODAY-ys)/(ye-ys)*100)));
  const active=state.units.filter(u=>parseD(u.start)<=TODAY&&parseD(u.end)>=TODAY||u.status==="pagar").filter((u,i,a)=>a.indexOf(u)===i);
@@ -843,7 +869,9 @@ function vSettings(){
  <section class="panel"><div class="panel-h"><h2>Om Lärarbordet</h2></div>
   <p class="small" style="margin-top:0">Version <b>${esc(APP_VERSION)}</b>. ${UPDATE?`Version ${esc(UPDATE.version)} finns att ladda ner.`:""}</p>
   <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="chkupd" ${state.checkUpdates!==false?"checked":""} style="margin-top:4px"><span class="small">Sök efter nya versioner när appen startar. Appen frågar GitHub vilken version som är senast. Inga uppgifter om dig eller dina elever skickas.</span></label>
-  <div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn" data-a="open-update">Nedladdningssidan</button></div></section>
+  ${isWebCopy()?`<p class="small muted">Det här är webbversionen, som alltid är senaste versionen. Vill du spara på riktigt: ladda ner Lärarbordet nedan.</p><div class="actions" style="justify-content:flex-start"><button class="btn pri" data-a="open-update">Ladda ner Lärarbordet</button></div>`
+  :`<div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn pri" data-a="download-latest">${DESKTOP?"Ladda ner senaste versionen":"Uppdatera till senaste versionen"}</button><button class="btn" data-a="open-update">Nedladdningssidan</button></div>
+  <p class="small muted" id="dlstatus" style="margin:8px 0 0">${DESKTOP?(OS==="windows"?"Laddar ner installationsfilen för Windows.":OS==="mac"?"Laddar ner installationsfilen för Mac.":"Öppnar nedladdningssidan."):"Hämtar den nya versionen och sparar den med all din data i den här filen."}</p>`}</section>
  <p class="small muted" style="text-align:center">Byggd av DorkTeach · Centralt innehåll och betygskriterier från Skolverket</p>`;
 }
 
@@ -1076,6 +1104,8 @@ const A={
  "open-update":()=>{const v=UPDATE?UPDATE.version:"";modal(v?"Uppdatera till "+v:"Ladda ner Lärarbordet",DESKTOP?`<p style="margin:0">Ladda ner den nya installationsfilen och installera den som vanligt. Din data ligger kvar i <b>Dokument/Lärarbordet</b> och följer med automatiskt.</p><div class="actions"><span class="sp"></span><button class="btn pri" id="upgo">Öppna nedladdningssidan</button></div>`
   :`<ol style="margin:0;padding-left:20px;display:grid;gap:6px"><li>Spara dina ändringar i den här filen först.</li><li>Ladda ner den nya <b>lararbordet.html</b> från nedladdningssidan.</li><li>Öppna den nya filen och välj <b>Inställningar → Importera data</b>.</li><li>Välj din gamla lararbordet.html. All data flyttas över.</li></ol><div class="actions"><span class="sp"></span><button class="btn pri" id="upgo">Öppna nedladdningssidan</button></div>`,m=>m.querySelector("#upgo").onclick=()=>openExternal(UPDATE?UPDATE.url:RELEASES_URL))},
  "new-year":()=>newYearModal(),
+ "download-latest":()=>downloadLatest(),
+ reload:()=>location.reload(),
  "switch-year":el=>{const a=state.archive.find(x=>x.id===el.dataset.id);if(!a)return;confirmBox(`Öppna läsår ${esc(a.label)}? Läsår ${esc(yearLabel(state.year))} sparas under Tidigare läsår så att du kan byta tillbaka.`,()=>{switchYear(state,a.id);ui=Object.assign(ui,{course:null,group:null,acourse:"all",wheel:"all"});commit()},"Öppna")},
  "del-year":el=>{const a=state.archive.find(x=>x.id===el.dataset.id);if(!a)return;confirmBox(`Ta bort läsår ${esc(a.label)} med alla kurser, elever och omdömen? Det går inte att ångra. Exportera gärna en säkerhetskopia först.`,()=>{state.archive=state.archive.filter(x=>x!==a);commit()})},
  "share-course":el=>shareCourse(el.dataset.id),
