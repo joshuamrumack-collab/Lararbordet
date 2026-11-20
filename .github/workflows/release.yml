@@ -104,6 +104,7 @@ jobs:
             **Ladda ner den version som passar din dator:**
             - **Windows:** filen som slutar på `x64-setup.exe`
             - **Mac:** filen som slutar på `universal.dmg`
+            - **Android (telefon, läsläge):** filen som slutar på `android.apk`
             - **Webbläsare / Chromebook:** `lararbordet.html`
             - **Testa direkt utan nedladdning:** https://joshuamrumack-collab.github.io/Lararbordet/
 
@@ -111,6 +112,59 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+  android:
+    # Android-appen (APK) i läsläge. Signeras med ANDROID_KEYSTORE (base64), ANDROID_KEYSTORE_PASSWORD
+    # och ANDROID_KEY_ALIAS om de finns; annars med en tillfällig nyckel (då måste appen avinstalleras före uppdatering).
+    needs: desktop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+      - name: Android NDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.0.12077973" >/dev/null
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npx tauri android init --ci
+      - run: npx tauri icon app-icon.png
+      - run: npx tauri android build --apk --ci
+      - name: Signera och lägg i releasen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          VER=$(jq -r .version src-tauri/tauri.conf.json)
+          APK=$(find src-tauri/gen/android -name "*universal*release*unsigned*.apk" | head -1)
+          [ -z "$APK" ] && APK=$(find src-tauri/gen/android -name "*release*.apk" | head -1)
+          echo "APK: $APK"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          if [ -n "$ANDROID_KEYSTORE" ]; then
+            echo "$ANDROID_KEYSTORE" | base64 -d > ks.jks; PASS="$ANDROID_KEYSTORE_PASSWORD"; ALIAS="$ANDROID_KEY_ALIAS"
+          else
+            echo "::warning::Ingen ANDROID_KEYSTORE: signerar med tillfällig nyckel."
+            PASS=lararbordet; ALIAS=lararbordet
+            keytool -genkeypair -keystore ks.jks -storepass "$PASS" -keypass "$PASS" -alias "$ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=DorkTeach, O=DorkTeach, C=SE"
+          fi
+          "$BT/zipalign" -f -p 4 "$APK" aligned.apk
+          "$BT/apksigner" sign --ks ks.jks --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --ks-key-alias "$ALIAS" --out "Lararbordet_${VER}_android.apk" aligned.apk
+          "$BT/apksigner" verify "Lararbordet_${VER}_android.apk"
+          gh release upload "v$VER" "Lararbordet_${VER}_android.apk" --clobber
 
   html:
     needs: desktop

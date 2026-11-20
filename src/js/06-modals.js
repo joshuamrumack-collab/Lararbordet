@@ -198,6 +198,8 @@ function welcomeModal(){modal("Välkommen till Lärarbordet",`<p style="margin:0
  <div style="display:grid;gap:10px">
   <button class="btn pri" id="w-blank" style="justify-content:center;padding:12px">Börja med ett tomt Lärarbordet</button>
   <button class="btn" id="w-ex" style="justify-content:center;padding:12px">Titta runt med exempeldata först</button>
+  ${DESKTOP?`<button class="btn" data-a="open-file" style="justify-content:center;padding:12px">Öppna en befintlig fil</button><span class="small muted" style="margin-top:-4px">Om du redan använder Lärarbordet på en annan dator och filen ligger i skolans Drive eller OneDrive.</span>`:""}
+  <button class="btn ghost" data-a="sync-guide" style="justify-content:center">Så synkar du mellan datorer och telefonen</button>
   ${DESKTOP?"":`<button class="btn" data-a="open-ro" style="justify-content:center;padding:12px">Öppna min fil i läsläge</button><span class="small muted" style="margin-top:-4px">För telefonen: välj din lararbordet.json eller lararbordet.html, till exempel från skolans Drive. Inget kan ändras eller skrivas över.</span>`}</div>
  <p class="small muted" style="margin:0">Exempeldatan kan du ta bort när som helst under Inställningar → Rensa allt.</p>`,m=>{
   m.querySelector("#w-blank").onclick=()=>{const y=state.year;state=emptyState();state.year=y;closeModal();commit();pickerModal()};

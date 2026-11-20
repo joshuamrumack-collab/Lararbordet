@@ -1,9 +1,9 @@
 /* ---------- rendering ---------- */
 function route(){const h=(location.hash||"").slice(1);return TABS.some(t=>t[0]===h)?h:"oversikt"}
 function renderTabs(){const r=route();$("#tabs").innerHTML=TABS.map(([id,l])=>`<a href="#${id}" class="tab-${id}" ${r===id?'aria-current="page"':""}>${ICON[id]}<span>${l==="Centralt innehåll"?"Innehåll":l}</span></a>`).join("");const g=document.getElementById("hdrgear");if(g)g.setAttribute("aria-current",r==="installningar"?"page":"false")}
-function roBanner(){return READONLY?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Läsläge</b>${RO_NAME?" · "+esc(RO_NAME):""}. Du kan titta men inte ändra. Ändringar gör du på datorn.</span><button class="btn" data-a="open-ro">Öppna en nyare fil</button><button class="btn" data-a="close-ro">Stäng</button></div>`:""}
+function roBanner(){return READONLY?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Läsläge</b>${RO_NAME?" · "+esc(RO_NAME):""}. Du kan titta men inte ändra. Ändringar gör du på datorn.</span><button class="btn" data-a="open-ro">Öppna en nyare fil</button>${window.matchMedia("(max-width: 700px)").matches?'<button class="btn" data-a="p-phone">Telefonvy</button>':""}<button class="btn" data-a="close-ro">Stäng</button></div>`:""}
 function exampleBanner(){return state.example&&!READONLY?`<div class="example"><span class="sp"><b>Exempeldata.</b> Kurserna, eleverna och omdömena här är påhittade så att du ser hur allt hänger ihop.</span><button class="btn" data-a="clear-example">Börja med tomt bord</button></div>`:""}
-function render(){renderTabs();const r=route();const m=$("#main");
+function render(){if(isPhone()){renderPhone();return}document.body.classList.remove("phone");renderTabs();const r=route();const m=$("#main");
  const v={oversikt:vOverview,planering:vPlanning,schema:vSchedule,arshjul:vWheel,innehall:vContent,bedomning:vAssess,installningar:vSettings}[r];
  m.innerHTML=roBanner()+(READONLY?"":updateBanner())+exampleBanner()+v();}
 
@@ -215,7 +215,8 @@ function syncPanel(){const where=DESKTOP?syncPlace(filePath):null;
    <li>Lärarbordet varnar om filen har ändrats på en annan dator sedan du öppnade den${DESKTOP?", och om den verkar vara öppen på en annan dator just nu":""}. Då får du välja vad som ska gälla.</li>
   </ol>
   ${status}
-  ${DESKTOP?`<div class="actions" style="justify-content:flex-start;margin-top:12px"><button class="btn" data-a="save-as">Flytta filen till en synkad mapp…</button></div><p class="small muted" style="margin:6px 0 0">Välj en mapp i Drive eller OneDrive. Lärarbordet använder sedan filen där på den här datorn. På den andra datorn väljer du Öppna annan fil och samma fil.</p>`
+  <div class="actions" style="justify-content:flex-start;margin-top:12px"><button class="btn pri" data-a="sync-guide">Steg-för-steg-guide</button></div>
+  ${DESKTOP?`<div class="actions" style="justify-content:flex-start;margin-top:8px"><button class="btn" data-a="save-as">Flytta filen till en synkad mapp…</button></div><p class="small muted" style="margin:6px 0 0">Välj en mapp i Drive eller OneDrive. Lärarbordet använder sedan filen där på den här datorn. På den andra datorn väljer du Öppna annan fil och samma fil.</p>`
    :canPick?`<div class="actions" style="justify-content:flex-start"><button class="btn" data-a="save-as">Spara filen i en synkad mapp…</button></div><p class="small muted" style="margin:6px 0 0">Öppna sedan alltid filen därifrån, på varje dator.</p>`
    :`<p class="small muted" style="margin:0">I den här webbläsaren laddas en ny fil ner varje gång du sparar, och då fungerar inte synkning. Använd Chrome, Edge eller skrivbordsappen om du vill synka.</p>`}</section>`}
 function vSettings(){
