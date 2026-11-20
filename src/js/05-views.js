@@ -1,12 +1,18 @@
 /* ---------- rendering ---------- */
 function route(){const h=(location.hash||"").slice(1);return TABS.some(t=>t[0]===h)?h:"oversikt"}
-function renderTabs(){const r=route();$("#tabs").innerHTML=TABS.map(([id,l])=>`<a href="#${id}" ${r===id?'aria-current="page"':""}>${ICON[id]}<span>${l==="Centralt innehåll"?'<span class="lg">Centralt innehåll</span>':l}</span></a>`).join("")}
-function exampleBanner(){return state.example?`<div class="example"><span class="sp"><b>Exempeldata.</b> Kurserna, eleverna och omdömena här är påhittade så att du ser hur allt hänger ihop.</span><button class="btn" data-a="clear-example">Börja med tomt bord</button></div>`:""}
+function renderTabs(){const r=route();$("#tabs").innerHTML=TABS.map(([id,l])=>`<a href="#${id}" class="tab-${id}" ${r===id?'aria-current="page"':""}>${ICON[id]}<span>${l==="Centralt innehåll"?"Innehåll":l}</span></a>`).join("");const g=document.getElementById("hdrgear");if(g)g.setAttribute("aria-current",r==="installningar"?"page":"false")}
+function roBanner(){return READONLY?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Läsläge</b>${RO_NAME?" · "+esc(RO_NAME):""}. Du kan titta men inte ändra. Ändringar gör du på datorn.</span><button class="btn" data-a="open-ro">Öppna en nyare fil</button><button class="btn" data-a="close-ro">Stäng</button></div>`:""}
+function exampleBanner(){return state.example&&!READONLY?`<div class="example"><span class="sp"><b>Exempeldata.</b> Kurserna, eleverna och omdömena här är påhittade så att du ser hur allt hänger ihop.</span><button class="btn" data-a="clear-example">Börja med tomt bord</button></div>`:""}
 function render(){renderTabs();const r=route();const m=$("#main");
- const v={oversikt:vOverview,planering:vPlanning,arshjul:vWheel,innehall:vContent,bedomning:vAssess,installningar:vSettings}[r];
- m.innerHTML=updateBanner()+exampleBanner()+v();}
+ const v={oversikt:vOverview,planering:vPlanning,schema:vSchedule,arshjul:vWheel,innehall:vContent,bedomning:vAssess,installningar:vSettings}[r];
+ m.innerHTML=roBanner()+(READONLY?"":updateBanner())+exampleBanner()+v();}
 
-function weekPanel(){const mon=mondayOf(TODAY);const ls=lessonsInWeek(state,mon);
+function weekPanel(){const mon=mondayOf(TODAY);
+ if((state.schedule||[]).length){const all=[];const days=DAYS5.map(i=>{const ds=fmtD(addDays(mon,i-1));const occ=dayOccurrences(ds);all.push(...occ);const d=parseD(ds);
+   return `<div class="day ${ds===fmtD(TODAY)?"today":""}"><div class="dh"><b>${DAY[i].slice(0,3)}</b> <span class="muted small">${d.getDate()}/${d.getMonth()+1}</span></div>${occ.map(o=>occCard(o,true)).join("")||'<span class="small muted">–</span>'}</div>`}).join("");
+  const nc=all.filter(o=>o.cancel).length;
+  return `<section class="panel"><div class="panel-h"><h2>Den här veckan</h2><span class="muted small">v.${isoWeek(TODAY)}</span><span class="sp"></span><span class="small muted">${all.length} lektioner${nc?` · <span class="lowtag">${nc} inställda</span>`:""}</span><a class="btn ghost" href="#schema">Schema</a></div><div class="week">${days}</div></section>`}
+ const ls=lessonsInWeek(state,mon);
  const days=[1,2,3,4,5].map(i=>{const d=addDays(mon,i-1);const ds=fmtD(d);const l=ls.filter(x=>x.date===ds);
   return `<div class="day ${ds===fmtD(TODAY)?"today":""}"><div class="dh"><b>${DAY[d.getDay()].slice(0,3)}</b> <span class="muted small">${d.getDate()}/${d.getMonth()+1}</span></div>${l.map(x=>{const u=unit(x.unitId)||{};const c=course(u.courseId)||{};return `<button class="lesson ${x.done?"done":""}" data-a="edit-lesson" data-id="${x.id}" style="border-left-color:${c.color||"var(--line)"}"><span class="small muted">${esc(c.name||"")}</span><b>${esc(x.title||"Lektion")}</b>${x.done?'<span class="small" style="color:var(--ok)">Genomförd</span>':""}</button>`}).join("")||'<span class="small muted">–</span>'}</div>`}).join("");
  return `<section class="panel"><div class="panel-h"><h2>Den här veckan</h2><span class="muted small">v.${isoWeek(TODAY)}</span><span class="sp"></span>${ls.length?`<span class="small muted">${ls.filter(x=>x.done).length} av ${ls.length} lektioner genomförda</span>`:""}</div>
@@ -54,7 +60,7 @@ function vPlanning(){
  const strip=`<div class="strip-wrap" id="stripwrap"><div class="strip" style="width:${weeks.length*CW}px"><div class="wkhead">${weeks.map((w,i)=>`<div class="wk ${inLov(w)?"lov":""} ${i===ti?"today":""}">${isoWeek(w)}</div>`).join("")}</div>
   <div class="lanes" style="height:${Math.max(1,lanes.length)*34+8}px">${placed.map(p=>`<button class="ubar ${p.u.status}" data-a="edit-unit" data-id="${p.u.id}" style="left:${p.si*CW+2}px;width:${(p.ei-p.si+1)*CW-4}px;top:${p.lane*34+4}px;background:${c.color};color:${p.u.status==="planerad"?c.color:"#fff"}" title="${esc(p.u.title)}">${esc(p.u.title)}</button>`).join("")}${ti>=0?`<span class="todayline" style="left:${ti*CW+CW/2}px"></span>`:""}</div></div></div>`;
  const g=group(c.groupId);
- const cards=us.length?`<div class="units">${us.map(u=>{const na=state.assessments.filter(a=>a.unitId===u.id).length;const ls=lessonsOf(u.id);return `<button class="ucard" data-a="edit-unit" data-id="${u.id}" style="border-left-color:${c.color}"><span class="meta"><span class="pill p-${u.status}">${STATUS[u.status]}</span><span class="num">${wkRange(u.start,u.end)}</span></span><b>${esc(u.title)}</b>${u.desc?`<span class="small muted">${esc(u.desc)}</span>`:""}<span class="meta"><span>${(u.contentIds||[]).length} delar av centralt innehåll</span>${na?`<span>· ${na} bedömning${na>1?"ar":""}</span>`:""}${ls.length?`<span>· ${ls.filter(l=>l.done).length}/${ls.length} lektioner</span>`:""}</span></button>`}).join("")}</div>`:`<div class="empty">Inga arbetsområden ännu.</div>`;
+ const cards=us.length?`<div class="units">${us.map(u=>{const na=state.assessments.filter(a=>a.unitId===u.id).length;const ls=lessonsOf(u.id);return `<button class="ucard" data-a="edit-unit" data-id="${u.id}" style="border-left-color:${c.color}"><span class="meta"><span class="pill p-${u.status}">${STATUS[u.status]}</span><span class="num">${wkRange(u.start,u.end)}</span></span><b>${esc(u.title)}</b>${u.desc?`<span class="small muted">${esc(u.desc)}</span>`:""}<span class="meta"><span>${(u.contentIds||[]).length} delar av centralt innehåll</span>${na?`<span>· ${na} bedömning${na>1?"ar":""}</span>`:""}${ls.length?`<span>· ${ls.filter(l=>l.done).length}/${ls.length} lektioner</span>`:""}${(()=>{const k=unitCapacity(state,u);return k?`<span>· ${k.available} pass i schemat${k.cancelled?` <span class="lowtag">(${k.cancelled} inställda)</span>`:""}</span>`:""})()}</span></button>`}).join("")}</div>`:`<div class="empty">Inga arbetsområden ännu.</div>`;
  const sum=covSummary(c.subjectId,c.id);
  return `<section class="panel"><div class="toolbar"><div class="chips">${chips}</div><span class="sp"></span><button class="btn" data-a="import-course">Importera kurs</button><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>
  <section class="panel"><div class="panel-h"><span class="dot" style="background:${c.color};width:14px;height:14px"></span><h1>${esc(c.name)}</h1><span class="sp"></span><button class="btn" data-a="share-course" data-id="${c.id}">Dela kurs</button><button class="btn" data-a="edit-course" data-id="${c.id}">Redigera kurs</button><button class="btn pri" data-a="new-unit">+ Arbetsområde</button></div>
@@ -189,6 +195,29 @@ function vAssess(){
   <p class="small muted" style="margin:8px 0 0">Tryck på en ruta för att sätta omdöme och anteckning. Typnivå är medianen av elevens omdömen och ersätter inte en samlad bedömning mot betygskriterierna. En prick betyder att det finns en anteckning.</p>`}</section>`;
 }
 
+/* Var ligger filen? Gissning utifrån sökvägen (OneDrive för jobb heter "OneDrive - Organisation") */
+function syncPlace(p){if(!p)return null;const s=String(p);
+ const od=s.match(/OneDrive( - ([^\\/]+))?/i);if(od)return od[2]?{name:"OneDrive",work:true,org:od[2]}:{name:"OneDrive",work:false};
+ if(/Google ?Drive|My Drive|Min enhet|GoogleDrive|Delade enheter|Shared drives/i.test(s))return {name:"Google Drive",work:null};
+ if(/Dropbox/i.test(s))return {name:"Dropbox",work:false};if(/iCloud|Mobile Documents/i.test(s))return {name:"iCloud",work:false};return null}
+function phonePanel(){if(DESKTOP)return "";return `<section class="panel"><div class="panel-h"><h2>I telefonen</h2></div>
+  <p class="small" style="margin-top:0">Öppna webbversionen i telefonen och lägg till den på hemskärmen (Dela → Lägg till på hemskärmen på iPhone, menyn → Installera app på Android). Välj sedan <b>Öppna min fil i läsläge</b> och din fil från skolans Drive eller OneDrive. I läsläget kan du titta på schema, planering och omdömen, men ingenting kan ändras eller skrivas över.</p>
+  <div class="actions" style="justify-content:flex-start"><button class="btn" data-a="open-ro">Öppna en fil i läsläge</button>${isWebCopy()?"":`<a class="btn" href="${WEB_URL}" target="_blank" rel="noopener">Webbversionen</a>`}</div></section>`}
+function syncPanel(){const where=DESKTOP?syncPlace(filePath):null;
+ const status=DESKTOP?(where?(where.work?`<p class="example" style="background:var(--ok-bg);color:var(--ok);margin:0"><span>Filen ligger i <b>OneDrive för ${esc(where.org)}</b>, som ser ut att vara ett jobbkonto.</span></p>`
+   :where.work===false?`<p class="example" style="margin:0"><span>Filen ligger i <b>${esc(where.name)}</b>, som ser ut att vara ett privat konto. Flytta den hellre till skolans lagring.</span></p>`
+   :`<p class="example" style="background:var(--info-bg);color:var(--info);margin:0"><span>Filen ligger i <b>${esc(where.name)}</b>. Kontrollera att det är ditt jobbkonto och inte ett privat.</span></p>`)
+  :`<p class="small muted" style="margin:0">Filen ligger just nu bara på den här datorn.</p>`):"";
+ return `<section class="panel"><div class="panel-h"><h2>Använda Lärarbordet på flera datorer</h2></div>
+  <ol style="margin:0 0 12px;padding-left:20px;display:grid;gap:8px">
+   <li>Lägg ${DESKTOP?"datafilen":"filen"} i en mapp som synkas med <b>skolans</b> Google Drive eller OneDrive, alltså med ditt jobbkonto. Fråga skolans dataskyddsombud om den lagringen är godkänd för elevuppgifter som omdömen. Använd inte ett privat konto.</li>
+   <li><b>Stäng Lärarbordet</b> innan du byter dator, och vänta tills synkningen är klar. Annars kan ändringar från den ena datorn skrivas över av den andra.</li>
+   <li>Lärarbordet varnar om filen har ändrats på en annan dator sedan du öppnade den${DESKTOP?", och om den verkar vara öppen på en annan dator just nu":""}. Då får du välja vad som ska gälla.</li>
+  </ol>
+  ${status}
+  ${DESKTOP?`<div class="actions" style="justify-content:flex-start;margin-top:12px"><button class="btn" data-a="save-as">Flytta filen till en synkad mapp…</button></div><p class="small muted" style="margin:6px 0 0">Välj en mapp i Drive eller OneDrive. Lärarbordet använder sedan filen där på den här datorn. På den andra datorn väljer du Öppna annan fil och samma fil.</p>`
+   :canPick?`<div class="actions" style="justify-content:flex-start"><button class="btn" data-a="save-as">Spara filen i en synkad mapp…</button></div><p class="small muted" style="margin:6px 0 0">Öppna sedan alltid filen därifrån, på varje dator.</p>`
+   :`<p class="small muted" style="margin:0">I den här webbläsaren laddas en ny fil ner varje gång du sparar, och då fungerar inte synkning. Använd Chrome, Edge eller skrivbordsappen om du vill synka.</p>`}</section>`}
 function vSettings(){
  return `<div class="grid2"><section class="panel"><div class="panel-h"><h2>Läsår</h2></div>
   <div class="row"><div class="f"><label for="ys">Första skoldag</label><input type="date" id="ys" value="${state.year.start}"></div><div class="f"><label for="ye">Sista skoldag</label><input type="date" id="ye" value="${state.year.end}"></div></div>
@@ -208,6 +237,8 @@ function vSettings(){
   <p class="small">${canPick?`<b>Chrome och Edge:</b> första gången du trycker Spara väljer du den här filen för att skriva över den. Därefter sparas ändringar automatiskt tills du stänger fliken.`:`<b>Den här webbläsaren</b> kan inte skriva direkt till filen. Spara laddar ner en uppdaterad kopia. Ersätt den gamla filen med den nya. Chrome eller Edge gör det smidigare.`} Spara också med Ctrl/Cmd+S.</p>
   <div class="actions" style="justify-content:flex-start"><button class="btn pri" data-a="save">Spara</button>${canPick?'<button class="btn" data-a="save-as">Spara som ny fil</button>':""}<button class="btn" data-a="export-json">Exportera data (JSON)</button><button class="btn" data-a="import-json">Importera data</button>`}
   ${state.example?"":'<button class="btn" data-a="load-example">Visa exempeldata</button>'}</div></section>
+ ${syncPanel()}
+ ${phonePanel()}
  <section class="panel" style="border-color:color-mix(in srgb,var(--bad) 35%,var(--line))"><div class="panel-h"><h2>Rensa allt</h2></div>
   <p class="small" style="margin-top:0">Tar bort alla kurser, arbetsområden, händelser, elever, omdömen och valda ämnen, så att du får ett helt tomt Lärarbordet att börja med. ${DESKTOP?"":"Spara filen efteråt så blir den tom även nästa gång du öppnar den."}</p>
   <div class="actions" style="justify-content:flex-start"><button class="btn danger" data-a="wipe">Rensa allt</button></div>

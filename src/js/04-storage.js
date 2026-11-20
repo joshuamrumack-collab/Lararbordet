@@ -20,9 +20,11 @@ const baseName=p=>String(p||"").split(/[\\/]/).pop();
 function buildHTML(){state.ui=ui;const json=JSON.stringify(state).replace(/</g,"\\u003c");return TEMPLATE.replace(TOK,()=>json)}
 function setSync(m){if(m)syncMode=m;const el=$("#sync");if(!el)return;const hh=d=>String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
  let t,c="";
+ if(READONLY){el.textContent="Läsläge";el.className="sync";el.title=RO_NAME;updateBar();return}
  if(saving)t="Sparar…";
  else if(syncMode==="error"){t="Kunde inte spara · försök igen";c="err"}
  else if(syncMode==="readerr"){t="Kunde inte läsa filen";c="err"}
+ else if(syncMode==="conflict"){t="Filen ändrades på en annan dator · välj";c="err"}
  else if(dirty){t=DESKTOP?"Sparar strax…":"Osparade ändringar · Spara";c=DESKTOP?"":"err"}
  else if(syncMode==="downloaded"){t="Ny fil nedladdad "+hh(savedAt);c="ok"}
  else if(savedAt){t="Sparat "+hh(savedAt);c="ok"}
@@ -36,7 +38,7 @@ const IDB={open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("lar
  async set(k,v){const db=await this.open();return new Promise(res=>{const t=db.transaction("h","readwrite").objectStore("h").put(v,k);t.onsuccess=()=>res();t.onerror=()=>res()})}};
 if(!DESKTOP&&canPick){IDB.get(HKEY).then(h=>{storedHandle=h;updateBar()}).catch(()=>{})}
 function updateBar(){const b=document.getElementById("savebar");if(!b)return;
- if(DESKTOP||!dirty||saving||fileHandle){b.hidden=true;return}
+ if(DESKTOP||READONLY||!dirty||saving||fileHandle){b.hidden=true;return}
  let msg,btn;
  if(canPick&&storedHandle){msg=`Du har ändringar som inte är sparade. Spara dem i <b>${esc(storedHandle.name)}</b>?`;btn="Spara i filen"}
  else if(canPick){msg=`Du har ändringar som inte är sparade. Välj <b>${esc(FILENAME)}</b> för att spara direkt i filen. Sedan sparas allt automatiskt.`;btn="Spara i filen…"}
@@ -44,25 +46,33 @@ function updateBar(){const b=document.getElementById("savebar");if(!b)return;
  b.innerHTML=`<span>${msg}</span><button class="btn pri" data-a="bar-save">${btn}</button>`;b.hidden=false}
 async function barSave(){if(canPick&&storedHandle&&!fileHandle){try{const st=await storedHandle.requestPermission({mode:"readwrite"});if(st==="granted")fileHandle=storedHandle}catch(e){}}saveFile(false)}
 async function tryStored(){if(fileHandle||!storedHandle)return false;try{if((await storedHandle.queryPermission({mode:"readwrite"}))==="granted"){fileHandle=storedHandle;return true}}catch(e){}return false}
-function commit(){state.updated=Date.now();dirty=true;render();setSync();
+/* ---------- läsläge (t.ex. i telefonen): visar en fil men sparar aldrig något ---------- */
+let READONLY=false,RO_SNAP=null,RO_NAME="";
+function openReadOnly(text,name){const d=parsePlanbok(text);READONLY=true;RO_SNAP=JSON.stringify(d);RO_NAME=name||"";state=d;ui=Object.assign(ui,d.ui||{});dirty=false;document.body.classList.add("ro");closeModal();render();setSync();location.hash="oversikt"}
+function pickReadOnly(){const inp=document.createElement("input");inp.type="file";inp.accept=".json,.html,application/json,text/html";
+ inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;try{openReadOnly(await f.text(),f.name)}catch(e){modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj din <b>lararbordet.json</b> eller <b>lararbordet.html</b>.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}};inp.click()}
+function commit(){if(READONLY){state=normalize(JSON.parse(RO_SNAP));render();toast("Läsläge: ändringar sparas inte. Ändra på datorn.");return}
+ state.updated=Date.now();dirty=true;render();setSync();
  if(DESKTOP||fileHandle){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),DESKTOP?700:1200);return}
  tryStored().then(ok=>{if(ok){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),600)}})}
 function downloadBlob(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}
 
 /* skrivbordsläge */
 async function rememberPath(p){try{const d=await T.path.appConfigDir();await T.fs.mkdir(d,{recursive:true});await T.fs.writeTextFile(await T.path.join(d,"senaste-fil.txt"),p)}catch(e){}}
-async function desktopWrite(){state.ui=ui;const dir=await T.path.dirname(filePath);await T.fs.mkdir(dir,{recursive:true});await T.fs.writeTextFile(filePath,JSON.stringify(state,null,1));await rememberPath(filePath)}
+async function desktopWrite(force){state.ui=ui;const dir=await T.path.dirname(filePath);await T.fs.mkdir(dir,{recursive:true});
+ if(!force&&fileMtime){const m=await fileStatMs(filePath);if(m&&m>fileMtime+1500){showConflict();throw {conflict:true}}}
+ await T.fs.writeTextFile(filePath,JSON.stringify(state,null,1));fileMtime=(await fileStatMs(filePath))||Date.now();await rememberPath(filePath);if(!lockTimer)startLock()}
 async function desktopInit(){
  try{let p=null;try{const cfg=await T.path.join(await T.path.appConfigDir(),"senaste-fil.txt");if(await T.fs.exists(cfg))p=(await T.fs.readTextFile(cfg)).trim()}catch(e){}
   if(!p||!(await T.fs.exists(p).catch(()=>false)))p=await T.path.join(await T.path.documentDir(),"Lärarbordet","lararbordet.json");
   filePath=p;
-  if(await T.fs.exists(p)){state=parsePlanbok(await T.fs.readTextFile(p));ui=Object.assign(ui,state.ui||{});savedAt=new Date();syncMode="file";FIRST=false}else FIRST=true;
+  if(await T.fs.exists(p)){state=parsePlanbok(await T.fs.readTextFile(p));ui=Object.assign(ui,state.ui||{});savedAt=new Date();syncMode="file";FIRST=false;fileMtime=await fileStatMs(p)}else FIRST=true;
  }catch(e){syncMode="readerr"}
- render();setSync();if(FIRST)welcomeModal()}
+ render();setSync();if(FIRST)welcomeModal();else afterFileOpened()}
 async function desktopOpen(){try{const p=await T.dialog.open({multiple:false,directory:false,filters:[{name:"Lärarbordet",extensions:["json","html"]}]});if(!p)return;const path=typeof p==="string"?p:p.path;
   const d=parsePlanbok(await T.fs.readTextFile(path));
   if(/\.html?$/i.test(path)){state=d;state.example=false;filePath=path.replace(/\.html?$/i,".json");await desktopWrite()}else{state=d;filePath=path;await rememberPath(path)}
-  ui=Object.assign(ui,state.ui||{});dirty=false;savedAt=new Date();syncMode="file";render();setSync()}
+  ui=Object.assign(ui,state.ui||{});dirty=false;savedAt=new Date();syncMode="file";fileMtime=await fileStatMs(filePath);render();setSync();afterFileOpened()}
  catch(e){modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en lararbordet.json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}}
 
 async function saveFile(forcePicker){if(saving){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(forcePicker),600);return}
@@ -73,13 +83,14 @@ async function saveFile(forcePicker){if(saving){clearTimeout(saveT);saveT=setTim
   const html=buildHTML();
   if(canPick){
    try{if(!fileHandle||forcePicker){fileHandle=await window.showSaveFilePicker({suggestedName:storedHandle?storedHandle.name:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});storedHandle=fileHandle;IDB.set(HKEY,fileHandle).catch(()=>{})}
-    const w=await fileHandle.createWritable();await w.write(html);await w.close();dirty=false;savedAt=new Date();syncMode="file";return}
-   catch(e){if(e&&e.name==="AbortError")return;fileHandle=null}
+    if(!forcePicker&&!FORCE_ONCE&&!(await htmlUnchanged())){showConflict();throw {conflict:true}}FORCE_ONCE=false;
+    const w=await fileHandle.createWritable();await w.write(html);await w.close();htmlMtime=(await fileHandle.getFile()).lastModified;dirty=false;savedAt=new Date();syncMode="file";return}
+   catch(e){if(e&&e.name==="AbortError")return;if(e&&e.conflict)throw e;fileHandle=null}
   }
   downloadBlob(FILENAME,html,"text/html");dirty=false;savedAt=new Date();syncMode="downloaded";
- }catch(e){syncMode="error"}
+ }catch(e){syncMode=e&&e.conflict?"conflict":"error"}
  finally{saving=false;setSync()}}
-window.addEventListener("beforeunload",e=>{if(dirty&&!DESKTOP){e.preventDefault();e.returnValue=""}});
+window.addEventListener("beforeunload",e=>{if(dirty&&!DESKTOP&&!READONLY){e.preventDefault();e.returnValue=""}});
 document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveFile(false)}});
 
 /* Öppna en textfil: dialog i skrivbordsappen, filväljare i webbläsaren */

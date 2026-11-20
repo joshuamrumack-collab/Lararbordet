@@ -10,7 +10,7 @@ const shiftDate=(s,days)=>s?fmtD(addDays(parseD(s),days)):s;
 function weekShift(fromStart,toStart){return Math.round((mondayOf(parseD(toStart))-mondayOf(parseD(fromStart)))/dayMs/7)*7}
 
 /* ----- läsår ----- */
-const YEAR_KEYS=["year","courses","units","events","groups","assessments","grades","manual","lessons"];
+const YEAR_KEYS=["year","courses","units","events","groups","assessments","grades","manual","lessons","schedule","cancel"];
 function yearLabel(y){return parseD(y.start).getFullYear()+"/"+String(parseD(y.end).getFullYear()).slice(2)}
 function snapshotYear(s){const o={id:uid(),archivedAt:fmtD(TODAY)};YEAR_KEYS.forEach(k=>o[k]=JSON.parse(JSON.stringify(s[k])));o.label=yearLabel(s.year);return o}
 /* Bygger ett nytt läsår. opts: {start,end,courses,lessons,assessments,groups,events} */
@@ -25,7 +25,8 @@ function rollover(s,opts){
   out.lessons=opts.lessons?(s.lessons||[]).filter(l=>idm[l.unitId]).map(l=>Object.assign({},l,{id:uid(),unitId:idm[l.unitId],date:shiftDate(l.date,shift),done:false,note:""})):[];
   out.assessments=opts.assessments&&opts.groups?s.assessments.filter(a=>idm[a.courseId]&&idm[a.groupId]).map(a=>Object.assign({},a,{id:uid(),courseId:idm[a.courseId],groupId:idm[a.groupId],unitId:a.unitId?(idm[a.unitId]||""):"",date:shiftDate(a.date,shift)})):[];
  }else{out.courses=[];out.units=[];out.lessons=[];out.assessments=[]}
- out.events=opts.events?s.events.map(e=>Object.assign({},e,{id:uid(),start:shiftDate(e.start,shift),end:shiftDate(e.end,shift)})):[];
+ out.events=opts.events?s.events.map(e=>Object.assign({},e,{id:uid(),start:shiftDate(e.start,shift),end:shiftDate(e.end,shift),groups:(e.groups||[]).map(g=>idm[g]).filter(Boolean)})):[];
+ out.schedule=opts.courses?(s.schedule||[]).filter(x=>idm[x.courseId]).map(x=>Object.assign({},x,{id:uid(),courseId:idm[x.courseId]})):[];out.cancel={};
  return out}
 /* Ersätter det aktuella läsåret med ett nytt och lägger det gamla i arkivet */
 function applyNewYear(s,newYear){s.archive=(s.archive||[]).concat([snapshotYear(s)]);YEAR_KEYS.forEach(k=>s[k]=newYear[k]);return s}
@@ -80,3 +81,39 @@ function aggregateAspects(asp){const v=Object.values(asp||{}).map(lvIdx).filter(
 /* Underlag per aspekt för en elev i en kurs: median och antal bedömningar */
 function aspectEvidence(s,courseId,studentId){const out={};s.assessments.filter(a=>a.courseId===courseId&&(a.aspects||[]).length).forEach(a=>{const g=((s.grades[a.id]||{})[studentId]||{}).asp||{};Object.entries(g).forEach(([i,k])=>{if(lvIdx(k)<0)return;(out[i]=out[i]||[]).push(lvIdx(k))})});
  const res={};Object.entries(out).forEach(([i,v])=>res[i]={k:scale().levels[median(v)].k,n:v.length});return res}
+
+/* ----- schema och kalendarium -----
+   state.schedule: [{id,courseId,day(1-5),start:"08:20",end:"09:20",room,weeks:"alla"|"jamna"|"udda"}]
+   state.events: typ lov | studiedag | aktivitet (groups:[] = alla, from/to = tid, tomt = hela dagen) | annat | deadline
+   state.cancel: {"slotId|datum": "orsak"} – enstaka lektioner som ställts in för hand */
+const EVENT_TYPES={lov:"Lov",studiedag:"Studiedag",aktivitet:"Aktivitet",annat:"Händelse",deadline:"Deadline"};
+const CANCELS={lov:true,studiedag:true,aktivitet:true};
+const WEEKS_LABEL={alla:"Varje vecka",jamna:"Jämna veckor",udda:"Udda veckor"};
+function slotRunsInWeek(slot,d){if(!slot.weeks||slot.weeks==="alla")return true;const w=isoWeek(d);return slot.weeks==="jamna"?w%2===0:w%2===1}
+function slotDates(s,slot,from,to){const a=from>s.year.start?from:s.year.start,b=to<s.year.end?to:s.year.end;const out=[];
+ for(let d=parseD(a);fmtD(d)<=b;d=addDays(d,1))if(d.getDay()===+slot.day&&slotRunsInWeek(slot,d))out.push(fmtD(d));return out}
+/* Varför en lektion blir inställd, eller null om den blir av */
+function cancellation(s,slot,date){const c=(s.courses||[]).find(x=>x.id===slot.courseId)||{};
+ const man=(s.cancel||{})[slot.id+"|"+date];if(man!=null)return {reason:man||"Inställd",type:"manuell"};
+ for(const e of s.events){if(!CANCELS[e.type]||date<e.start||date>e.end)continue;
+  if(e.type==="aktivitet"){if(e.groups&&e.groups.length&&!e.groups.includes(c.groupId))continue;if(e.from&&e.to&&!(slot.start<e.to&&slot.end>e.from))continue}
+  return {reason:e.title,type:e.type}}
+ return null}
+/* Alla schemalagda lektioner för en kurs mellan två datum, med eventuell orsak till att de ställs in */
+function courseSlots(s,courseId,from,to){const out=[];(s.schedule||[]).filter(x=>x.courseId===courseId).forEach(sl=>slotDates(s,sl,from,to).forEach(d=>out.push({date:d,slot:sl,cancel:cancellation(s,sl,d)})));
+ return out.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.slot.start<b.slot.start?-1:1)}
+const hasSchedule=(s,courseId)=>(s.schedule||[]).some(x=>x.courseId===courseId);
+function courseStats(s,courseId,from,to){const l=courseSlots(s,courseId,from||s.year.start,to||s.year.end);const c=l.filter(x=>x.cancel);return {total:l.length,cancelled:c.length,held:l.length-c.length,list:c}}
+function unitCapacity(s,u){if(!hasSchedule(s,u.courseId))return null;const l=courseSlots(s,u.courseId,u.start,u.end);const c=l.filter(x=>x.cancel).length;
+ return {total:l.length,cancelled:c,available:l.length-c,planned:(s.lessons||[]).filter(x=>x.unitId===u.id).length}}
+/* Är en planerad lektion inställd? Bara om kursen har schema den dagen och alla pass den dagen är inställda. */
+function lessonCancel(s,l){const u=s.units.find(x=>x.id===l.unitId);if(!u)return null;const day=courseSlots(s,u.courseId,l.date,l.date);
+ if(!day.length)return null;const pick=l.time?day.filter(x=>x.slot.start===l.time):day;const list=pick.length?pick:day;return list.every(x=>x.cancel)?list[0].cancel:null}
+/* Datum för lektioner som följer schemat, utan inställda pass */
+function scheduleDates(s,courseId,from,to){return courseSlots(s,courseId,from,to).filter(x=>!x.cancel).map(x=>({date:x.date,time:x.slot.start}))}
+/* Flytta fram ej genomförda lektioner i ett arbetsområde till nästa pass som blir av. Ordningen behålls. */
+function reflowLessons(s,unitId){const u=s.units.find(x=>x.id===unitId);if(!u||!hasSchedule(s,u.courseId))return 0;
+ const pend=(s.lessons||[]).filter(l=>l.unitId===unitId&&!l.done).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);if(!pend.length)return 0;
+ const taken=new Set((s.lessons||[]).filter(l=>l.done||l.unitId!==unitId).filter(l=>{const v=s.units.find(x=>x.id===l.unitId);return v&&v.courseId===u.courseId}).map(l=>l.date+"|"+(l.time||"")));
+ const free=scheduleDates(s,u.courseId,pend[0].date,s.year.end).filter(x=>!taken.has(x.date+"|"+x.time));let moved=0;
+ pend.forEach((l,i)=>{const f=free[i];if(!f)return;if(l.date!==f.date||l.time!==f.time){l.date=f.date;l.time=f.time;moved++}});return moved}

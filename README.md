@@ -57,11 +57,17 @@ Välj vilka ämnen och årskurser eller nivåer du undervisar i under *Inställn
 ## Det här kan Lärarbordet
 
 - **Planering:** kurser, arbetsområden på ett veckoband och lektioner med upplägg, anteckningar och genomförd-bock. Skapa en hel lektionsserie på en gång, lov hoppas över.
+- **Schema och kalendarium:** lägg in ditt veckoschema (även jämna och udda veckor) och fyll i kalendariet med lov, studiedagar och aktiviteter som friluftsdag och prao. Lärarbordet räknar ut vilka lektioner som blir inställda, hur många lektioner varje arbetsområde faktiskt får, och kan flytta fram planerade lektioner som krockar.
 - **Läsåret i fyra vyer:** årshjul, band (en rad per kurs), månader (som en väggkalender) och veckor (vecka för vecka). Välj den du gillar under Årshjul.
 - **Centralt innehåll:** se vad som är genomfört, planerat och var luckorna finns.
 - **Bedömning:** matris per elevgrupp. Bedöm mot Skolverkets betygskriterier, del för del, och se underlaget per kriterium för varje elev.
 - **Nytt läsår:** kopiera kurser, arbetsområden och lektioner till nästa läsår med datumen flyttade. Tidigare läsår sparas och kan öppnas igen.
 - **Dela i arbetslaget:** exportera en kurs som fil, utan elever och omdömen, och importera kollegors kurser.
+
+## Flera datorer och telefonen
+
+- **Flera datorer:** lägg filen i en mapp som synkas med skolans Google Drive eller OneDrive (jobbkontot, om skolan godkänt det för elevuppgifter). Stäng Lärarbordet innan du byter dator. Appen varnar om filen har ändrats på en annan dator sedan du öppnade den, och skrivbordsappen varnar om filen är öppen på en annan dator just nu.
+- **Telefonen (läsläge):** öppna webbversionen i telefonen och lägg den på hemskärmen. Välj *Öppna min fil i läsläge* och din fil från Drive eller OneDrive. Du kan titta på schema, planering och omdömen, men ingenting kan ändras eller skrivas över.
 
 ## Uppdateringar
 

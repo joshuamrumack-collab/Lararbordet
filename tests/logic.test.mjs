@@ -131,3 +131,56 @@ test("underlag per kriterium samlas per elev", () => {
   assert.deepEqual(Object.keys(ev).sort(), ["0", "1"]);
   assert.equal(ev["0"].n, 1);
 });
+
+test("schema och kalendarium ställer in rätt lektioner", () => {
+  const run = load();
+  // Studiedag fredag v.48 (2026-11-27): engelska på fredagar ställs in
+  assert.equal(run('cancellation(state,state.schedule.find(x=>x.id==="s-en2"),"2026-11-27").reason'), "Studiedag");
+  // Friluftsdag torsdag v.49 för 8B: svenska på torsdagar ställs in
+  assert.equal(run('cancellation(state,state.schedule.find(x=>x.id==="s-sv2"),"2026-12-03").type'), "aktivitet");
+  // vanlig dag: ingen inställning
+  assert.equal(run('cancellation(state,state.schedule.find(x=>x.id==="s-sv1"),"2026-11-16")'), null);
+  // aktivitet för en annan grupp påverkar inte
+  run('state.events.push({id:"x",title:"Utflykt 9A",start:"2026-11-16",end:"2026-11-16",type:"aktivitet",groups:["annan"],from:"",to:""})');
+  assert.equal(run('cancellation(state,state.schedule.find(x=>x.id==="s-sv1"),"2026-11-16")'), null);
+  // aktivitet med tid: bara pass som överlappar
+  run('state.events.push({id:"y",title:"Föreläsning",start:"2026-11-18",end:"2026-11-18",type:"aktivitet",groups:[],from:"12:30",to:"13:30"})');
+  assert.equal(run('cancellation(state,state.schedule.find(x=>x.id==="s-ma2"),"2026-11-18").reason'), "Föreläsning");
+  assert.equal(run('cancellation(state,state.schedule.find(x=>x.id==="s-en1"),"2026-11-18")'), null);
+  // manuellt inställd
+  run('state.cancel["s-sv1|2026-11-23"]="Sjuk"');
+  assert.equal(run('cancellation(state,state.schedule.find(x=>x.id==="s-sv1"),"2026-11-23").reason'), "Sjuk");
+  // lov: höstlov v.44
+  assert.equal(run('courseSlots(state,"c-sv","2026-10-26","2026-10-30").every(x=>x.cancel)'), true);
+});
+
+test("jämna och udda veckor", () => {
+  const run = load();
+  run('state.schedule.push({id:"jv",courseId:"c-sv",day:5,start:"14:00",end:"15:00",weeks:"jamna"})');
+  const d = run('slotDates(state,state.schedule.find(x=>x.id==="jv"),"2026-11-16","2026-12-06")');
+  assert.deepEqual(d, ["2026-11-27"], "v.48 är jämn");
+  run('state.schedule.find(x=>x.id==="jv").weeks="udda"');
+  assert.deepEqual(run('slotDates(state,state.schedule.find(x=>x.id==="jv"),"2026-11-16","2026-12-06")'), ["2026-11-20", "2026-12-04"], "v.47 och v.49 är udda");
+});
+
+test("kapacitet per arbetsområde och flytt av inställda lektioner", () => {
+  const run = load();
+  const k = run('unitCapacity(state,unit("u3"))');
+  assert.ok(k.total > 0 && k.cancelled >= 0 && k.available === k.total - k.cancelled);
+  // lägg en ej genomförd lektion på friluftsdagen och flytta fram
+  run('state.lessons.push({id:"t1",unitId:"u4",date:"2026-12-03",time:"10:00",title:"Test",plan:"",note:"",done:false})');
+  assert.equal(run('lessonCancel(state,state.lessons.find(l=>l.id==="t1")).reason'), "Friluftsdag");
+  const moved = run('reflowLessons(state,"u4")');
+  assert.ok(moved >= 1);
+  assert.equal(run('lessonCancel(state,state.lessons.find(l=>l.id==="t1"))'), null);
+  assert.ok(run('state.lessons.find(l=>l.id==="t1").date') > "2026-12-03");
+});
+
+test("nytt läsår tar med schemat till de nya kurserna", () => {
+  const run = load();
+  run('var ny=rollover(state,{start:"2027-08-16",end:"2028-06-09",courses:true,lessons:false,groups:true,assessments:false,events:true})');
+  assert.equal(run("ny.schedule.length"), run("state.schedule.length"));
+  assert.ok(run("ny.schedule.every(x=>ny.courses.some(c=>c.id===x.courseId))"));
+  assert.ok(run('ny.events.filter(e=>e.type==="aktivitet").every(e=>e.groups.every(g=>ny.groups.some(x=>x.id===g)))'));
+  assert.deepEqual(run("ny.cancel"), {});
+});

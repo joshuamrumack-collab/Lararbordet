@@ -143,7 +143,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir site && cp dist/index.html site/index.html && cp assets/ikon.png site/ikon.png && touch site/.nojekyll
+          mkdir site && cp dist/index.html site/index.html && cp assets/ikon.png site/ikon.png && cp assets/web/* site/ && touch site/.nojekyll
           cd site && git init -q -b gh-pages && git add -A
           git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -qm "Webbversion $(jq -r .version ../src-tauri/tauri.conf.json)"
           git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" gh-pages

@@ -28,24 +28,30 @@ function unitModal(id){const u=id?unit(id):null;const c=course(u?u.courseId:ui.c
 
 /* ---------- lektioner ---------- */
 function lessonsModal(unitId){const u=unit(unitId);if(!u)return;const c=course(u.courseId)||{};const ls=lessonsOf(unitId);
+ const cap=unitCapacity(state,u);const nCancel=ls.filter(l=>!l.done&&lessonCancel(state,l)).length;
  modal("Lektioner",`<p class="small muted" style="margin:-8px 0 0"><span class="dot" style="background:${c.color}"></span> ${esc(c.name||"")} · ${esc(u.title)} · ${wkRange(u.start,u.end)}</p>
- ${ls.length?`<div class="list">${ls.map(l=>`<div class="li"><button class="check" role="checkbox" aria-checked="${!!l.done}" aria-label="Genomförd" data-a="toggle-lesson" data-id="${l.id}">${l.done?CHECK:""}</button><span class="when num">${DAY[parseD(l.date).getDay()].slice(0,3)} ${shortD(l.date)}</span><button class="what" style="background:none;border:0;text-align:left;cursor:pointer;padding:0" data-a="edit-lesson" data-id="${l.id}"><b>${esc(l.title||"Lektion")}</b>${l.plan?`<br><span class="small muted">${esc(l.plan.length>90?l.plan.slice(0,90)+"…":l.plan)}</span>`:""}${l.note?`<br><span class="small" style="color:var(--info)">Anteckning: ${esc(l.note.length>70?l.note.slice(0,70)+"…":l.note)}</span>`:""}</button></div>`).join("")}</div>`:`<div class="empty">Inga lektioner ännu. Lägg till en i taget eller en hel serie, till exempel varje måndag och torsdag.</div>`}
+ ${cap?`<p class="small" style="margin:0">Enligt ditt schema: <b>${cap.total} pass</b> under arbetsområdet, varav <b>${cap.cancelled} inställda</b>. Det ger <b>${cap.available} lektioner</b>, och du har planerat ${cap.planned}.</p>`:""}
+ ${nCancel?`<p class="example" style="background:var(--bad-bg);color:var(--bad);margin:0"><span>${nCancel} planerad${nCancel>1?"e":""} lektion${nCancel>1?"er":""} blir inställd${nCancel>1?"a":""}.</span><button class="btn" id="lflow">Flytta fram inställda</button></p>`:""}
+ ${ls.length?`<div class="list">${ls.map(l=>`<div class="li"><button class="check" role="checkbox" aria-checked="${!!l.done}" aria-label="Genomförd" data-a="toggle-lesson" data-id="${l.id}">${l.done?CHECK:""}</button><span class="when num">${DAY[parseD(l.date).getDay()].slice(0,3)} ${shortD(l.date)}${l.time?`<br><span class="small">${esc(l.time)}</span>`:""}${!l.done&&lessonCancel(state,l)?`<br><span class="pill p-gap">Inställd</span>`:""}</span><button class="what" style="background:none;border:0;text-align:left;cursor:pointer;padding:0" data-a="edit-lesson" data-id="${l.id}"><b>${esc(l.title||"Lektion")}</b>${l.plan?`<br><span class="small muted">${esc(l.plan.length>90?l.plan.slice(0,90)+"…":l.plan)}</span>`:""}${l.note?`<br><span class="small" style="color:var(--info)">Anteckning: ${esc(l.note.length>70?l.note.slice(0,70)+"…":l.note)}</span>`:""}</button></div>`).join("")}</div>`:`<div class="empty">Inga lektioner ännu. Lägg till en i taget eller en hel serie, till exempel varje måndag och torsdag.</div>`}
  <div class="actions"><button class="btn" data-a="edit-unit" data-id="${u.id}">Tillbaka</button><span class="sp"></span><button class="btn" id="lser">+ Lektionsserie</button><button class="btn pri" id="lnew">+ Lektion</button></div>`,m=>{
-  m.querySelector("#lnew").onclick=()=>lessonModal(null,unitId);m.querySelector("#lser").onclick=()=>seriesModal(unitId)})}
-function lessonModal(id,unitId){const l=id?state.lessons.find(x=>x.id===id):null;unitId=l?l.unitId:unitId;const u=unit(unitId);if(!u)return;
- const prev=lessonsOf(unitId);const d=l||{date:(()=>{const last=prev.length?prev[prev.length-1].date:null;const t=fmtD(TODAY);return last&&last>=t?fmtD(addDays(parseD(last),1)):(t>=u.start&&t<=u.end?t:u.start)})(),title:"Lektion "+(prev.length+1),plan:"",note:"",done:false};
+  m.querySelector("#lnew").onclick=()=>lessonModal(null,unitId);m.querySelector("#lser").onclick=()=>seriesModal(unitId);
+  const fl=m.querySelector("#lflow");if(fl)fl.onclick=()=>{const n=reflowLessons(state,unitId);commit();lessonsModal(unitId);toast(n?`${n} lektion${n>1?"er":""} flyttades till nästa pass som blir av. Ordningen är densamma.`:"Inga lektioner behövde flyttas.")}})}
+function lessonModal(id,unitId,preset){const l=id?state.lessons.find(x=>x.id===id):null;unitId=l?l.unitId:unitId;const u=unit(unitId);if(!u)return;
+ const prev=lessonsOf(unitId);const d=l||Object.assign({date:(()=>{const last=prev.length?prev[prev.length-1].date:null;const t=fmtD(TODAY);return last&&last>=t?fmtD(addDays(parseD(last),1)):(t>=u.start&&t<=u.end?t:u.start)})(),title:"Lektion "+(prev.length+1),plan:"",note:"",done:false},preset||{});
  modal(l?"Lektion":"Ny lektion",`<p class="small muted" style="margin:-8px 0 0">${esc(u.title)}</p>
- <div class="row"><div class="f"><label for="lt">Rubrik</label><input id="lt" value="${esc(d.title)}"></div><div class="f"><label for="ld">Datum</label><input type="date" id="ld" value="${d.date}"></div></div>
+ <div class="row"><div class="f"><label for="lt">Rubrik</label><input id="lt" value="${esc(d.title)}"></div><div class="f"><label for="ld">Datum${d.time?" · "+esc(d.time):""}</label><input type="date" id="ld" value="${d.date}"></div></div>
+ ${l&&lessonCancel(state,l)?`<p class="example" style="background:var(--bad-bg);color:var(--bad);margin:0"><span>Den här lektionen blir inställd: <b>${esc(lessonCancel(state,l).reason)}</b>. Flytta den, eller använd Flytta fram inställda i listan över lektioner.</span></p>`:""}
  <div class="f"><label for="lp">Upplägg och material</label><textarea id="lp" placeholder="Mål för lektionen, aktiviteter, material, läxa…">${esc(d.plan||"")}</textarea></div>
  <div class="f"><label for="ln">Anteckning efter lektionen</label><textarea id="ln" placeholder="Hur gick det? Vad behöver följas upp?">${esc(d.note||"")}</textarea></div>
  <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="ldone" ${d.done?"checked":""}> Genomförd</label>
  <div class="actions">${l?'<button class="btn danger" id="ldel">Ta bort</button>':""}<button class="btn" id="lback">Alla lektioner</button><span class="sp"></span><button class="btn pri" id="lsave">Spara</button></div>`,m=>{
-  const save=()=>{const o={title:val("lt").trim()||"Lektion",date:val("ld")||d.date,plan:val("lp"),note:val("ln"),done:m.querySelector("#ldone").checked};if(l)Object.assign(l,o);else state.lessons.push(Object.assign({id:uid(),unitId},o));commit()};
+  const save=()=>{const o={title:val("lt").trim()||"Lektion",date:val("ld")||d.date,time:val("ld")===d.date?(d.time||""):"",plan:val("lp"),note:val("ln"),done:m.querySelector("#ldone").checked};if(l)Object.assign(l,o);else state.lessons.push(Object.assign({id:uid(),unitId},o));commit()};
   m.querySelector("#lsave").onclick=()=>{save();lessonsModal(unitId)};
   m.querySelector("#lback").onclick=()=>lessonsModal(unitId);
   const del=m.querySelector("#ldel");if(del)del.onclick=()=>{state.lessons=state.lessons.filter(x=>x!==l);commit();lessonsModal(unitId)}})}
 function seriesModal(unitId){const u=unit(unitId);if(!u)return;
  modal("Lektionsserie",`<p class="small muted" style="margin:-8px 0 0">${esc(u.title)} · ${shortD(u.start)} – ${shortD(u.end)}. Lov hoppas över.</p>
+ ${hasSchedule(state,u.courseId)?`<div class="example" style="background:var(--info-bg);color:var(--info);margin:0"><span>Kursen har ett schema. Lektionerna kan läggas på varje pass som blir av, med inställda pass överhoppade.</span><button class="btn pri" id="ssched">Följ mitt schema</button></div><p class="small muted" style="margin:0">Eller välj veckodagar själv:</p>`:""}
  <div class="f"><label>Veckodagar</label><div class="chips" id="wd">${[1,2,3,4,5].map(i=>`<button class="chip" aria-pressed="false" data-wd="${i}">${DAY[i]}</button>`).join("")}</div></div>
  <div class="row"><div class="f"><label for="sfrom">Från</label><input type="date" id="sfrom" value="${u.start}"></div><div class="f"><label for="sto">Till</label><input type="date" id="sto" value="${u.end}"></div></div>
  <p class="small muted" id="scount" style="margin:0">Välj minst en veckodag.</p>
@@ -55,6 +61,7 @@ function seriesModal(unitId){const u=unit(unitId);if(!u)return;
   m.querySelectorAll("[data-wd]").forEach(b=>b.onclick=()=>{const i=+b.dataset.wd;wd.has(i)?wd.delete(i):wd.add(i);b.setAttribute("aria-pressed",wd.has(i));upd()});
   m.querySelector("#sfrom").onchange=upd;m.querySelector("#sto").onchange=upd;
   m.querySelector("#sback").onclick=()=>lessonsModal(unitId);
+  const sch=m.querySelector("#ssched");if(sch)sch.onclick=()=>{const n0=lessonsOf(unitId).length;const have=new Set(lessonsOf(unitId).map(l=>l.date+"|"+(l.time||"")));const ds=scheduleDates(state,u.courseId,val("sfrom"),val("sto")).filter(x=>!have.has(x.date+"|"+x.time));ds.forEach((x,i)=>state.lessons.push({id:uid(),unitId,date:x.date,time:x.time,title:"Lektion "+(n0+i+1),plan:"",note:"",done:false}));commit();lessonsModal(unitId);toast(ds.length+" lektioner skapades enligt schemat.")};
   m.querySelector("#sok").onclick=()=>{const n0=lessonsOf(unitId).length;dates().forEach((dt,i)=>state.lessons.push({id:uid(),unitId,date:dt,title:"Lektion "+(n0+i+1),plan:"",note:"",done:false}));commit();lessonsModal(unitId)}})}
 
 function courseModal(id){const c=id?course(id):null;const opts=usedSubjects();if(!c&&!opts.length){modal("Välj dina ämnen först",`<p style="margin:0">En kurs hör till ett ämne. Välj först vilka ämnen du undervisar i.</p><div class="actions"><button class="btn pri" data-a="picker">Välj ämnen</button></div>`);return}
@@ -72,12 +79,27 @@ function courseModal(id){const c=id?course(id):null;const opts=usedSubjects();if
    const o={name:n,subjectId:val("cs"),groupId:gid,color};if(c)Object.assign(c,o);else{const nc=Object.assign({id:uid()},o);state.courses.push(nc);ui.course=nc.id;saveUI()}closeModal();commit()};
   const del=m.querySelector("#cdel");if(del)del.onclick=()=>confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden och bedömningar?`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);ui.course=null;commit()})})}
 
-function eventModal(id){const e=id?state.events.find(x=>x.id===id):null;const d=e||{title:"",start:fmtD(TODAY),end:fmtD(TODAY),type:"annat"};
- modal(e?"Händelse":"Ny händelse",`<div class="f"><label for="et">Namn</label><input id="et" value="${esc(d.title)}" placeholder="t.ex. Nationella prov svenska"></div>
+function eventModal(id,preset){const e=id?state.events.find(x=>x.id===id):null;const d=e||Object.assign({title:"",start:fmtD(TODAY),end:fmtD(TODAY),type:"annat",groups:[],from:"",to:""},preset||{});
+ const hint={lov:"Alla lektioner ställs in.",studiedag:"Alla lektioner ställs in den dagen.",aktivitet:"Lektioner för de valda grupperna ställs in, hela dagen eller under den tid du anger.",annat:"Påverkar inte lektionerna, t.ex. utvecklingssamtal eller ett prov.",deadline:"Påverkar inte lektionerna. Visas i rött i årshjulet."};
+ modal(e?"Händelse i kalendariet":"Ny händelse i kalendariet",`<div class="f"><label for="et">Namn</label><input id="et" value="${esc(d.title)}" placeholder="t.ex. Friluftsdag, Prao, Studiedag"></div>
  <div class="row"><div class="f"><label for="es">Från</label><input type="date" id="es" value="${d.start}"></div><div class="f"><label for="ee">Till</label><input type="date" id="ee" value="${d.end}"></div></div>
- <div class="f"><label for="ety">Typ</label><select id="ety"><option value="annat" ${d.type==="annat"?"selected":""}>Händelse (prov, samtal, studiedag)</option><option value="lov" ${d.type==="lov"?"selected":""}>Lov</option><option value="deadline" ${d.type==="deadline"?"selected":""}>Deadline (betyg, inlämning)</option></select></div>
+ <div class="f"><label for="ety">Typ</label><select id="ety">${Object.entries(EVENT_TYPES).map(([k,l])=>`<option value="${k}" ${d.type===k?"selected":""}>${l}</option>`).join("")}</select><span class="small muted" id="ehint">${hint[d.type]||""}</span></div>
+ <div id="eakt" ${d.type==="aktivitet"?"":"hidden"} style="display:grid;gap:12px">
+  <div class="f"><label>Vilka grupper berörs?</label><div class="chips" id="egr"><button class="chip" aria-pressed="${!(d.groups||[]).length}" data-g="">Alla</button>${state.groups.map(g=>`<button class="chip" aria-pressed="${(d.groups||[]).includes(g.id)}" data-g="${g.id}">${esc(g.name)}</button>`).join("")}</div></div>
+  <div class="row"><div class="f"><label for="efr">Från klockan</label><input type="time" id="efr" value="${d.from||""}"></div><div class="f"><label for="eto">Till klockan</label><input type="time" id="eto" value="${d.to||""}"></div></div>
+  <span class="small muted" style="margin-top:-6px">Lämna tiderna tomma om aktiviteten pågår hela dagen.</span></div>
+ <p class="small" id="eaff" style="margin:0"></p>
  <div class="actions">${e?'<button class="btn danger" id="edel">Ta bort</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="esave">Spara</button></div>`,m=>{
-  m.querySelector("#esave").onclick=()=>{const t=val("et").trim();if(!t){$("#et").focus();return}let s=val("es"),en=val("ee")||s;if(en<s)[s,en]=[en,s];const o={title:t,start:s,end:en,type:val("ety")};if(e)Object.assign(e,o);else state.events.push(Object.assign({id:uid()},o));closeModal();commit()};
+  let groups=[...(d.groups||[])];
+  const draft=()=>{let s=val("es"),en=val("ee")||s;if(en<s)[s,en]=[en,s];return {title:val("et").trim(),start:s,end:en,type:val("ety"),groups:val("ety")==="aktivitet"?groups:[],from:val("ety")==="aktivitet"?val("efr"):"",to:val("ety")==="aktivitet"?val("eto"):""}};
+  const affected=()=>{const o=draft();if(!CANCELS[o.type]||!(state.schedule||[]).length){m.querySelector("#eaff").textContent="";return}
+   const tmp=Object.assign({},state,{events:[Object.assign({id:"tmp"},o)],cancel:{}});let n=0;state.courses.forEach(c=>{n+=courseSlots(tmp,c.id,o.start,o.end).filter(x=>x.cancel).length});
+   m.querySelector("#eaff").innerHTML=n?`<b>${n} lektion${n>1?"er":""}</b> i ditt schema ställs in.`:"Inga lektioner i ditt schema berörs."};
+  const paintG=()=>m.querySelectorAll("#egr [data-g]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.g?groups.includes(b.dataset.g):!groups.length));
+  m.querySelector("#egr").onclick=ev=>{const b=ev.target.closest("[data-g]");if(!b)return;const g=b.dataset.g;if(!g)groups=[];else groups=groups.includes(g)?groups.filter(x=>x!==g):groups.concat([g]);paintG();affected()};
+  m.querySelector("#ety").onchange=()=>{const t=val("ety");m.querySelector("#eakt").hidden=t!=="aktivitet";m.querySelector("#ehint").textContent=hint[t]||"";affected()};
+  ["es","ee","efr","eto"].forEach(x=>m.querySelector("#"+x).addEventListener("change",affected));affected();
+  m.querySelector("#esave").onclick=()=>{const o=draft();if(!o.title){$("#et").focus();return}if(e)Object.assign(e,o);else state.events.push(Object.assign({id:uid()},o));closeModal();commit()};
   const del=m.querySelector("#edel");if(del)del.onclick=()=>{state.events=state.events.filter(x=>x!==e);closeModal();commit()}})}
 
 function groupModal(id){const g=id?group(id):null;
@@ -171,10 +193,12 @@ function pickerModal(after){
   m.querySelector("#pk-ok").onclick=()=>{state.mine=[...sel];if(!state.mine.includes(ui.subject))ui.subject=state.mine[0]||ui.subject;closeModal();commit();after&&after()};
  })}
 
+function roInfo(){modal("Läsläge",`<p style="margin:0">Du tittar på <b>${esc(RO_NAME||"en fil")}</b> i läsläge. Ingenting sparas här, så filen kan aldrig skrivas över från telefonen.</p><p class="small muted" style="margin:0">När du har ändrat något på datorn och filen har synkats: öppna den igen här för att se det senaste.</p><div class="actions"><button class="btn" data-a="close">Stäng</button><span class="sp"></span><button class="btn pri" data-a="open-ro">Öppna nyare fil</button></div>`)}
 function welcomeModal(){modal("Välkommen till Lärarbordet",`<p style="margin:0">Här planerar du kurser, håller koll på årshjulet, ser vilket centralt innehåll du har täckt och bedömer elevernas arbeten. Allt på ett ställe, och allt sparas på din egen dator.</p>
  <div style="display:grid;gap:10px">
   <button class="btn pri" id="w-blank" style="justify-content:center;padding:12px">Börja med ett tomt Lärarbordet</button>
-  <button class="btn" id="w-ex" style="justify-content:center;padding:12px">Titta runt med exempeldata först</button></div>
+  <button class="btn" id="w-ex" style="justify-content:center;padding:12px">Titta runt med exempeldata först</button>
+  ${DESKTOP?"":`<button class="btn" data-a="open-ro" style="justify-content:center;padding:12px">Öppna min fil i läsläge</button><span class="small muted" style="margin-top:-4px">För telefonen: välj din lararbordet.json eller lararbordet.html, till exempel från skolans Drive. Inget kan ändras eller skrivas över.</span>`}</div>
  <p class="small muted" style="margin:0">Exempeldatan kan du ta bort när som helst under Inställningar → Rensa allt.</p>`,m=>{
   m.querySelector("#w-blank").onclick=()=>{const y=state.year;state=emptyState();state.year=y;closeModal();commit();pickerModal()};
   m.querySelector("#w-ex").onclick=()=>closeModal()})}

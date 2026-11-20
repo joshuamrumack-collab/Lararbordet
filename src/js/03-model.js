@@ -38,7 +38,10 @@ function exampleState(){
   {id:"e4",title:"Jullov",start:"2026-12-21",end:"2027-01-08",type:"lov"},
   {id:"e5",title:"Sportlov",start:W(Y2,9),end:W(Y2,9,4),type:"lov"},
   {id:"e6",title:"Påsklov",start:W(Y2,13),end:W(Y2,13,4),type:"lov"},
-  {id:"e7",title:"Betygssättning VT",start:"2027-06-04",end:"2027-06-04",type:"deadline"}
+  {id:"e7",title:"Betygssättning VT",start:"2027-06-04",end:"2027-06-04",type:"deadline"},
+  {id:"e8",title:"Studiedag",start:W(Y,48,4),end:W(Y,48,4),type:"studiedag"},
+  {id:"e9",title:"Friluftsdag",start:W(Y,49,3),end:W(Y,49,3),type:"aktivitet",groups:["g8b"],from:"",to:""},
+  {id:"e10",title:"Prao",start:W(Y2,6),end:W(Y2,7,4),type:"aktivitet",groups:["g8b"],from:"",to:""}
  ];
  const names=["Alva","Elias","Maja","Noah","Wilma","Liam","Ella","Hugo","Saga","Omar","Freja","Leo"];
  const base=[4,2,5,1,3,0,3,2,4,3,5,1];
@@ -54,6 +57,11 @@ function exampleState(){
  ];
  const L=["F","E","D","C","B","A"]; const grades={};
  assessments.forEach((a,j)=>{grades[a.id]={};students.forEach((s,i)=>{if(a.id==="a3"&&i>8)return;if(a.id==="a7"&&i%4===3)return;const v=Math.max(0,Math.min(5,base[i]+((i*7+j*3)%3)-1));grades[a.id][s.id]={k:L[v],note:(a.id==="a5"&&i===5)?"Behöver extra stöd med procentuell förändring.":""}})});
+ const schedule=[
+  {id:"s-sv1",courseId:"c-sv",day:1,start:"08:20",end:"09:20",room:"B12",weeks:"alla"},{id:"s-sv2",courseId:"c-sv",day:4,start:"10:00",end:"11:00",room:"B12",weeks:"alla"},
+  {id:"s-ma1",courseId:"c-ma",day:2,start:"09:30",end:"10:30",room:"C3",weeks:"alla"},{id:"s-ma2",courseId:"c-ma",day:3,start:"13:00",end:"14:00",room:"C3",weeks:"alla"},
+  {id:"s-en1",courseId:"c-en",day:3,start:"08:20",end:"09:20",room:"B14",weeks:"alla"},{id:"s-en2",courseId:"c-en",day:5,start:"10:00",end:"11:00",room:"B14",weeks:"alla"},
+  {id:"s-tk1",courseId:"c-tk",day:2,start:"13:00",end:"14:20",room:"Tekniksalen",weeks:"alla"}];
  /* lektioner: varje arbetsområde som pågår eller är klart får lektioner två dagar i veckan */
  const lessons=[];const plans={u3:["Vad är en källa?","Sök och sovra","Faktagranska en nyhet","AI-genererade bilder och texter","Källhänvisningar","Skriv en källkritisk text","Kamratrespons","Redovisning"]};
  units.filter(u=>u.status!=="planerad").forEach(u=>{const wd=u.courseId==="c-sv"?[1,4]:u.courseId==="c-ma"?[2,3]:u.courseId==="c-en"?[3,5]:[2];let n=0;
@@ -62,10 +70,10 @@ function exampleState(){
  /* betygskriterier: muntlig debatt bedöms mot aspekt 1, debattartikeln mot aspekt 2 (svenska åk 9) */
  assessments.find(a=>a.id==="a2").aspects=[0];assessments.find(a=>a.id==="a3").aspects=[1];
  ["a2","a3"].forEach(aid=>{const asp=aid==="a2"?0:1;Object.values(grades[aid]).forEach(g=>{g.asp={[asp]:g.k};g.manual=false})});
- return {v:2,example:true,updated:0,scale:"af",year:{start:"2026-08-17",end:"2027-06-11"},mine:["GRGRSVE01/7-9", "GRGRMAT01/7-9", "GRGRENG01/7-9", "GRGRTEK01/7-9"],custom:{},extra:{},lessons,archive:[],checkUpdates:true,courses:c,units,events,manual:{},groups:[{id:"g8b",name:"8B",students}],assessments,grades};
+ return {v:2,example:true,updated:0,scale:"af",year:{start:"2026-08-17",end:"2027-06-11"},mine:["GRGRSVE01/7-9", "GRGRMAT01/7-9", "GRGRENG01/7-9", "GRGRTEK01/7-9"],custom:{},extra:{},lessons,archive:[],schedule,cancel:{},checkUpdates:true,courses:c,units,events,manual:{},groups:[{id:"g8b",name:"8B",students}],assessments,grades};
 }
-function emptyState(){return {v:2,example:false,updated:Date.now(),scale:"af",year:{start:"2026-08-17",end:"2027-06-11"},mine:[],custom:{},extra:{},lessons:[],archive:[],checkUpdates:true,courses:[],units:[],events:[],manual:{},groups:[],assessments:[],grades:{}}}
-function normalize(s){const e=emptyState();const o=Object.assign(e,s||{});for(const k of ["courses","units","events","groups","assessments","mine","lessons","archive"]) if(!Array.isArray(o[k]))o[k]=[];if(!o.grades||typeof o.grades!=="object")o.grades={};if(!o.manual)o.manual={};if(!o.custom)o.custom={};if(!o.extra)o.extra={};
+function emptyState(){return {v:2,example:false,updated:Date.now(),scale:"af",year:{start:"2026-08-17",end:"2027-06-11"},mine:[],custom:{},extra:{},lessons:[],archive:[],schedule:[],cancel:{},checkUpdates:true,courses:[],units:[],events:[],manual:{},groups:[],assessments:[],grades:{}}}
+function normalize(s){const e=emptyState();const o=Object.assign(e,s||{});for(const k of ["courses","units","events","groups","assessments","mine","lessons","archive","schedule"]) if(!Array.isArray(o[k]))o[k]=[];if(!o.grades||typeof o.grades!=="object")o.grades={};if(!o.manual)o.manual={};if(!o.custom)o.custom={};if(!o.cancel||typeof o.cancel!=="object")o.cancel={};if(!o.extra)o.extra={};
  /* äldre filer (v1) hade ämnena inbäddade: behåll egna ämnen, och gamla förkortade listor som används av kurser */
  if(o.subjects){const used=new Set(o.courses.map(c=>c.subjectId));Object.values(o.subjects).forEach(x=>{if(!x||!x.id)return;if(!x.builtin)o.custom[x.id]=x;else if(used.has(x.id))o.custom[x.id]=Object.assign({},x,{builtin:false,stage:(x.stage||"")+" (äldre förkortad lista)"})});delete o.subjects}
  o.mine=o.mine.filter(id=>PLAN[id]);o.v=2;return o}
