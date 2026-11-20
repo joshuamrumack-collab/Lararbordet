@@ -6,6 +6,8 @@ const A={
  wipe:()=>confirmBox("Allt tas bort: kurser, arbetsområden, händelser, elever, omdömen och valda ämnen. Du får ett helt tomt Lärarbordet. Det går inte att ångra.",()=>{state=emptyState();ui=Object.assign(ui,{course:null,group:null,subject:null,subjFilter:"all",acourse:"all",wheel:"all"});commit();pickerModal()},"Rensa allt"),
  picker:()=>pickerModal(),
  "open-ro":()=>pickReadOnly(),
+ "p-go":el=>pGo(el.dataset.t,el.dataset.id),
+ "p-back":()=>{if(PH.nav.length)history.back();else location.hash=PH.tab||"idag"},
  "p-toggle":el=>{const k=el.dataset.k;PH.open[k]=!PH.open[k];render()},
  "p-week":el=>{const v=+el.dataset.v;PH.week=v===0?0:PH.week+v;render();window.scrollTo(0,0)},
  "p-course":el=>{PH.course=el.dataset.id||null;render();window.scrollTo(0,0)},

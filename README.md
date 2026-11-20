@@ -68,7 +68,7 @@ Välj vilka ämnen och årskurser eller nivåer du undervisar i under *Inställn
 
 - **Flera datorer:** lägg filen i en mapp som synkas med skolans Google Drive eller OneDrive (jobbkontot, om skolan godkänt det för elevuppgifter). Stäng Lärarbordet innan du byter dator. Appen varnar om filen har ändrats på en annan dator sedan du öppnade den, och skrivbordsappen varnar om filen är öppen på en annan dator just nu.
 - **Guide:** *Inställningar → Använda Lärarbordet på flera datorer → Steg-för-steg-guide* visar hur du lägger filen i skolans Google Drive eller OneDrive och öppnar samma fil på nästa dator och i telefonen.
-- **Telefonen:** en egen, avskalad telefonvy med flikarna Idag, Vecka, Kurser, Elever och Fil. Telefonen kan bara läsa. Ingenting kan ändras eller skrivas över.
+- **Telefonen:** en egen, avskalad telefonvy med flikarna Idag, Vecka, Kurser, Elever och Fil. Allt går att klicka sig djupare i: lektioner, arbetsområden, centralt innehåll, bedömningar med kriterier, elever och kalendariet. Telefonens bakåtknapp fungerar. Telefonen kan bara läsa. Ingenting kan ändras eller skrivas över.
   - **Android:** installera `…android.apk` från releasen (tillåt installation från okänd källa första gången).
   - **iPhone:** öppna https://joshuamrumack-collab.github.io/Lararbordet/ i Safari och välj *Dela → Lägg till på hemskärmen*. En installerbar iPhone-app (.ipa) kräver Apples utvecklarprogram och distribueras via TestFlight eller App Store.
 
