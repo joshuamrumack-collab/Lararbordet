@@ -56,8 +56,8 @@ async function pickReadOnlyApp(){try{const p=await T.dialog.open({multiple:false
 function pickReadOnly(){if(IS_MOBILE_APP){pickReadOnlyApp().then(ok=>{if(!ok)pickReadOnlyInput()});return}pickReadOnlyInput()}
 function pickReadOnlyInput(){const inp=document.createElement("input");inp.type="file";inp.accept=".json,.html,application/json,text/html";
  inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;try{openReadOnly(await f.text(),f.name)}catch(e){modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj din <b>lararbordet.json</b> eller <b>lararbordet.html</b>.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}};inp.click()}
-function commit(){if(READONLY){state=normalize(JSON.parse(RO_SNAP));render();toast("Läsläge: ändringar sparas inte. Ändra på datorn.");return}
- state.updated=Date.now();dirty=true;render();setSync();
+function commit(quiet){if(READONLY){state=normalize(JSON.parse(RO_SNAP));render();toast("Läsläge: ändringar sparas inte. Ändra på datorn.");return}
+ state.updated=Date.now();dirty=true;if(!quiet)render();setSync();
  if(DESKTOP||fileHandle){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),DESKTOP?700:1200);return}
  tryStored().then(ok=>{if(ok){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),600)}})}
 function downloadBlob(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}

@@ -107,7 +107,7 @@ function eventModal(id,preset){const e=id?state.events.find(x=>x.id===id):null;c
  <div id="eakt" ${d.type==="aktivitet"?"":"hidden"} style="display:grid;gap:12px">
   <div class="f"><label>Vilka grupper berörs?</label><div class="chips" id="egr"><button class="chip" aria-pressed="${!(d.groups||[]).length}" data-g="">Alla</button>${state.groups.map(g=>`<button class="chip" aria-pressed="${(d.groups||[]).includes(g.id)}" data-g="${g.id}">${esc(g.name)}</button>`).join("")}</div></div>
 </div>
- <div class="f"><label style="display:flex;gap:8px;align-items:center;cursor:pointer;font-weight:600"><input type="checkbox" id="eall" ${d.from&&d.to?"":"checked"}> Heldag</label></div>
+ <label class="chk"><input type="checkbox" id="eall" ${d.from&&d.to?"":"checked"}><span>Heldag</span></label>
  <div class="row" id="etime" ${d.from&&d.to?"":"hidden"}><div class="f"><label for="efr">Från klockan</label><input type="time" id="efr" value="${d.from||""}"></div><div class="f"><label for="eto">Till klockan</label><input type="time" id="eto" value="${d.to||""}"></div></div>
  <p class="small" id="eaff" style="margin:0"></p>
  <div class="actions">${e?'<button class="btn danger" id="edel">Ta bort</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="esave">Spara</button></div>`,m=>{
@@ -186,7 +186,7 @@ function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const
   const reagg=()=>{};
   m.querySelectorAll("[data-main]").forEach(b=>b.onclick=()=>{pick=pick===b.dataset.k?"":b.dataset.k;manual=true;paint()});
   m.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{const i=b.dataset.asp;asp[i]=asp[i]===b.dataset.k?undefined:b.dataset.k;if(asp[i]===undefined)delete asp[i];Object.keys(asm).forEach(k=>{if(k===String(i)||k.startsWith(i+"."))delete asm[k]});paint()});
-  m.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{const i=b.dataset.cm,k=b.dataset.lv;asm[i]=asm[i]||{};const nx=MARK_NEXT[asm[i][k]||""];if(nx)asm[i][k]=nx;else delete asm[i][k];if(!Object.keys(asm[i]).length)delete asm[i];
+  m.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{const i=b.dataset.cm,k=b.dataset.lv;asm[i]=asm[i]||{};const nx=MARK_NEXT[asm[i][k]||""];if(nx)asm[i][k]=nx;else delete asm[i][k];if(nx==="g"||nx==="y")cr.levels.slice(0,cr.levels.indexOf(k)).forEach(l=>{if(cr.aspects[+String(i).split(".")[0]][l])asm[i][l]="g"});if(!Object.keys(asm[i]).length)delete asm[i];
    const ai=b.dataset.ai;if(eca){const gr=partsToGrade(asm,ai,partsOf(+ai).length,state.scale);if(gr)asp[ai]=gr;else delete asp[ai]}paint()});
   paint();
   const save=()=>{state.grades[aid]=state.grades[aid]||{};const note=val("gnote").trim();const pv=parseFloat(val("gpts"));const p=isFinite(pv)?pv:null;
@@ -206,21 +206,20 @@ function kmatHtml(gid,sid,cid){const c=course(cid);const cr=c&&critFor(c.subject
   <div class="km-wrap" data-kcid="${cid}"><table class="km"><colgroup>${lv.map(()=>"<col>").join("")}<col style="width:22%"></colgroup><thead><tr>${lv.map(k=>`<th>${esc(cr.names[k])}</th>`).join("")}<th>Kommentar</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
 function bindKmat(m,gid,sid){m.querySelectorAll(".km-wrap").forEach(w=>{const cid=w.dataset.kcid;const cr=critFor(course(cid).subjectId);
  w.addEventListener("click",e=>{const b=e.target.closest("[data-km]");if(!b||READONLY)return;const km=kmatOf(gid,sid,cid,true);const key=b.dataset.km,k=b.dataset.lv;const row=km.m[key]=km.m[key]||{};
-  const nx={undefined:"y",y:"g",g:"r",r:undefined}[row[k]];if(nx)row[k]=nx;else delete row[k];if(!Object.keys(row).length)delete km.m[key];
+  const nx={undefined:"y",y:"g",g:"r",r:undefined}[row[k]];if(nx)row[k]=nx;else delete row[k];
+  const lower=[];if(nx==="g"||nx==="y")cr.levels.slice(0,cr.levels.indexOf(k)).forEach(l=>{row[l]="g";lower.push(l)});if(!Object.keys(row).length)delete km.m[key];
+  lower.forEach(l=>{const c2=w.querySelector(`[data-km="${key}"][data-lv="${l}"]`);if(c2){c2.dataset.m="g";c2.classList.remove("auto");const s2=c2.querySelector(".src");if(s2)s2.hidden=true}});
   const au=(derivedMarks(state,cid,sid,cr)[key]||{})[k];const shown=row[k]||(au&&au.m);if(shown)b.dataset.m=shown;else delete b.dataset.m;b.classList.toggle("auto",!row[k]&&!!au);
   const src=b.querySelector(".src");if(src)src.hidden=!!row[k];commit()});
  w.addEventListener("change",e=>{const t=e.target.closest("[data-kc]");if(!t||READONLY)return;const km=kmatOf(gid,sid,cid,true);const v=t.value.trim();if(v)km.c[t.dataset.kc]=v;else delete km.c[t.dataset.kc];commit()})})}
-function studentModal(gid,sid){const g=group(gid);const s=g&&g.students.find(x=>x.id===sid);if(!s)return;
- const as=state.assessments.filter(a=>a.groupId===gid).sort((a,b)=>a.date<b.date?-1:1);const byC={};as.forEach(a=>(byC[a.courseId]=byC[a.courseId]||[]).push(a));const sc=scale();
+/* elevens kurser: kunskapsmatris och uppgifter */
+function studentCourses(gid,sid){const as=state.assessments.filter(a=>a.groupId===gid).sort((a,b)=>a.date<b.date?-1:1);const byC={};as.forEach(a=>(byC[a.courseId]=byC[a.courseId]||[]).push(a));const sc=scale();
  state.courses.filter(c=>c.groupId===gid).forEach(c=>{byC[c.id]=byC[c.id]||[]});
- const body=Object.entries(byC).map(([cid,list])=>{const c=course(cid)||{name:"Okänd kurs"};const sm=studentSummary(gid,sid,cid);const mk=sm.m==null?null:sc.levels[sm.m];
-  return `<div><div class="area-h"><span class="dot" style="background:${c.color}"></span><h3>${esc(c.name)}</h3><span class="sp" style="flex:1"></span><span class="small">Typnivå <b class="${mk&&mk.low?"lowtag":""}">${mk?esc(mk.l):"–"}</b></span></div>
+ return Object.entries(byC).map(([cid,list])=>{const c=course(cid)||{name:"Okänd kurs"};const sm=studentSummary(gid,sid,cid);const mk=sm.m==null?null:sc.levels[sm.m];
+  return `<div class="panel" style="margin:0"><div class="area-h"><span class="dot" style="background:${c.color}"></span><h3>${esc(c.name)}</h3><span class="sp" style="flex:1"></span><span class="small">Typnivå <b class="${mk&&mk.low?"lowtag":""}">${mk?esc(mk.l):"–"}</b></span></div>
   ${kmatHtml(gid,sid,cid)}
-  <div class="list">${list.map(a=>{const v=(state.grades[a.id]||{})[sid];const t=v?gradeT(v.k):null;return `<div class="li"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b>${v&&v.note?`<br><span class="small muted">${esc(v.note)}</span>`:""}</span><button class="cell ${t!=null?"g":""}" style="width:auto;min-width:52px;border-radius:8px;${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${sid}">${v&&v.k?esc(v.k):'<span class="muted small">Ej bedömt</span>'}${v&&v.p!=null?` <span class="small">${v.p}${a.max?"/"+a.max:""}p</span>`:""}</button></div>`}).join("")}</div></div>`}).join("");
- const all=studentSummary(gid,sid,"all");
- modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)} · ${all.count} omdömen · ${all.low} under godtagbar nivå · ${all.missing} saknas</p>
- <div class="f"><label for="snote">Om eleven</label><textarea id="snote" placeholder="T.ex. anpassningar, stöd, sådant du vill komma ihåg">${esc(s.note||"")}</textarea><span class="small muted">Visas när du bedömer eleven. Skriv bara det du behöver i undervisningen. Känsliga uppgifter, t.ex. diagnoser, hör hemma i skolans system för elevhälsa.</span>${READONLY?"":`<button class="btn small" id="snsave" style="align-self:flex-start;margin-top:4px">Spara anteckningen</button>`}</div>
- ${body||'<div class="empty">Inga bedömningar ännu.</div>'}`,m=>{m.classList.add("wide");bindKmat(m,gid,sid);const b=m.querySelector("#snsave");if(b)b.onclick=()=>{const v=val("snote").trim();if(v)s.note=v;else delete s.note;commit();toast("Anteckningen är sparad.")}})}
+  ${list.length?`<b class="small" style="display:block;margin-top:10px">Uppgifter</b><div class="list">${list.map(a=>{const v=(state.grades[a.id]||{})[sid];const t=v?gradeT(v.k):null;return `<div class="li"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b>${v&&v.note?`<br><span class="small muted">${esc(v.note)}</span>`:""}</span><button class="cell ${t!=null?"g":""}" style="width:auto;min-width:52px;border-radius:8px;${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${sid}">${v&&v.k?esc(v.k):'<span class="muted small">Ej bedömt</span>'}${v&&v.p!=null?` <span class="small">${v.p}${a.max?"/"+a.max:""}p</span>`:""}</button></div>`}).join("")}</div>`:""}</div>`}).join("")}
+function studentModal(gid,sid){ui.sgroup=gid;ui.student=sid;saveUI();closeModal();if(location.hash!=="#elever")location.hash="elever";else render()}
 
 function subjectModal(){modal("Eget ämne",`<div class="row"><div class="f"><label for="sn">Ämne</label><input id="sn" placeholder="t.ex. Bild"></div><div class="f"><label for="sst">Stadium</label><input id="sst" placeholder="t.ex. åk 7–9"></div></div>
  <div class="f"><label for="sc">Centralt innehåll</label><textarea id="sc" style="min-height:220px" placeholder="# Bildframställning&#10;Framställning av berättande och informativa bilder&#10;Tekniker för teckning och måleri&#10;# Redskap för bildframställning&#10;..."></textarea><span class="small muted">Rader som börjar med # blir kunskapsområden. Övriga rader blir punkter. Kopiera gärna från kursplanen på skolverket.se.</span></div>

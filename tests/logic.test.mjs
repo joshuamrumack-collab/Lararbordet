@@ -241,3 +241,31 @@ test("kriterier delas i delar och kunskapsmatrisen hämtar från uppgifter", () 
   assert.equal(d["0.1"].E.m, "g");
   assert.equal(d["0.1"].C.m, "g");
 });
+
+test("processkoder tolkas och nytt läsår behåller elevernas anpassningar", () => {
+  const run = load();
+  assert.equal(run('procVal(" 1 234 ")'), "1234");
+  assert.equal(run('procVal("Klar")'), "k");
+  assert.equal(run('procVal("GF")'), "gf");
+  assert.equal(run('procVal("of")'), "of");
+  assert.equal(run('procVal("för hand")'), "för hand");
+  run('group("g8b").students[0].adapt=["tid"]');
+  run('var ny=rollover(state,{start:"2027-08-16",end:"2028-06-09",courses:true,lessons:false,groups:true,assessments:false,events:true})');
+  assert.deepEqual(run("ny.groups[0].students[0].adapt"), ["tid"]);
+  assert.deepEqual(run("ny.process"), []);
+  run('state.process=undefined');
+  assert.ok(run('snapshotYear(state).process.length===0'));
+});
+
+test("iCal: import av veckoschema och händelser, och export", () => {
+  const run = load();
+  const ics = "BEGIN:VCALENDAR\\nBEGIN:VEVENT\\nSUMMARY:Engelska 5\\nDTSTART;TZID=Europe/Stockholm:20261116T082000\\nDTEND;TZID=Europe/Stockholm:20261116T092000\\nRRULE:FREQ=WEEKLY\\nLOCATION:B12\\nEND:VEVENT\\nBEGIN:VEVENT\\nSUMMARY:Svenska 1\\nDTSTART:20261117T100000\\nDTEND:20261117T110000\\nEND:VEVENT\\nBEGIN:VEVENT\\nSUMMARY:Svenska 1\\nDTSTART:20261124T100000\\nDTEND:20261124T110000\\nEND:VEVENT\\nBEGIN:VEVENT\\nSUMMARY:Jullov\\nDTSTART;VALUE=DATE:20261221\\nDTEND;VALUE=DATE:20270108\\nEND:VEVENT\\nEND:VCALENDAR";
+  const r = run(`splitICS(parseICS("${ics}"))`);
+  assert.equal(r.slots.length, 2);
+  assert.deepEqual([r.slots[0].day, r.slots[0].start, r.slots[0].end, r.slots[0].room], [1, "08:20", "09:20", "B12"]);
+  assert.equal(r.slots[1].n, 2);
+  assert.equal(r.events.length, 1);
+  assert.deepEqual([r.events[0].start, r.events[0].end, r.events[0].type], ["2026-12-21", "2027-01-07", "lov"]);
+  const out = run("buildICS(state)");
+  assert.ok(out.startsWith("BEGIN:VCALENDAR") && out.includes("BEGIN:VEVENT") && out.includes("SUMMARY:Svenska 8B"));
+});

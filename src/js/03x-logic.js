@@ -10,15 +10,15 @@ const shiftDate=(s,days)=>s?fmtD(addDays(parseD(s),days)):s;
 function weekShift(fromStart,toStart){return Math.round((mondayOf(parseD(toStart))-mondayOf(parseD(fromStart)))/dayMs/7)*7}
 
 /* ----- läsår ----- */
-const YEAR_KEYS=["year","courses","units","events","groups","assessments","grades","manual","lessons","schedule","cancel"];
+const YEAR_KEYS=["year","courses","units","events","groups","assessments","grades","manual","lessons","schedule","cancel","process","kmat"];
 function yearLabel(y){return parseD(y.start).getFullYear()+"/"+String(parseD(y.end).getFullYear()).slice(2)}
-function snapshotYear(s){const o={id:uid(),archivedAt:fmtD(TODAY)};YEAR_KEYS.forEach(k=>o[k]=JSON.parse(JSON.stringify(s[k])));o.label=yearLabel(s.year);return o}
+function snapshotYear(s){const o={id:uid(),archivedAt:fmtD(TODAY)};YEAR_KEYS.forEach(k=>o[k]=s[k]==null?(k==="process"?[]:k==="kmat"?{}:null):JSON.parse(JSON.stringify(s[k])));o.label=yearLabel(s.year);return o}
 /* Bygger ett nytt läsår. opts: {start,end,courses,lessons,assessments,groups,events} */
 function rollover(s,opts){
  const shift=weekShift(s.year.start,opts.start);const out={};
- out.year={start:opts.start,end:opts.end};out.grades={};out.manual={};
+ out.year={start:opts.start,end:opts.end};out.grades={};out.manual={};out.process=[];out.kmat={};
  const idm={};const nid=old=>idm[old]||(idm[old]=uid());
- out.groups=opts.groups?s.groups.map(g=>({id:nid(g.id),name:g.name,students:g.students.map(st=>({id:nid(st.id),name:st.name}))})):[];
+ out.groups=opts.groups?s.groups.map(g=>({id:nid(g.id),name:g.name,students:g.students.map(st=>Object.assign({},st,{id:nid(st.id)}))})):[];
  if(opts.courses){
   out.courses=s.courses.map(c=>Object.assign({},c,{id:nid(c.id),groupId:opts.groups&&c.groupId?nid(c.groupId):""}));
   out.units=s.units.map(u=>Object.assign({},u,{id:nid(u.id),courseId:nid(u.courseId),start:shiftDate(u.start,shift),end:shiftDate(u.end,shift),status:"planerad"}));
@@ -31,7 +31,7 @@ function rollover(s,opts){
 /* Ersätter det aktuella läsåret med ett nytt och lägger det gamla i arkivet */
 function applyNewYear(s,newYear){s.archive=(s.archive||[]).concat([snapshotYear(s)]);YEAR_KEYS.forEach(k=>s[k]=newYear[k]);return s}
 /* Byter plats på det aktuella läsåret och ett arkiverat */
-function switchYear(s,archiveId){const i=(s.archive||[]).findIndex(a=>a.id===archiveId);if(i<0)return s;const target=s.archive[i];const cur=snapshotYear(s);s.archive.splice(i,1,cur);YEAR_KEYS.forEach(k=>s[k]=target[k]);return s}
+function switchYear(s,archiveId){const i=(s.archive||[]).findIndex(a=>a.id===archiveId);if(i<0)return s;const target=s.archive[i];const cur=snapshotYear(s);s.archive.splice(i,1,cur);YEAR_KEYS.forEach(k=>s[k]=target[k]!==undefined&&target[k]!==null?target[k]:(k==="process"?[]:k==="kmat"?{}:target[k]));return s}
 
 /* ----- dela kurs i arbetslaget (utan elever och omdömen) ----- */
 function exportCourse(s,courseId){const c=s.courses.find(x=>x.id===courseId);if(!c)return null;
@@ -162,3 +162,35 @@ function parseCalendarRows(text,yearHint){const out=[];const lines=String(text||
 /* lägger till nya och uppdaterar befintliga (samma namn och startdatum) */
 function mergeEvents(s,rows){let added=0,updated=0;rows.forEach(r=>{const e=s.events.find(x=>x.title.toLowerCase()===r.title.toLowerCase()&&x.start===r.start);
   if(e){if(e.end!==r.end||e.type!==r.type){e.end=r.end;e.type=r.type;updated++}}else{s.events.push({id:uid(),title:r.title,start:r.start,end:r.end,type:r.type,groups:[],from:"",to:""});added++}});return {added,updated}}
+
+/* process: antal ord, k klar, gf giltig frånvaro, of ogiltig frånvaro, annars fri text */
+function procVal(t){t=String(t||"").trim();const l=t.toLowerCase();if(!t)return "";if(/^(k|klar|d|done|✓)$/.test(l))return "k";if(/^(gf|giltig)/.test(l))return "gf";if(/^(of|ogiltig)/.test(l))return "of";const n=t.replace(/\s/g,"");return /^\d+$/.test(n)?n:t}
+
+/* ----- iCal (.ics): Google Kalender, Outlook, Skola24 och andra schemaprogram ----- */
+function parseICS(text){const lines=String(text||"").replace(/\r\n[ \t]/g,"").replace(/\n[ \t]/g,"").split(/\r?\n/);const out=[];let cur=null;
+ const unesc=v=>v.replace(/\\n/gi,"\n").replace(/\\([,;\\])/g,"$1");
+ const dt=(prop,val)=>{const m=val.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/);if(!m)return null;
+  if(!m[4])return {date:`${m[1]}-${m[2]}-${m[3]}`,time:""};
+  if(m[7]){const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5]));return {date:fmtD(d),time:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}}
+  return {date:`${m[1]}-${m[2]}-${m[3]}`,time:`${m[4]}:${m[5]}`}};
+ for(const ln of lines){if(ln==="BEGIN:VEVENT"){cur={summary:"",location:"",desc:"",rrule:""};continue}if(ln==="END:VEVENT"){if(cur&&cur.start)out.push(cur);cur=null;continue}if(!cur)continue;
+  const i=ln.indexOf(":");if(i<0)continue;const prop=ln.slice(0,i).split(";")[0].toUpperCase();const val=ln.slice(i+1);
+  if(prop==="SUMMARY")cur.summary=unesc(val).trim();else if(prop==="LOCATION")cur.location=unesc(val).trim();else if(prop==="DESCRIPTION")cur.desc=unesc(val).trim();else if(prop==="RRULE")cur.rrule=val;
+  else if(prop==="DTSTART")cur.start=dt(prop,val);else if(prop==="DTEND")cur.end=dt(prop,val)}
+ return out.map(e=>{let end=e.end||e.start;if(!e.start.time&&e.end&&e.end.date>e.start.date)end={date:fmtD(addDays(parseD(e.end.date),-1)),time:""};return {summary:e.summary||"Händelse",location:e.location,desc:e.desc,rrule:e.rrule,date:e.start.date,start:e.start.time,endDate:end.date,end:end.time||""}})}
+/* Lektioner som återkommer varje vecka blir rader i veckoschemat, resten blir händelser */
+function splitICS(evs){const map={};const rest=[];
+ evs.forEach(e=>{if(e.start&&e.end&&e.date===e.endDate){const day=parseD(e.date).getDay();if(day>=1&&day<=5){const k=[day,e.start,e.end,e.summary].join("|");(map[k]=map[k]||[]).push(e);return}}rest.push(e)});
+ const slots=[];Object.entries(map).forEach(([k,list])=>{const weekly=list.some(e=>/FREQ=WEEKLY/i.test(e.rrule));if(weekly||list.length>=2){const [day,start,end,summary]=k.split("|");slots.push({summary,day:+day,start,end,room:list[0].location||"",n:list.length,weekly})}else rest.push(...list)});
+ slots.sort((a,b)=>a.day-b.day||(a.start<b.start?-1:1));
+ return {slots,events:rest.map(e=>({title:e.summary,start:e.date,end:e.endDate||e.date,type:guessType(e.summary,""),from:e.start||"",to:e.end||""}))}}
+/* Export till kalender: alla lektioner som blir av, med plan, och kalendariets händelser */
+function buildICS(s){const esc2=t=>String(t||"").replace(/\\/g,"\\\\").replace(/;/g,"\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
+ const d8=d=>d.replace(/-/g,"");const t6=t=>t.replace(":","")+"00";const now=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"");
+ const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//DorkTeach//Lärarbordet//SV","CALSCALE:GREGORIAN","X-WR-CALNAME:Lärarbordet"];
+ const ev=(uidv,lines)=>{L.push("BEGIN:VEVENT","UID:"+uidv+"@lararbordet","DTSTAMP:"+now,...lines,"END:VEVENT")};
+ (s.schedule||[]).forEach(sl=>{const c=(s.courses||[]).find(x=>x.id===sl.courseId);if(!c)return;slotDates(s,sl,s.year.start,s.year.end).forEach(d=>{if(cancellation(s,sl,d))return;
+   const uids=new Set(s.units.filter(u=>u.courseId===c.id).map(u=>u.id));const l=(s.lessons||[]).find(x=>x.date===d&&(uids.has(x.unitId)||x.courseId===c.id)&&(!x.time||x.time===sl.start));
+   ev(sl.id+"-"+d8(d),["DTSTART;TZID=Europe/Stockholm:"+d8(d)+"T"+t6(sl.start),"DTEND;TZID=Europe/Stockholm:"+d8(d)+"T"+t6(sl.end),"SUMMARY:"+esc2(c.name+(l&&l.title?" · "+l.title:"")),...(sl.room?["LOCATION:"+esc2(sl.room)]:[]),...((l&&l.plan)||sl.note?["DESCRIPTION:"+esc2([l&&l.plan,sl.note].filter(Boolean).join("\n\n"))]:[])])})});
+ (s.events||[]).forEach(e=>{const timed=e.from&&e.to;ev("ev-"+e.id,timed?["DTSTART;TZID=Europe/Stockholm:"+d8(e.start)+"T"+t6(e.from),"DTEND;TZID=Europe/Stockholm:"+d8(e.start)+"T"+t6(e.to),"SUMMARY:"+esc2(e.title)]:["DTSTART;VALUE=DATE:"+d8(e.start),"DTEND;VALUE=DATE:"+d8(fmtD(addDays(parseD(e.end),1))),"SUMMARY:"+esc2(e.title)])});
+ L.push("END:VCALENDAR");return L.join("\r\n")}

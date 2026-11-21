@@ -19,11 +19,11 @@ const critHtml=t=>esc(t).replace(/\*([^*]+)\*/g,"<b>$1</b>");
 function dOcc(key){const [slotId,date]=key.split("|");const o=dayOccurrences(date).find(x=>x.slot.id===slotId);if(!o)return "";
  if(o.lesson&&!o.cancel)return dLesson(o.lesson.id,o);
  return `<header class="p-hero" style="--cc:${o.course.color}"><span class="p-date">${esc(o.course.name)}</span><span class="p-week">${cap(DAY[parseD(date).getDay()])} ${shortD(date)} · ${esc(o.slot.start)}–${esc(o.slot.end)}</span></header>
- ${o.cancel?`<div class="p-card x"><span class="p-label">Inställd</span><b>${esc(o.cancel.reason)}</b><span class="p-sub">${o.cancel.type==="manuell"?"Inställd för hand":"Enligt kalendariet"}</span></div>`:`<div class="p-card"><span class="p-label">Ingen lektion planerad</span><span class="p-sub">Planera den på datorn.</span></div>`}
+ ${o.cancel?`<div class="p-card x"><span class="p-label">Inställd</span><b>${esc(o.cancel.reason)}</b><span class="p-sub">${o.cancel.type==="manuell"?"Inställd för hand":"Enligt kalendariet"}</span></div>`:`<div class="p-card"><span class="p-label">Ingen lektion planerad</span><span class="p-sub">${o.slot.note?esc(o.slot.note):"Planera den på datorn."}</span></div>${adaptReminder(o.course)}`}
  ${pKV([["Sal",esc(o.slot.room||"")],["Veckor",o.slot.weeks&&o.slot.weeks!=="alla"?WEEKS_LABEL[o.slot.weeks]:""]])}
  ${o.unit?pSec("Arbetsområde",unitRow(o.unit)):""}${o.lesson?pSec("Planerad lektion",lessonRow(o.lesson)):""}`}
 
-function dLesson(id,occ){const l=(state.lessons||[]).find(x=>x.id===id);if(!l)return "";const u=unit(l.unitId)||{};const c=course(u.courseId||l.courseId)||{};const lc=lessonCancel(state,l);
+function dLesson0(id,occ){const l=(state.lessons||[]).find(x=>x.id===id);if(!l)return "";const u=unit(l.unitId)||{};const c=course(u.courseId||l.courseId)||{};const lc=lessonCancel(state,l);
  const slot=occ?occ.slot:(state.schedule||[]).find(x=>x.courseId===c.id&&+x.day===parseD(l.date).getDay()&&(!l.time||x.start===l.time));
  const all=lessonsOf(l.unitId);const i=all.findIndex(x=>x.id===l.id);
  return `<header class="p-hero" style="--cc:${c.color}"><span class="p-label">${esc(c.name||"")}</span><span class="p-date">${esc(l.title)}</span><span class="p-week">${cap(DAY[parseD(l.date).getDay()])} ${shortD(l.date)}${slot?` · ${esc(slot.start)}–${esc(slot.end)}${slot.room?" · "+esc(slot.room):""}`:l.time?" · "+esc(l.time):""}</span></header>
@@ -56,7 +56,7 @@ function dAssess(id){const a=state.assessments.find(x=>x.id===id);if(!a)return "
  ${cr?pSec("Betygskriterier som bedöms",a.aspects.filter(i=>cr.aspects[i]).map(i=>`<details class="p-card p-det"><summary>${critHtml(aspectLabel(cr.aspects[i]))}</summary>${cr.levels.map(k=>cr.aspects[i][k]?`<p><b>${esc(cr.names[k])}:</b> ${critHtml(cr.aspects[i][k])}</p>`:"").join("")}</details>`).join("")):""}
  ${g?pSec("Elever",g.students.map(s=>{const v=(state.grades[a.id]||{})[s.id];return goBtn("grade",a.id+"|"+s.id,`<span class="p-what"><b>${esc(s.name)}</b>${v&&v.note?`<span class="p-note">${esc(v.note.length>70?v.note.slice(0,70)+"…":v.note)}</span>`:""}</span>${v?gradeChip(v.k):`<span class="p-muted">Ej bedömd</span>`}`)}).join("")):""}`}
 
-function dStudentD(key){const [gid,sid]=key.split("|");const g=group(gid);const s=g&&g.students.find(x=>x.id===sid);return s?pStudent(g,s):""}
+function dStudentD(key){const [gid,sid]=key.split("|");const g=group(gid);const s=g&&g.students.find(x=>x.id===sid);if(!s)return "";const al=adaptList(s);return pStudent(g,s)+(al.length||s.note?`<div class="p-card"><span class="p-label">Om eleven</span>${al.length?`<b>${esc(al.join(", "))}</b>`:""}${s.note?`<span class="p-sub">${esc(s.note)}</span>`:""}</div>`:"")}
 
 /* en elevs omdöme på en uppgift, med kriterier */
 function dGrade(key){const [aid,sid]=key.split("|");const a=state.assessments.find(x=>x.id===aid);if(!a)return "";const g=group(a.groupId);const s=g&&g.students.find(x=>x.id===sid);if(!s)return "";
@@ -91,3 +91,5 @@ function dEvent(id){const e=state.events.find(x=>x.id===id);if(!e)return "";
  ${CANCELS[e.type]?pSec(`Inställda lektioner (${lost.length})`,lost.map(o=>goBtn("occ",o.slot.id+"|"+o.date,`<span class="p-time num">${parseD(o.date).getDate()}/${parseD(o.date).getMonth()+1}<small>${esc(o.slot.start)}</small></span><span class="p-what"><b>${esc(o.course.name)}</b></span>`,"p-row",`--cc:${o.course.color}`)).join("")||`<p class="p-empty">Inga lektioner i schemat berörs.</p>`):""}`}
 function dUnits(courseId){const c=course(courseId);if(!c)return "";const us=state.units.filter(u=>u.courseId===c.id).sort((a,b)=>a.start<b.start?-1:1);
  return `<header class="p-hero" style="--cc:${c.color}"><span class="p-label">${esc(c.name)}</span><span class="p-date">Alla arbetsområden</span></header>${us.map(unitRow).join("")||`<p class="p-empty">Inga arbetsområden.</p>`}`}
+
+function dLesson(id,occ){const h=dLesson0(id,occ);if(!h)return h;const l=(state.lessons||[]).find(x=>x.id===id);const c=course((unit(l.unitId)||{}).courseId||l.courseId);return h+(c?`<div style="margin-top:12px">${adaptReminder(c)}</div>`:"")}
