@@ -38,7 +38,10 @@ const A={
  "bar-save":()=>barSave(),
  unmine:el=>{state.mine=state.mine.filter(x=>x!==el.dataset.id);commit()},
  "sel-course":el=>{ui.course=el.dataset.id;saveUI();render()},
- "bar-hide":()=>{BAR_HIDDEN=true;updateBar();toast("Rutan visas inte mer i dag. Kom ihåg att spara med Spara eller Ctrl/Cmd+S.")}, "import-cal":()=>importCalModal(), how:()=>howModal(), results:()=>resultsModal(), cview:el=>{ui.cview=el.dataset.v;saveUI();render()}, "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
+ "bar-hide":()=>{BAR_HIDDEN=true;updateBar();toast("Rutan visas inte mer i dag. Kom ihåg att spara med Spara eller Ctrl/Cmd+S.")}, "import-cal":()=>importCalModal(), how:()=>howModal(), theme:el=>{setTheme(el.dataset.v);render()}, planview:el=>{ui.planView=el.dataset.v;saveUI();render()},
+ "new-task":el=>{const cs=state.courses;if(!cs.length)return;const c=course(el.dataset.id)||(ui.course!=="all"&&course(ui.course))||cs[0];const gid=c.groupId||(state.groups[0]||{}).id;
+  if(!gid){modal("Elevgrupp saknas",`<p style="margin:0">En uppgift bedöms för en elevgrupp. Lägg till en grupp och koppla den till kursen.</p><div class="actions"><button class="btn pri" data-a="edit-course" data-id="${c.id}">Redigera kursen</button></div>`);return}
+  assessModal(null,{courseId:c.id,groupId:gid})}, results:()=>resultsModal(), cview:el=>{ui.cview=el.dataset.v;saveUI();render()}, "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
  "new-unit":()=>unitModal(), "edit-unit":el=>unitModal(el.dataset.id),
  wheel:el=>{ui.wheel=el.dataset.id;saveUI();render()},
  wheelmode:el=>{ui.wheelMode=el.dataset.v;render()},

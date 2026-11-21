@@ -225,3 +225,19 @@ test("kalendarium från inklistrade Excel-rader", () => {
   assert.deepEqual(r2, { added: 0, updated: 1 });
   assert.equal(run("state.events.length"), n + 1);
 });
+
+test("kriterier delas i delar och kunskapsmatrisen hämtar från uppgifter", () => {
+  const run = load();
+  const parts = run('critParts({E:"Eleven lyssnar. Eleven läser. Eleven väljer.",C:"Eleven lyssnar väl. Eleven läser väl. Eleven väljer väl.",A:"Eleven lyssnar mycket väl. Eleven läser mycket väl. Eleven väljer mycket väl."},["E","C","A"])');
+  assert.equal(parts.length, 3);
+  assert.equal(parts[1].C, "Eleven läser väl.");
+  assert.equal(run('critParts({E:"En. Två.",C:"Bara en.",A:"A. B."},["E","C","A"]).length'), 1);
+  assert.equal(run('partsToGrade({"0.0":{E:"g",C:"g"},"0.1":{E:"g"},"0.2":{E:"g",C:"g",A:"g"}},0,3)'), "C");
+  run('var cr={levels:["E","C","A"],aspects:[{E:"Eleven lyssnar. Eleven läser.",C:"Eleven lyssnar väl. Eleven läser väl.",A:"Eleven lyssnar mycket väl. Eleven läser mycket väl."}]}');
+  run('state.assessments.push({id:"k1",courseId:"c-en",groupId:"g8b",date:"2026-09-01",aspects:[0]},{id:"k2",courseId:"c-en",groupId:"g8b",date:"2026-10-01",aspects:[0]})');
+  run('state.grades.k1={s1:{k:"E",asm:{"0":{E:"y"}}}};state.grades.k2={s1:{k:"C",asm:{"0.1":{E:"g",C:"g"}}}}');
+  const d = run('derivedMarks(state,"c-en","s1",cr)');
+  assert.equal(d["0.0"].E.m, "y");
+  assert.equal(d["0.1"].E.m, "g");
+  assert.equal(d["0.1"].C.m, "g");
+});

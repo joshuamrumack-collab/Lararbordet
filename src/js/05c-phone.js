@@ -77,6 +77,7 @@ async function pUpdateGo(){if(IS_MOBILE_APP){PUPD={state:"busy",msg:"Öppnar ned
  try{const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg)await reg.update();if(window.caches){for(const k of await caches.keys())await caches.delete(k)}}catch(e){}
  location.reload()}
 function pFile(){return `<h2 class="p-h">Inställningar och fil</h2>
+ <div class="p-card"><span class="p-label">Utseende</span>${themeSeg()}</div>
  <div class="p-card">${READONLY?`<span class="p-label">Öppen i läsläge</span><b>${esc(RO_NAME||"Fil")}</b><span class="p-sub">Läsår ${esc(yearLabel(state.year))} · ${state.courses.length} kurser</span>`:`<span class="p-label">Ingen fil öppen</span><b>${state.example?"Exempeldata":"Lärarbordet"}</b>`}</div>
  <button class="p-big" data-a="open-ro">${READONLY?"Öppna en nyare fil":"Öppna min fil"}</button>
  <p class="p-muted">Välj din <b>lararbordet.json</b> eller <b>lararbordet.html</b>, till exempel från skolans Google Drive eller OneDrive. Telefonen kan bara läsa. Ingenting ändras eller skrivs över, så filen på datorn är alltid den som gäller.</p>

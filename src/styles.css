@@ -394,6 +394,7 @@ button.evtag{border:0;font:inherit;font-size:.82rem;padding:6px 12px;cursor:poin
 .p-upd .p-big{margin-top:10px}
 /* ---- 1.8: feedback ---- */
 [hidden]{display:none!important}
+.modal>*{flex-shrink:0}
 #savebar .x{background:none;border:0;color:inherit;font-size:1.3rem;line-height:1;cursor:pointer;padding:4px 6px;opacity:.75}
 #savebar .x:hover{opacity:1}
 .occ-p{font-size:.76rem;color:var(--muted);white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-align:left}
@@ -433,3 +434,33 @@ button.evtag{border:0;font:inherit;font-size:.82rem;padding:6px 12px;cursor:poin
 .wheel-leg{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;font-size:.8rem;margin-top:6px}
 .wheel-leg span{display:inline-flex;gap:5px;align-items:center}
 body.phone .hdrgear{margin-left:auto}
+/* lodrät veckoplanering */
+.wt-wrap{max-height:72vh;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.wt{border-collapse:collapse;width:100%;min-width:900px;font-size:.82rem;table-layout:fixed}
+.wt th,.wt td{border:1px solid var(--line);padding:4px;vertical-align:top;text-align:left}
+.wt thead th{position:sticky;top:0;background:var(--soft);z-index:2;font-size:.8rem}
+.wt thead th:first-child{width:64px}
+.wt tbody th{background:var(--soft);font-weight:800;display:table-cell}
+.wt tbody th span{display:block;font-weight:500}
+.wt tr.cur>*{box-shadow:inset 0 0 0 9999px color-mix(in srgb,var(--accent) 7%,transparent)}
+.wt tr.cur th{color:var(--accent)}
+.wt tr.lov td{background:repeating-linear-gradient(135deg,transparent 0 6px,var(--soft) 6px 12px)}
+.wt-i{display:grid;gap:1px;width:100%;text-align:left;border:0;border-left:3px solid var(--cc,var(--line));background:var(--surface);color:var(--ink);padding:3px 6px;margin:0 0 4px;border-radius:4px;font:inherit;cursor:pointer}
+.wt-i:hover{background:var(--soft)}
+.wt-i.x{text-decoration:line-through;color:var(--muted)}
+.wt-t{font-size:.72rem;color:var(--muted)}
+.wt-p{white-space:pre-line;color:var(--muted);font-size:.76rem}
+.wt .evtag{display:inline-block;margin:0 4px 4px 0}
+.cm-part{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 10px 2px;border-top:1px solid var(--line);background:var(--surface)}
+.cm-h+.cm-part{border-top:0}
+.modal.wide{max-width:1040px}
+/* kunskapsmatris per elev */
+.km{width:100%;border-collapse:collapse;font-size:.8rem;table-layout:fixed;min-width:760px}
+.km th,.km td{border:1px solid var(--line);padding:0;vertical-align:top}
+.km thead th{background:var(--soft);padding:6px 8px;text-align:left;font-size:.78rem}
+.km tr.km-main td{background:var(--soft);font-weight:800;padding:6px 8px;border-top:2px solid var(--ink)}
+.km .cm-c{border:0;width:100%;height:100%;min-height:100%;border-radius:0}
+.km .cm-c.auto{background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(0,0,0,.06) 6px 12px)}
+.km .cm-c .src{font-size:.68rem;opacity:.8}
+.km textarea{width:100%;min-height:72px;border:0;background:transparent;color:inherit;font:inherit;padding:6px 8px;resize:vertical}
+.km-wrap{overflow:auto;border:2px solid var(--ink);border-radius:10px}

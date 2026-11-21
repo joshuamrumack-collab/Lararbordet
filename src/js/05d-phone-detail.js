@@ -7,7 +7,7 @@ function pDetail(n){const f={lesson:dLesson,occ:dOcc,unit:dUnit,course:pCourseD,
  const body=f?f(n.id):"";return `<button class="p-back" data-a="p-back">‹ Tillbaka</button>${body||'<p class="p-empty">Hittades inte. Filen kan ha ändrats.</p>'}`}
 const pSec=(t,inner)=>inner?`<h2 class="p-h">${t}</h2>${inner}`:"";
 const pKV=rows=>`<dl class="p-kv">${rows.filter(r=>r&&r[1]).map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
-const lessonRow=l=>{const u=unit(l.unitId)||{};const c=course(u.courseId)||{};const lc=lessonCancel(state,l);
+const lessonRow=l=>{const u=unit(l.unitId)||{};const c=course(u.courseId||l.courseId)||{};const lc=lessonCancel(state,l);
  return goBtn("lesson",l.id,`<span class="p-time num">${parseD(l.date).getDate()}/${parseD(l.date).getMonth()+1}<small>${DAY[parseD(l.date).getDay()].slice(0,3)}${l.time?" "+esc(l.time):""}</small></span><span class="p-what"><b>${l.done?"✓ ":""}${esc(l.title)}</b>${lc?`<span class="p-cancel">Inställd · ${esc(lc.reason)}</span>`:l.plan?`<span class="p-sub">${esc(l.plan.length>80?l.plan.slice(0,80)+"…":l.plan)}</span>`:""}</span>`,"p-row",`--cc:${c.color||"var(--line)"}`)};
 const unitRow=u=>{const c=course(u.courseId)||{};return goBtn("unit",u.id,`<span class="p-what"><b>${esc(u.title)}</b><span class="p-sub">${wkRange(u.start,u.end)} · ${STATUS[u.status]}</span></span>`,"p-row",`--cc:${c.color}`)};
 const assessRow=a=>{const c=course(a.courseId)||{};const g=group(a.groupId);const n=g?g.students.filter(s=>(state.grades[a.id]||{})[s.id]).length:0;
@@ -23,7 +23,7 @@ function dOcc(key){const [slotId,date]=key.split("|");const o=dayOccurrences(dat
  ${pKV([["Sal",esc(o.slot.room||"")],["Veckor",o.slot.weeks&&o.slot.weeks!=="alla"?WEEKS_LABEL[o.slot.weeks]:""]])}
  ${o.unit?pSec("Arbetsområde",unitRow(o.unit)):""}${o.lesson?pSec("Planerad lektion",lessonRow(o.lesson)):""}`}
 
-function dLesson(id,occ){const l=(state.lessons||[]).find(x=>x.id===id);if(!l)return "";const u=unit(l.unitId)||{};const c=course(u.courseId)||{};const lc=lessonCancel(state,l);
+function dLesson(id,occ){const l=(state.lessons||[]).find(x=>x.id===id);if(!l)return "";const u=unit(l.unitId)||{};const c=course(u.courseId||l.courseId)||{};const lc=lessonCancel(state,l);
  const slot=occ?occ.slot:(state.schedule||[]).find(x=>x.courseId===c.id&&+x.day===parseD(l.date).getDay()&&(!l.time||x.start===l.time));
  const all=lessonsOf(l.unitId);const i=all.findIndex(x=>x.id===l.id);
  return `<header class="p-hero" style="--cc:${c.color}"><span class="p-label">${esc(c.name||"")}</span><span class="p-date">${esc(l.title)}</span><span class="p-week">${cap(DAY[parseD(l.date).getDay()])} ${shortD(l.date)}${slot?` · ${esc(slot.start)}–${esc(slot.end)}${slot.room?" · "+esc(slot.room):""}`:l.time?" · "+esc(l.time):""}</span></header>

@@ -81,6 +81,20 @@ function markToGrade(m,scaleKey){m=m||{};const has=Object.values(m).some(Boolean
  if(g("A"))step=5;else if(g("C")&&y("A"))step=4;else if(g("C"))step=3;else if(g("E")&&y("C"))step=2;else if(g("E"))step=1;else step=0;
  if(scaleKey==="lokal")return String([y("E")?2:1,3,4,4,5,5][step]);
  return ["F","E","D","C","B","A"][step]}
+/* Ett kriterium kan delas i sina meningar (delar), t.ex. lyssna, läsa, välja källor. Delas bara om alla nivåer har lika många meningar. */
+const splitSent=t=>String(t||"").trim().split(/(?<=[.!?])\s+(?=[A-ZÅÄÖ*])/).filter(Boolean);
+function critParts(A,levels){const lv=levels.filter(k=>A[k]);if(!lv.length)return [A];const sp=lv.map(k=>splitSent(A[k]));const n=sp[0].length;
+ if(n<2||sp.some(x=>x.length!==n))return [A];return Array.from({length:n},(_,j)=>{const o={};lv.forEach((k,i)=>o[k]=sp[i][j]);return o})}
+/* Aspektens steg ur delarnas markeringar: medianen av delarnas steg */
+function partsToGrade(asm,i,nParts,scaleKey){const gs=[];for(let j=0;j<nParts;j++){const g=markToGrade((asm||{})[nParts>1?i+"."+j:String(i)],scaleKey);if(g)gs.push(g)}
+ if(!gs.length)return null;const order=scaleKey==="lokal"?["1","2","3","4","5"]:["F","E","D","C","B","A"];const v=gs.map(g=>order.indexOf(g)).sort((a,b)=>a-b);return order[v[Math.floor((v.length-1)/2)]]}
+/* Kunskapsmatris: senaste markering per del och nivå från elevens uppgifter i kursen */
+function derivedMarks(s,courseId,studentId,cr){const out={};if(!cr)return out;
+ s.assessments.filter(a=>a.courseId===courseId&&(a.aspects||[]).length).sort((a,b)=>a.date<b.date?-1:1).forEach(a=>{const g=((s.grades[a.id]||{})[studentId]||{}).asm||{};
+  Object.entries(g).forEach(([key,lvls])=>{const i=+String(key).split(".")[0];const A=cr.aspects[i];if(!A)return;const n=critParts(A,cr.levels).length;
+   const keys=String(key).includes(".")||n<2?[n<2?String(i):key]:Array.from({length:n},(_,j)=>i+"."+j);
+   keys.forEach(k=>Object.entries(lvls||{}).forEach(([lv,m])=>{if(m){(out[k]=out[k]||{})[lv]={m,from:a.title,date:a.date}}}))})});
+ return out}
 /* Ett kort namn på en aspekt: början av E-texten */
 function aspectLabel(asp){const t=String(asp.E||asp.G||Object.values(asp)[0]||"").replace(/\*/g,"");return t.length>110?t.slice(0,107).replace(/\s+\S*$/,"")+"…":t}
 /* Samlat omdöme ur aspektomdömen: medianen på skalan */
@@ -103,7 +117,8 @@ function slotDates(s,slot,from,to){const a=from>s.year.start?from:s.year.start,b
 function cancellation(s,slot,date){const c=(s.courses||[]).find(x=>x.id===slot.courseId)||{};
  const man=(s.cancel||{})[slot.id+"|"+date];if(man!=null)return {reason:man||"Inställd",type:"manuell"};
  for(const e of s.events){if(!CANCELS[e.type]||date<e.start||date>e.end)continue;
-  if(e.type==="aktivitet"){if(e.groups&&e.groups.length&&!e.groups.includes(c.groupId))continue;if(e.from&&e.to&&!(slot.start<e.to&&slot.end>e.from))continue}
+  if(e.type==="aktivitet"&&e.groups&&e.groups.length&&!e.groups.includes(c.groupId))continue;
+  if(e.from&&e.to&&!(slot.start<e.to&&slot.end>e.from))continue;
   return {reason:e.title,type:e.type}}
  return null}
 /* Alla schemalagda lektioner för en kurs mellan två datum, med eventuell orsak till att de ställs in */

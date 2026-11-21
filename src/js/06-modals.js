@@ -73,10 +73,10 @@ function shadesOf(hex){const h=hex.replace("#","");const r=parseInt(h.slice(0,2)
  return [-.45,-.25,0,.25,.45].map(t=>"#"+[r,g,b].map(v=>Math.round(t<0?v*(1+t):v+(255-v)*t).toString(16).padStart(2,"0")).join(""))}
 function courseModal(id){const c=id?course(id):null;const opts=usedSubjects();if(!c&&!opts.length){modal("Välj dina ämnen först",`<p style="margin:0">En kurs hör till ett ämne. Välj först vilka ämnen du undervisar i.</p><div class="actions"><button class="btn pri" data-a="picker">Välj ämnen</button></div>`);return}
  const sameSubj=sid=>state.courses.find(x=>x.subjectId===sid&&x!==c);
- const d=c||{name:"",subjectId:opts[0],groupId:(state.groups[0]||{}).id||"",color:(sameSubj(opts[0])||{}).color||COLORS[state.courses.length%COLORS.length]};let color=d.color;
+ const d=c||{name:"",subjectId:opts[0],groupId:(state.groups[0]||{}).id||"",color:(sameSubj(opts[0])||{}).color||COLORS[state.courses.length%COLORS.length]};let color=d.color;let base=d.baseColor||color;
  let touched=!!c&&c.name!==autoCourseName(c.subjectId,(group(c.groupId)||{}).name);
  const sw=()=>`${COLORS.map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Färg ${x}"></button>`).join("")}<input type="color" class="cpick" id="ccol" value="${/^#[0-9a-f]{6}$/i.test(color)?color:"#4f46e5"}" title="Välj valfri färg" aria-label="Välj valfri färg">`;
- const shades=()=>/^#[0-9a-f]{6}$/i.test(color)?`<div class="shades"><span class="small muted" style="align-self:center">Nyanser:</span>${shadesOf(color).map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Nyans ${x}"></button>`).join("")}</div>`:"";
+ const shades=()=>/^#[0-9a-f]{6}$/i.test(base)?`<div class="shades"><span class="small muted" style="align-self:center">Nyanser:</span>${shadesOf(base).map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Nyans ${x}"></button>`).join("")}</div>`:"";
  modal(c?"Redigera kurs":"Ny kurs",`
  <div class="row"><div class="f"><label for="cs">Ämne</label><select id="cs">${Object.keys(FORM_LABEL).map(fk=>{const l=opts.filter(id=>formOf(id)===fk);return l.length?`<optgroup label="${esc(FORM_LABEL[fk])}">${l.map(id=>`<option value="${esc(id)}" ${d.subjectId===id?"selected":""}>${esc(subjTitle(id))}</option>`).join("")}</optgroup>`:""}).join("")}</select><button class="btn ghost small" data-a="picker" style="align-self:flex-start;margin-top:4px">Fler ämnen…</button></div>
  <div class="f"><label for="cg">Elevgrupp</label><select id="cg"><option value="">Ingen</option>${state.groups.map(g=>`<option value="${g.id}" ${d.groupId===g.id?"selected":""}>${esc(g.name)}</option>`).join("")}<option value="__new">+ Ny grupp…</option></select></div></div>
@@ -87,37 +87,39 @@ function courseModal(id){const c=id?course(id):null;const opts=usedSubjects();if
   const gname=()=>{const v=val("cg");return v==="__new"?val("cgn").trim():(group(v)||{}).name||""};
   const auto=()=>{if(!touched)m.querySelector("#cn").value=autoCourseName(val("cs"),gname())};
   const paintC=()=>{m.querySelector("#csw").innerHTML=sw();m.querySelector("#csh").innerHTML=shades();bindC()};
-  const bindC=()=>{m.querySelectorAll(".sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;paintC()});const cp=m.querySelector("#ccol");cp.oninput=()=>{color=cp.value;m.querySelector("#csh").innerHTML=shades();m.querySelectorAll("#csw .sw").forEach(x=>x.setAttribute("aria-pressed","false"));m.querySelectorAll("#csh .sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;paintC()})}};
+  const bindC=()=>{m.querySelectorAll("#csw .sw").forEach(b=>b.onclick=()=>{color=base=b.dataset.c;paintC()});m.querySelectorAll("#csh .sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;paintC()});const cp=m.querySelector("#ccol");cp.oninput=()=>{color=base=cp.value;m.querySelector("#csh").innerHTML=shades();m.querySelectorAll("#csw .sw").forEach(x=>x.setAttribute("aria-pressed","false"));m.querySelectorAll("#csh .sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;paintC()})}};
   bindC();
   m.querySelector("#cn").oninput=e=>{touched=!!e.target.value.trim()};
-  m.querySelector("#cs").onchange=e=>{auto();if(!c){const o=sameSubj(e.target.value);if(o&&o.color&&/^#/.test(o.color)){const sh=shadesOf(o.color);color=sh.find(x=>!state.courses.some(k=>k.color===x))||o.color;paintC()}}};
+  m.querySelector("#cs").onchange=e=>{auto();if(!c){const o=sameSubj(e.target.value);if(o&&o.color&&/^#/.test(o.color)){base=o.baseColor||o.color;const sh=shadesOf(base);color=sh.find(x=>!state.courses.some(k=>k.color===x))||o.color;paintC()}}};
   m.querySelector("#cg").onchange=e=>{m.querySelector("#cgnw").hidden=e.target.value!=="__new";auto();if(e.target.value==="__new")m.querySelector("#cgn").focus()};
   m.querySelector("#cgn").oninput=auto;
   if(!c)auto();
   m.querySelector("#csave").onclick=()=>{let n=val("cn").trim();if(!n)n=autoCourseName(val("cs"),gname())||"Kurs";let gid=val("cg");
    if(gid==="__new"){const gn=val("cgn").trim()||"Ny grupp";gid=uid();state.groups.push({id:gid,name:gn,students:[]})}
-   const o={name:n,subjectId:val("cs"),groupId:gid,color};if(c)Object.assign(c,o);else{const nc=Object.assign({id:uid()},o);state.courses.push(nc);ui.course=nc.id;saveUI()}closeModal();commit()};
+   const o={name:n,subjectId:val("cs"),groupId:gid,color,baseColor:base};if(c)Object.assign(c,o);else{const nc=Object.assign({id:uid()},o);state.courses.push(nc);ui.course=nc.id;saveUI()}closeModal();commit()};
   const del=m.querySelector("#cdel");if(del)del.onclick=()=>confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden och bedömningar?`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);ui.course=null;commit()})})}
 
 function eventModal(id,preset){const e=id?state.events.find(x=>x.id===id):null;const d=e||Object.assign({title:"",start:fmtD(TODAY),end:fmtD(TODAY),type:"annat",groups:[],from:"",to:""},preset||{});
- const hint={lov:"Alla lektioner ställs in.",studiedag:"Alla lektioner ställs in den dagen.",aktivitet:"Lektioner för de valda grupperna ställs in, hela dagen eller under den tid du anger.",annat:"Påverkar inte lektionerna, t.ex. utvecklingssamtal eller ett prov.",deadline:"Påverkar inte lektionerna. Visas i rött i årshjulet."};
+ const hint={lov:"Alla lektioner ställs in.",studiedag:"Alla lektioner ställs in, hela dagen eller under den tid du anger.",aktivitet:"Lektioner för de valda grupperna ställs in.",annat:"Påverkar inte lektionerna, t.ex. utvecklingssamtal eller ett prov.",deadline:"Påverkar inte lektionerna. Visas i rött i årshjulet."};
  modal(e?"Händelse i kalendariet":"Ny händelse i kalendariet",`<div class="f"><label for="et">Namn</label><input id="et" value="${esc(d.title)}" placeholder="t.ex. Friluftsdag, Prao, Studiedag"></div>
  <div class="row"><div class="f"><label for="es">Från</label><input type="date" id="es" value="${d.start}"></div><div class="f"><label for="ee">Till</label><input type="date" id="ee" value="${d.end}"></div></div>
  <div class="f"><label for="ety">Typ</label><select id="ety">${Object.entries(EVENT_TYPES).map(([k,l])=>`<option value="${k}" ${d.type===k?"selected":""}>${l}</option>`).join("")}</select><span class="small muted" id="ehint">${hint[d.type]||""}</span></div>
  <div id="eakt" ${d.type==="aktivitet"?"":"hidden"} style="display:grid;gap:12px">
   <div class="f"><label>Vilka grupper berörs?</label><div class="chips" id="egr"><button class="chip" aria-pressed="${!(d.groups||[]).length}" data-g="">Alla</button>${state.groups.map(g=>`<button class="chip" aria-pressed="${(d.groups||[]).includes(g.id)}" data-g="${g.id}">${esc(g.name)}</button>`).join("")}</div></div>
-  <div class="row"><div class="f"><label for="efr">Från klockan</label><input type="time" id="efr" value="${d.from||""}"></div><div class="f"><label for="eto">Till klockan</label><input type="time" id="eto" value="${d.to||""}"></div></div>
-  <span class="small muted" style="margin-top:-6px">Lämna tiderna tomma om aktiviteten pågår hela dagen.</span></div>
+</div>
+ <div class="f"><label style="display:flex;gap:8px;align-items:center;cursor:pointer;font-weight:600"><input type="checkbox" id="eall" ${d.from&&d.to?"":"checked"}> Heldag</label></div>
+ <div class="row" id="etime" ${d.from&&d.to?"":"hidden"}><div class="f"><label for="efr">Från klockan</label><input type="time" id="efr" value="${d.from||""}"></div><div class="f"><label for="eto">Till klockan</label><input type="time" id="eto" value="${d.to||""}"></div></div>
  <p class="small" id="eaff" style="margin:0"></p>
  <div class="actions">${e?'<button class="btn danger" id="edel">Ta bort</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="esave">Spara</button></div>`,m=>{
   let groups=[...(d.groups||[])];
-  const draft=()=>{let s=val("es"),en=val("ee")||s;if(en<s)[s,en]=[en,s];return {title:val("et").trim(),start:s,end:en,type:val("ety"),groups:val("ety")==="aktivitet"?groups:[],from:val("ety")==="aktivitet"?val("efr"):"",to:val("ety")==="aktivitet"?val("eto"):""}};
+  const draft=()=>{let s=val("es"),en=val("ee")||s;if(en<s)[s,en]=[en,s];return {title:val("et").trim(),start:s,end:en,type:val("ety"),groups:val("ety")==="aktivitet"?groups:[],from:m.querySelector("#eall").checked?"":val("efr"),to:m.querySelector("#eall").checked?"":val("eto")}};
   const affected=()=>{const o=draft();if(!CANCELS[o.type]||!(state.schedule||[]).length){m.querySelector("#eaff").textContent="";return}
    const tmp=Object.assign({},state,{events:[Object.assign({id:"tmp"},o)],cancel:{}});let n=0;state.courses.forEach(c=>{n+=courseSlots(tmp,c.id,o.start,o.end).filter(x=>x.cancel).length});
    m.querySelector("#eaff").innerHTML=n?`<b>${n} lektion${n>1?"er":""}</b> i ditt schema ställs in.`:"Inga lektioner i ditt schema berörs."};
   const paintG=()=>m.querySelectorAll("#egr [data-g]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.g?groups.includes(b.dataset.g):!groups.length));
   m.querySelector("#egr").onclick=ev=>{const b=ev.target.closest("[data-g]");if(!b)return;const g=b.dataset.g;if(!g)groups=[];else groups=groups.includes(g)?groups.filter(x=>x!==g):groups.concat([g]);paintG();affected()};
   m.querySelector("#ety").onchange=()=>{const t=val("ety");m.querySelector("#eakt").hidden=t!=="aktivitet";m.querySelector("#ehint").textContent=hint[t]||"";affected()};
+  m.querySelector("#eall").onchange=e2=>{m.querySelector("#etime").hidden=e2.target.checked;if(!e2.target.checked)m.querySelector("#efr").focus();affected()};
   ["es","ee","efr","eto"].forEach(x=>m.querySelector("#"+x).addEventListener("change",affected));affected();
   m.querySelector("#esave").onclick=()=>{const o=draft();if(!o.title){$("#et").focus();return}if(e)Object.assign(e,o);else state.events.push(Object.assign({id:uid()},o));closeModal();commit()};
   const del=m.querySelector("#edel");if(del)del.onclick=()=>{state.events=state.events.filter(x=>x!==e);closeModal();commit()}})}
@@ -163,14 +165,16 @@ function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const
  const eca=cr&&cr.levels.includes("E");
  const btns=(sel,attr)=>`<div class="levels">${sc.levels.map((l,i)=>`<button class="lv" style="--h:${hueT(i/(sc.levels.length-1))}" aria-pressed="${sel===l.k}" ${attr} data-k="${l.k}">${esc(l.l)}</button>`).join("")}</div>`;
  const gkBtns=`<div class="levels"><button class="lv" style="--h:140" aria-pressed="${pick==="G"}" data-main="1" data-k="G">Genomfört</button><button class="lv" style="--h:8" aria-pressed="${pick==="EG"}" data-main="1" data-k="EG">Ej genomfört</button></div>`;
- const aspHtml=cr?a.aspects.filter(i=>cr.aspects[i]).map(i=>{const A=cr.aspects[i];const lv=cr.levels.filter(k=>A[k]);
-  return `<div class="cm" data-i="${i}"><div class="cm-h"><span>Kriterium ${a.aspects.indexOf(i)+1}</span><span class="sp"></span><span class="small" data-aspk="${i}"></span></div>
-   <div class="cm-g" style="--n:${lv.length}">${lv.map(k=>`<button class="cm-c" data-cm="${i}" data-lv="${k}" ${asm[i]&&asm[i][k]?`data-m="${asm[i][k]}"`:""}><span class="lvn">${esc(cr.names[k])}</span><span>${critText(A[k])}</span></button>`).join("")}</div>
-   <details style="padding:6px 10px 10px"><summary class="small muted">Sätt betygssteg för kriteriet direkt</summary>${btns(asp[i],`data-asp="${i}"`)}</details></div>`}).join(""):"";
+ const partsOf=i=>critParts(cr.aspects[i],cr.levels);
+ const partRows=(i,interactive,marks)=>{const A=cr.aspects[i];const lv=cr.levels.filter(k=>A[k]);const P=partsOf(i);
+  return P.map((pt,j)=>{const key=P.length>1?i+"."+j:String(i);return `${P.length>1?`<div class="cm-part">Del ${j+1}</div>`:""}<div class="cm-g" style="--n:${lv.length}">${lv.map(k=>{const m=((marks||{})[key]||{})[k];return interactive?`<button class="cm-c" data-cm="${key}" data-ai="${i}" data-lv="${k}" ${m?`data-m="${m}"`:""}><span class="lvn">${esc(cr.names[k])}</span><span>${critText(pt[k]||"")}</span></button>`:`<div class="cm-c" style="cursor:default"><span class="lvn">${esc(cr.names[k])}</span><span>${critText(pt[k]||"")}</span></div>`}).join("")}</div>`}).join("")};
+ const aspHtml=cr?a.aspects.filter(i=>cr.aspects[i]).map(i=>`<div class="cm" data-i="${i}"><div class="cm-h"><span>Kriterium ${a.aspects.indexOf(i)+1}${partsOf(i).length>1?` <span class="small muted" style="font-weight:500">· ${partsOf(i).length} delar</span>`:""}</span><span class="sp"></span><span class="small" data-aspk="${i}"></span></div>
+   ${partRows(i,true,asm)}
+   <details style="padding:6px 10px 10px"><summary class="small muted">Sätt betygssteg för kriteriet direkt</summary>${btns(asp[i],`data-asp="${i}"`)}</details></div>`).join(""):"";
  const pts=a.max?`<div class="f"><label for="gpts">Poäng (av ${esc(String(a.max))})</label><input type="number" id="gpts" min="0" max="${a.max}" step="0.5" value="${cur.p==null?"":cur.p}" style="max-width:140px"></div>`:"";
  modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(a.title)} · ${shortD(a.date)} · ${esc((c||{}).name||"")}${a.type?" · "+esc(ATYPES[a.type]||""):""}</p>
  ${s.note?`<p class="example" style="margin:0;background:var(--info-bg);color:var(--info)"><span><b>Om eleven:</b> ${esc(s.note)}</span></p>`:""}
- ${cr?`<h3 style="margin:0">Kriterier</h3><div class="cm-legend"><span>Tryck på texten: </span><span><i style="background:#fde68a"></i>ett tryck: delvis</span><span><i style="background:#86efac"></i>två: visat</span><span><i style="background:#fca5a5"></i>tre: inte visat</span><span>fyra: rensa</span></div>${aspHtml}<h3 style="margin:0">Samlat omdöme <span class="small muted" id="gsug" style="font-weight:400"></span></h3>`:""}
+ ${cr?`<h3 style="margin:0">Kriterier</h3><div class="cm-legend"><span>Tryck på texten: </span><span><i style="background:#fde68a"></i>ett tryck: delvis</span><span><i style="background:#86efac"></i>två: visat</span><span><i style="background:#fca5a5"></i>tre: inte visat</span><span>fyra: rensa</span></div>${aspHtml}<h3 style="margin:0">Samlat omdöme</h3><p class="small muted" style="margin:-8px 0 0" id="gsug"></p>`:""}
  <div id="gmain">${gk?gkBtns:btns(pick,'data-main="1"')}</div>
  ${pts}
  <div class="f"><label for="gnote">Anteckning till eleven eller dig själv</label><textarea id="gnote" placeholder="Styrkor, nästa steg, anpassningar…">${esc(cur.note||"")}</textarea></div>
@@ -178,12 +182,12 @@ function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const
   const paint=()=>{m.querySelectorAll("[data-main]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.k===pick));m.querySelectorAll("[data-asp]").forEach(x=>x.setAttribute("aria-pressed",asp[x.dataset.asp]===x.dataset.k));
    m.querySelectorAll("[data-cm]").forEach(x=>{const v=(asm[x.dataset.cm]||{})[x.dataset.lv];if(v)x.dataset.m=v;else delete x.dataset.m});
    m.querySelectorAll("[data-aspk]").forEach(x=>{const k=asp[x.dataset.aspk];const l=sc.levels.find(z=>z.k===k);x.innerHTML=l?`Steg: <b>${esc(l.l)}</b>`:""});
-   const sg=m.querySelector("#gsug");if(sg){const ag=aggregateAspects(asp);sg.textContent=ag?(manual?"(förslag utifrån kriterierna: "+(sc.levels.find(z=>z.k===ag)||{}).l+")":"(förslag utifrån kriterierna)"):""}};
-  const reagg=()=>{if(!manual)pick=aggregateAspects(asp)||""};
-  m.querySelectorAll("[data-main]").forEach(b=>b.onclick=()=>{pick=pick===b.dataset.k?"":b.dataset.k;manual=!!pick;if(!pick&&cr){pick=aggregateAspects(asp)||"";manual=false}paint()});
-  m.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{const i=b.dataset.asp;asp[i]=asp[i]===b.dataset.k?undefined:b.dataset.k;if(asp[i]===undefined)delete asp[i];delete asm[i];reagg();paint()});
+   const sg=m.querySelector("#gsug");if(sg){const ag=aggregateAspects(asp);const l=sc.levels.find(z=>z.k===ag);sg.innerHTML=l?`Kriterierna pekar mot <b>${esc(l.l)}</b>. Du sätter det samlade omdömet själv.${pick!==ag?` <button class="btn small" id="guse">Sätt ${esc(l.l)}</button>`:""}`:"Du sätter det samlade omdömet själv.";const gu=m.querySelector("#guse");if(gu)gu.onclick=()=>{pick=ag;manual=true;paint()}}};
+  const reagg=()=>{};
+  m.querySelectorAll("[data-main]").forEach(b=>b.onclick=()=>{pick=pick===b.dataset.k?"":b.dataset.k;manual=true;paint()});
+  m.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{const i=b.dataset.asp;asp[i]=asp[i]===b.dataset.k?undefined:b.dataset.k;if(asp[i]===undefined)delete asp[i];Object.keys(asm).forEach(k=>{if(k===String(i)||k.startsWith(i+"."))delete asm[k]});paint()});
   m.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{const i=b.dataset.cm,k=b.dataset.lv;asm[i]=asm[i]||{};const nx=MARK_NEXT[asm[i][k]||""];if(nx)asm[i][k]=nx;else delete asm[i][k];if(!Object.keys(asm[i]).length)delete asm[i];
-   if(eca){const gr=markToGrade(asm[i],state.scale);if(gr)asp[i]=gr;else delete asp[i]}reagg();paint()});
+   const ai=b.dataset.ai;if(eca){const gr=partsToGrade(asm,ai,partsOf(+ai).length,state.scale);if(gr)asp[ai]=gr;else delete asp[ai]}paint()});
   paint();
   const save=()=>{state.grades[aid]=state.grades[aid]||{};const note=val("gnote").trim();const pv=parseFloat(val("gpts"));const p=isFinite(pv)?pv:null;
    if(pick||note||Object.keys(asp).length||Object.keys(asm).length||p!=null)state.grades[aid][sid]=Object.assign({k:pick,note},Object.keys(asp).length||Object.keys(asm).length?{asp,manual}:{},Object.keys(asm).length?{asm}:{},p!=null?{p}:{});else delete state.grades[aid][sid];commit()};
@@ -191,17 +195,32 @@ function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const
   const nx=m.querySelector("#gnext");if(nx)nx.onclick=()=>{save();gradeModal(aid,next.id)};
   const cl=m.querySelector("#gclr");if(cl)cl.onclick=()=>{delete state.grades[aid][sid];closeModal();commit()}})}
 
+/* ---------- kunskapsmatris per elev: manuell, men hämtar markeringar från uppgifterna ---------- */
+const kmatOf=(gid,sid,cid,create)=>{state.kmat=state.kmat||{};if(!create)return ((state.kmat[gid]||{})[sid]||{})[cid]||{m:{},c:{}};
+ const g=state.kmat[gid]=state.kmat[gid]||{};const st=g[sid]=g[sid]||{};return st[cid]=st[cid]||{m:{},c:{}}};
+function kmatHtml(gid,sid,cid){const c=course(cid);const cr=c&&critFor(c.subjectId);if(!cr)return "";const km=kmatOf(gid,sid,cid);const dv=derivedMarks(state,cid,sid,cr);
+ const lv=cr.levels;const rows=cr.aspects.map((A,i)=>{const P=critParts(A,lv);
+  return `<tr class="km-main"><td colspan="${lv.length+1}">Kriterium ${i+1}${P.length>1?` · ${P.length} delar`:""}</td></tr>`+P.map((pt,j)=>{const key=P.length>1?i+"."+j:String(i);
+   return `<tr>${lv.map(k=>{const man=(km.m[key]||{})[k];const au=(dv[key]||{})[k];const m=man||(au&&au.m);return `<td><button class="cm-c ${!man&&au?"auto":""}" data-km="${key}" data-lv="${k}" ${m?`data-m="${m}"`:""} title="${!man&&au?esc("Från uppgiften "+au.from+" ("+shortD(au.date)+"). Tryck för att ändra själv."):man?"Satt för hand":""}"><span class="lvn">${esc(cr.names[k])}${P.length>1?" · del "+(j+1):""}</span><span>${critText(pt[k]||"")}</span>${!man&&au?`<span class="src">från ${esc(au.from)}</span>`:""}</button></td>`}).join("")}<td><textarea data-kc="${key}" placeholder="Kommentar">${esc((km.c||{})[key]||"")}</textarea></td></tr>`}).join("")}).join("");
+ return `<div class="evid" style="gap:6px"><b class="small">Kunskapsmatris</b><span class="small muted">Rutor med ränder kommer från bedömda uppgifter. Tryck för att ändra för hand: gult delvis, grönt visat, rött inte visat. Ett fjärde tryck går tillbaka till uppgifternas markering.</span>
+  <div class="km-wrap" data-kcid="${cid}"><table class="km"><colgroup>${lv.map(()=>"<col>").join("")}<col style="width:22%"></colgroup><thead><tr>${lv.map(k=>`<th>${esc(cr.names[k])}</th>`).join("")}<th>Kommentar</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
+function bindKmat(m,gid,sid){m.querySelectorAll(".km-wrap").forEach(w=>{const cid=w.dataset.kcid;const cr=critFor(course(cid).subjectId);
+ w.addEventListener("click",e=>{const b=e.target.closest("[data-km]");if(!b||READONLY)return;const km=kmatOf(gid,sid,cid,true);const key=b.dataset.km,k=b.dataset.lv;const row=km.m[key]=km.m[key]||{};
+  const nx={undefined:"y",y:"g",g:"r",r:undefined}[row[k]];if(nx)row[k]=nx;else delete row[k];if(!Object.keys(row).length)delete km.m[key];
+  const au=(derivedMarks(state,cid,sid,cr)[key]||{})[k];const shown=row[k]||(au&&au.m);if(shown)b.dataset.m=shown;else delete b.dataset.m;b.classList.toggle("auto",!row[k]&&!!au);
+  const src=b.querySelector(".src");if(src)src.hidden=!!row[k];commit()});
+ w.addEventListener("change",e=>{const t=e.target.closest("[data-kc]");if(!t||READONLY)return;const km=kmatOf(gid,sid,cid,true);const v=t.value.trim();if(v)km.c[t.dataset.kc]=v;else delete km.c[t.dataset.kc];commit()})})}
 function studentModal(gid,sid){const g=group(gid);const s=g&&g.students.find(x=>x.id===sid);if(!s)return;
  const as=state.assessments.filter(a=>a.groupId===gid).sort((a,b)=>a.date<b.date?-1:1);const byC={};as.forEach(a=>(byC[a.courseId]=byC[a.courseId]||[]).push(a));const sc=scale();
+ state.courses.filter(c=>c.groupId===gid).forEach(c=>{byC[c.id]=byC[c.id]||[]});
  const body=Object.entries(byC).map(([cid,list])=>{const c=course(cid)||{name:"Okänd kurs"};const sm=studentSummary(gid,sid,cid);const mk=sm.m==null?null:sc.levels[sm.m];
   return `<div><div class="area-h"><span class="dot" style="background:${c.color}"></span><h3>${esc(c.name)}</h3><span class="sp" style="flex:1"></span><span class="small">Typnivå <b class="${mk&&mk.low?"lowtag":""}">${mk?esc(mk.l):"–"}</b></span></div>
-  ${(()=>{const cr=critFor((course(cid)||{}).subjectId);const ev=aspectEvidence(state,cid,sid);const ks=Object.keys(ev);if(!cr||!ks.length)return "";
-    return `<div class="evid"><b class="small">Underlag per kriterium</b>${ks.sort((x,y)=>x-y).map(i=>{const e=ev[i];const t=lvT(e.k);return `<div class="evrow"><span class="small">${critText(aspectLabel(cr.aspects[i]||{}))}</span><span class="cell g" style="width:auto;min-width:44px;border-radius:8px;--h:${hueT(t)}">${esc(e.k)}</span><span class="small muted">${e.n} st</span></div>`}).join("")}</div>`})()}
+  ${kmatHtml(gid,sid,cid)}
   <div class="list">${list.map(a=>{const v=(state.grades[a.id]||{})[sid];const t=v?gradeT(v.k):null;return `<div class="li"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b>${v&&v.note?`<br><span class="small muted">${esc(v.note)}</span>`:""}</span><button class="cell ${t!=null?"g":""}" style="width:auto;min-width:52px;border-radius:8px;${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${sid}">${v&&v.k?esc(v.k):'<span class="muted small">Ej bedömt</span>'}${v&&v.p!=null?` <span class="small">${v.p}${a.max?"/"+a.max:""}p</span>`:""}</button></div>`}).join("")}</div></div>`}).join("");
  const all=studentSummary(gid,sid,"all");
  modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)} · ${all.count} omdömen · ${all.low} under godtagbar nivå · ${all.missing} saknas</p>
  <div class="f"><label for="snote">Om eleven</label><textarea id="snote" placeholder="T.ex. anpassningar, stöd, sådant du vill komma ihåg">${esc(s.note||"")}</textarea><span class="small muted">Visas när du bedömer eleven. Skriv bara det du behöver i undervisningen. Känsliga uppgifter, t.ex. diagnoser, hör hemma i skolans system för elevhälsa.</span>${READONLY?"":`<button class="btn small" id="snsave" style="align-self:flex-start;margin-top:4px">Spara anteckningen</button>`}</div>
- ${body||'<div class="empty">Inga bedömningar ännu.</div>'}`,m=>{const b=m.querySelector("#snsave");if(b)b.onclick=()=>{const v=val("snote").trim();if(v)s.note=v;else delete s.note;commit();toast("Anteckningen är sparad.")}})}
+ ${body||'<div class="empty">Inga bedömningar ännu.</div>'}`,m=>{m.classList.add("wide");bindKmat(m,gid,sid);const b=m.querySelector("#snsave");if(b)b.onclick=()=>{const v=val("snote").trim();if(v)s.note=v;else delete s.note;commit();toast("Anteckningen är sparad.")}})}
 
 function subjectModal(){modal("Eget ämne",`<div class="row"><div class="f"><label for="sn">Ämne</label><input id="sn" placeholder="t.ex. Bild"></div><div class="f"><label for="sst">Stadium</label><input id="sst" placeholder="t.ex. åk 7–9"></div></div>
  <div class="f"><label for="sc">Centralt innehåll</label><textarea id="sc" style="min-height:220px" placeholder="# Bildframställning&#10;Framställning av berättande och informativa bilder&#10;Tekniker för teckning och måleri&#10;# Redskap för bildframställning&#10;..."></textarea><span class="small muted">Rader som börjar med # blir kunskapsområden. Övriga rader blir punkter. Kopiera gärna från kursplanen på skolverket.se.</span></div>
