@@ -16,7 +16,9 @@ const shortD=s=>{const d=parseD(s);return d.getDate()+" "+MON[d.getMonth()]};
 const wkRange=(a,b)=>{const wa=isoWeek(parseD(a)),wb=isoWeek(parseD(b));return wa===wb?"v."+wa:"v."+wa+"–"+wb};
 const TODAY=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
 const COLORS=["#2f6db3","#c46a2f","#2f8f62","#8a4fa8","#b8465f","#6a8a1f","#1f8ca3","#a07a1c"];
-const STATUS={planerad:"Planerad",pagar:"Pågår",klar:"Genomförd"};
+const STATUS={planerad:"Planerad",pagar:"Pågår",klar:"Genomförd",bedomd:"Genomförd och bedömd"};
+const ATYPES={prov:"Prov",inlamning:"Skriftlig inlämning",redovisning:"Redovisning",muntligt:"Muntlig uppgift",laboration:"Laboration",projekt:"Projekt",diagnos:"Diagnos",np:"Nationellt prov",halvkurs:"Halvkursprov",annat:"Annat"};
+const AMODES={betyg:"Betygssteg",gk:"Genomfört / ej genomfört"};
 const ICON={
  oversikt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
  planering:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h5M7 17h9"/></svg>',

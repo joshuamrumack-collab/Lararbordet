@@ -38,7 +38,7 @@ const A={
  "bar-save":()=>barSave(),
  unmine:el=>{state.mine=state.mine.filter(x=>x!==el.dataset.id);commit()},
  "sel-course":el=>{ui.course=el.dataset.id;saveUI();render()},
- "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
+ "bar-hide":()=>{BAR_HIDDEN=true;updateBar();toast("Rutan visas inte mer i dag. Kom ihåg att spara med Spara eller Ctrl/Cmd+S.")}, "import-cal":()=>importCalModal(), how:()=>howModal(), results:()=>resultsModal(), cview:el=>{ui.cview=el.dataset.v;saveUI();render()}, "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
  "new-unit":()=>unitModal(), "edit-unit":el=>unitModal(el.dataset.id),
  wheel:el=>{ui.wheel=el.dataset.id;saveUI();render()},
  wheelmode:el=>{ui.wheelMode=el.dataset.v;render()},

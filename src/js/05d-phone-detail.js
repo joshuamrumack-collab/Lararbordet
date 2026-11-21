@@ -37,7 +37,7 @@ function dLesson(id,occ){const l=(state.lessons||[]).find(x=>x.id===id);if(!l)re
 function dUnit(id){const u=unit(id);if(!u)return "";const c=course(u.courseId)||{};const k=unitCapacity(state,u);const ls=lessonsOf(u.id);const as=state.assessments.filter(a=>a.unitId===u.id);
  const s=subj(c.subjectId);const items=s?s.areas.flatMap(a=>a.items.filter(i=>(u.contentIds||[]).includes(i.id)).map(i=>({i,a}))):[];
  return `<header class="p-hero" style="--cc:${c.color}"><span class="p-label">${esc(c.name||"")}</span><span class="p-date">${esc(u.title)}</span><span class="p-week">${wkRange(u.start,u.end)} · ${shortD(u.start)} – ${shortD(u.end)}</span></header>
- <div class="p-pill ${u.status==="klar"?"ok":u.status==="pagar"?"info":""}">${STATUS[u.status]}</div>
+ <div class="p-pill ${(u.status==="klar"||u.status==="bedomd")?"ok":u.status==="pagar"?"info":""}">${STATUS[u.status]}</div>
  ${u.desc?`<div class="p-card"><p>${esc(u.desc).replace(/\n/g,"<br>")}</p></div>`:""}
  ${k?`<div class="p-stats"><div><b>${k.available}</b><span>lektioner enligt schemat</span></div><div><b>${k.cancelled}</b><span>inställda</span></div><div><b>${ls.length}</b><span>planerade</span></div><div><b>${ls.filter(l=>l.done).length}</b><span>genomförda</span></div></div>`:""}
  ${pSec(`Lektioner (${ls.length})`,ls.length?ls.map(lessonRow).join(""):`<p class="p-empty">Inga lektioner planerade.</p>`)}

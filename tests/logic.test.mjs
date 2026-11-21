@@ -184,3 +184,44 @@ test("nytt läsår tar med schemat till de nya kurserna", () => {
   assert.ok(run('ny.events.filter(e=>e.type==="aktivitet").every(e=>e.groups.every(g=>ny.groups.some(x=>x.id===g)))'));
   assert.deepEqual(run("ny.cancel"), {});
 });
+
+test("kriteriematris ger betygssteg", () => {
+  const run = load();
+  assert.equal(run('markToGrade({})'), null);
+  assert.equal(run('markToGrade({E:"g"})'), "E");
+  assert.equal(run('markToGrade({E:"g",C:"y"})'), "D");
+  assert.equal(run('markToGrade({E:"g",C:"g"})'), "C");
+  assert.equal(run('markToGrade({E:"g",C:"g",A:"y"})'), "B");
+  assert.equal(run('markToGrade({E:"g",C:"g",A:"g"})'), "A");
+  assert.equal(run('markToGrade({E:"r"})'), "F");
+  assert.equal(run('markToGrade({E:"y"})'), "F");
+  assert.equal(run('markToGrade({E:"y"},"lokal")'), "2");
+  assert.equal(run('markToGrade({E:"g",C:"g"},"lokal")'), "4");
+});
+
+test("täckning räknar bedömda arbetsområden och antal prov", () => {
+  const run = load();
+  run('unit("u6").status="bedomd"');
+  const id = run('unit("u6").contentIds[0]');
+  assert.equal(run(`coverage("GRGRMAT01/7-9","all")["${id}"].state`), "covered");
+  assert.equal(run(`coverage("GRGRMAT01/7-9","all")["${id}"].assessed`), true);
+  assert.ok(Array.isArray(run(`coverage("GRGRMAT01/7-9","all")["${id}"].tests`)));
+});
+
+test("kalendarium från inklistrade Excel-rader", () => {
+  const run = load();
+  const rows = run(`parseCalendarRows("Datum\\tSlut\\tNamn\\tTyp\\n2026-10-26\\t2026-10-30\\tHöstlov\\n3/12/2026\\t\\tFriluftsdag\\n2027-01-08;;Studiedag\\n15.1\\t\\tUtvecklingssamtal\\tHändelse",2027)`);
+  assert.equal(rows.length, 4);
+  assert.deepEqual(rows[0], { title: "Höstlov", start: "2026-10-26", end: "2026-10-30", type: "lov" });
+  assert.equal(rows[1].start, "2026-12-03");
+  assert.equal(rows[1].type, "aktivitet");
+  assert.equal(rows[2].type, "studiedag");
+  assert.equal(rows[3].start, "2027-01-15");
+  assert.equal(rows[3].type, "annat");
+  const n = run("state.events.length");
+  const r1 = run(`mergeEvents(state,parseCalendarRows("2030-01-01\\tTestdag\\tStudiedag"))`);
+  assert.deepEqual(r1, { added: 1, updated: 0 });
+  const r2 = run(`mergeEvents(state,parseCalendarRows("2030-01-01\\t2030-01-02\\tTestdag\\tStudiedag"))`);
+  assert.deepEqual(r2, { added: 0, updated: 1 });
+  assert.equal(run("state.events.length"), n + 1);
+});

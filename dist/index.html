@@ -242,7 +242,7 @@ select.inline{border:1px solid var(--line);background:var(--surface);border-radi
 .evrow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
 
 /* läsåret: band, månader, veckor */
-.wheel .rlabel{fill:var(--muted);font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:4px}
+.wheel .rlabel{fill:var(--ink);font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:5px;stroke-linejoin:round}
 .band-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
 .band{min-width:820px}
 .band-row{display:grid;grid-template-columns:130px 1fr;border-bottom:1px solid var(--line)}
@@ -304,7 +304,7 @@ select.inline{border:1px solid var(--line);background:var(--surface);border-radi
 .cstat-h .sp{flex:1}
 
 /* läsläge: dölj knappar som skapar eller raderar */
-body.ro [data-a^="new-"],body.ro [data-a="wipe"],body.ro [data-a="save-as"],body.ro [data-a="download-latest"],body.ro [data-a="import-course"],body.ro [data-a="import-json"],body.ro [data-a="load-example"],body.ro [data-a="picker"],body.ro #savebar .btn.pri[data-a="bar-save"]{display:none}
+body.ro [data-a^="new-"],body.ro [data-a="wipe"],body.ro [data-a="save-as"],body.ro [data-a="download-latest"],body.ro [data-a="import-course"],body.ro [data-a="import-json"],body.ro [data-a="import-cal"],body.ro [data-a="load-example"],body.ro [data-a="picker"],body.ro #savebar .btn.pri[data-a="bar-save"]{display:none}
 .occ-t,.slot .occ-t,.lesson .small{font-family:var(--display);font-variant-numeric:tabular-nums}
 
 /* guide */
@@ -315,7 +315,7 @@ body.ro [data-a^="new-"],body.ro [data-a="wipe"],body.ro [data-a="save-as"],body
 /* telefonvy */
 body.phone main{max-width:560px;gap:10px;padding-top:12px}
 body.phone header.top .sync{display:none}
-body.phone .hdrgear{display:none!important}
+body.phone .hdrgear{display:inline-flex!important}
 body.phone nav.tabs{position:fixed;top:auto;bottom:0;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
 body.phone nav.tabs a{flex:1;flex-direction:column;font-size:.74rem;gap:2px;padding:6px 2px}
 body.phone nav.tabs a svg{width:24px;height:24px}
@@ -407,6 +407,47 @@ button.evtag{border:0;font:inherit;font-size:.82rem;padding:6px 12px;cursor:poin
 .p-det p b,.p-det summary b,.p-card p b{font-family:inherit;font-size:inherit;font-weight:800}
 .p-upd{border:2px solid var(--accent);background:var(--info-bg)}
 .p-upd .p-big{margin-top:10px}
+/* ---- 1.8: feedback ---- */
+[hidden]{display:none!important}
+#savebar .x{background:none;border:0;color:inherit;font-size:1.3rem;line-height:1;cursor:pointer;padding:4px 6px;opacity:.75}
+#savebar .x:hover{opacity:1}
+.occ-p{font-size:.76rem;color:var(--muted);white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-align:left}
+.lesson .occ-p{margin-top:2px}
+.p-bedomd{background:var(--ok-bg);color:var(--ok);box-shadow:inset 0 0 0 1px var(--ok)}
+.swatches .cpick{width:32px;height:32px;border-radius:50%;border:2px dashed var(--line);padding:0;cursor:pointer;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);overflow:hidden}
+.swatches .cpick::-webkit-color-swatch-wrapper{padding:0}.swatches .cpick::-webkit-color-swatch{border:0;opacity:0}
+.shades{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.shades .sw{width:26px;height:26px}
+/* kriteriematris (som i Vklass): ett klick gult, två grönt, tre rött */
+.cm{border:2px solid var(--ink);border-radius:10px;overflow:hidden;display:grid}
+.cm+.cm{margin-top:10px}
+.cm-h{padding:8px 10px;font-size:.85rem;font-weight:700;background:var(--soft);display:flex;gap:8px;align-items:center}
+.cm-h .sp{flex:1}
+.cm-g{display:grid;grid-template-columns:repeat(var(--n),1fr)}
+.cm-c{border:0;border-top:1px solid var(--line);border-left:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:left;padding:8px;font:inherit;font-size:.82rem;line-height:1.4;cursor:pointer;display:grid;gap:4px;align-content:start}
+.cm-c:first-child{border-left:0}
+.cm-c b{font:inherit;font-weight:700}
+.cm-c .lvn{font-weight:800;font-size:.75rem;color:var(--muted)}
+.cm-c[data-m="y"]{background:#fde68a;color:#3b2f00}
+.cm-c[data-m="g"]{background:#86efac;color:#06301a}
+.cm-c[data-m="r"]{background:#fca5a5;color:#3d0808}
+.cm-c[data-m] .lvn{color:inherit}
+@media (max-width:640px){.cm-g{grid-template-columns:1fr}.cm-c{border-left:0}}
+.cm-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+.cm-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+.crit-list{display:grid;gap:10px}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--soft);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);vertical-align:1px}
+.helpbox{border-left:4px solid var(--info);background:var(--info-bg);color:var(--ink);border-radius:8px;padding:10px 12px;font-size:.88rem;line-height:1.5}
+.helpbox b{color:var(--info)}
+.helpbox ul{margin:6px 0 0;padding-left:18px}
+.res-t{width:100%;border-collapse:collapse;font-size:.88rem}
+.res-t th,.res-t td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center}
+.res-t th:first-child,.res-t td:first-child{text-align:left}
+.res-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--soft);min-width:120px}
+.res-bar i{display:block;height:100%}
+.wheel-leg{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;font-size:.8rem;margin-top:6px}
+.wheel-leg span{display:inline-flex;gap:5px;align-items:center}
+body.phone .hdrgear{margin-left:auto}
 
 </style>
 </head>
@@ -431,7 +472,7 @@ button.evtag{border:0;font:inherit;font-size:.82rem;padding:6px 12px;cursor:poin
 "use strict";
 /* ===== 01-helpers.js ===== */
 /* ---------- hjälpfunktioner ---------- */
-const APP_VERSION="1.7.1";
+const APP_VERSION="1.8.0";
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -448,7 +489,9 @@ const shortD=s=>{const d=parseD(s);return d.getDate()+" "+MON[d.getMonth()]};
 const wkRange=(a,b)=>{const wa=isoWeek(parseD(a)),wb=isoWeek(parseD(b));return wa===wb?"v."+wa:"v."+wa+"–"+wb};
 const TODAY=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
 const COLORS=["#2f6db3","#c46a2f","#2f8f62","#8a4fa8","#b8465f","#6a8a1f","#1f8ca3","#a07a1c"];
-const STATUS={planerad:"Planerad",pagar:"Pågår",klar:"Genomförd"};
+const STATUS={planerad:"Planerad",pagar:"Pågår",klar:"Genomförd",bedomd:"Genomförd och bedömd"};
+const ATYPES={prov:"Prov",inlamning:"Skriftlig inlämning",redovisning:"Redovisning",muntligt:"Muntlig uppgift",laboration:"Laboration",projekt:"Projekt",diagnos:"Diagnos",np:"Nationellt prov",halvkurs:"Halvkursprov",annat:"Annat"};
+const AMODES={betyg:"Betygssteg",gk:"Genomfört / ej genomfört"};
 const ICON={
  oversikt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
  planering:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M7 13h5M7 17h9"/></svg>',
@@ -486,12 +529,14 @@ const formOf=id=>{const x=subj(id);return x?(x.form||"X"):"X"};
 /* ===== 03-model.js ===== */
 /* ---------- bedömningsskalor ---------- */
 const SCALES={
- af:{name:"A–F (betygsstegen i Lgr22)",levels:[{k:"F",l:"F",low:1},{k:"E",l:"E"},{k:"D",l:"D"},{k:"C",l:"C"},{k:"B",l:"B"},{k:"A",l:"A"}]},
+ af:{name:"A–F (betygsstegen)",levels:[{k:"F",l:"F",low:1},{k:"E",l:"E"},{k:"D",l:"D"},{k:"C",l:"C"},{k:"B",l:"B"},{k:"A",l:"A"}]},
  lokal:{name:"Lokal femgradig skala",levels:[{k:"1",l:"Ej visat",low:1},{k:"2",l:"På väg",low:1},{k:"3",l:"Godtagbart"},{k:"4",l:"Väl godtagbart"},{k:"5",l:"Mycket väl godtagbart"}]}
 };
 const scale=()=>SCALES[state.scale]||SCALES.af;
 const lvIdx=k=>scale().levels.findIndex(l=>l.k===k);
 const lvT=k=>{const i=lvIdx(k);return i<0?null:i/(scale().levels.length-1)};
+const gradeT=k=>k==="G"?1:k==="EG"?0:lvT(k);
+const gradeL=k=>k==="G"?"G":k==="EG"?"EG":k;
 const hueT=t=>Math.round(8+t*132);
 const isLow=k=>{const l=scale().levels.find(x=>x.k===k);return !!(l&&l.low)};
 function median(arr){if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);return s[Math.floor((s.length-1)/2)]}
@@ -571,11 +616,11 @@ const unit=id=>state.units.find(u=>u.id===id);
 const group=id=>state.groups.find(g=>g.id===id);
 const allItems=sid=>{const s=subj(sid);return s?s.areas.flatMap(a=>a.items):[]};
 function coverage(sid,courseFilter){
- const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,manual:!!state.manual[i.id]});
- const rank={gap:0,planned:1,ongoing:2,covered:3};const map={planerad:"planned",pagar:"ongoing",klar:"covered"};
+ const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,tests:[],manual:!!state.manual[i.id]});
+ const rank={gap:0,planned:1,ongoing:2,covered:3};const map={planerad:"planned",pagar:"ongoing",klar:"covered",bedomd:"covered"};
  const cs=state.courses.filter(c=>c.subjectId===sid&&(courseFilter==="all"||!courseFilter||c.id===courseFilter)).map(c=>c.id);
- state.units.filter(u=>cs.includes(u.courseId)).forEach(u=>(u.contentIds||[]).forEach(id=>{const r=res[id];if(!r)return;r.units.push(u);const st=map[u.status]||"planned";if(rank[st]>rank[r.state])r.state=st}));
- state.assessments.filter(a=>cs.includes(a.courseId)).forEach(a=>{const u=unit(a.unitId);(u?u.contentIds:[]).forEach(id=>{if(res[id])res[id].assessed=true})});
+ state.units.filter(u=>cs.includes(u.courseId)).forEach(u=>(u.contentIds||[]).forEach(id=>{const r=res[id];if(!r)return;r.units.push(u);if(u.status==="bedomd")r.assessed=true;const st=map[u.status]||"planned";if(rank[st]>rank[r.state])r.state=st}));
+ state.assessments.filter(a=>cs.includes(a.courseId)).forEach(a=>{const u=unit(a.unitId);(u?u.contentIds||[]:[]).concat(a.contentIds||[]).forEach(id=>{if(res[id]){res[id].assessed=true;if(!res[id].tests.includes(a))res[id].tests.push(a)}})});
  Object.values(res).forEach(r=>{if(r.manual)r.state="covered"});
  return res}
 function covSummary(sid,cf){const c=coverage(sid,cf);const v=Object.values(c);const n=v.length||1;const k=s=>v.filter(x=>x.state===s).length;return {n:v.length,covered:k("covered"),ongoing:k("ongoing"),planned:k("planned"),gap:k("gap"),pct:Math.round(k("covered")/n*100)}}
@@ -661,6 +706,13 @@ function critFor(planId){const r=PLAN[planId];if(!r)return null;let all;try{all=
  const n=Math.max(...order.map(k=>set[k].length));const aspects=[];for(let i=0;i<n;i++){const o={};order.forEach(k=>o[k]=set[k][i]||"");aspects.push(o)}
  const names={E:"E",C:"C",A:"A",G:"Grundläggande",F:"Fördjupade"};
  return {levels:order,names,aspects,year:r.f.id.startsWith("GR")?(planId.split("/")[1]||"").split("-").pop():null}}
+/* Kriteriematris (Vklass-stil): markeringar per nivå, "y" delvis (gult), "g" uppnått (grönt), "r" inte uppnått (rött).
+   Ger ett betygssteg för aspekten: A grönt = A, C grönt + A gult = B, C grönt = C, E grönt + C gult = D, E grönt = E, annars F. */
+function markToGrade(m,scaleKey){m=m||{};const has=Object.values(m).some(Boolean);if(!has)return null;
+ const g=k=>m[k]==="g",y=k=>m[k]==="y";let step;
+ if(g("A"))step=5;else if(g("C")&&y("A"))step=4;else if(g("C"))step=3;else if(g("E")&&y("C"))step=2;else if(g("E"))step=1;else step=0;
+ if(scaleKey==="lokal")return String([y("E")?2:1,3,4,4,5,5][step]);
+ return ["F","E","D","C","B","A"][step]}
 /* Ett kort namn på en aspekt: början av E-texten */
 function aspectLabel(asp){const t=String(asp.E||asp.G||Object.values(asp)[0]||"").replace(/\*/g,"");return t.length>110?t.slice(0,107).replace(/\s+\S*$/,"")+"…":t}
 /* Samlat omdöme ur aspektomdömen: medianen på skalan */
@@ -705,6 +757,29 @@ function reflowLessons(s,unitId){const u=s.units.find(x=>x.id===unitId);if(!u||!
  const free=scheduleDates(s,u.courseId,pend[0].date,s.year.end).filter(x=>!taken.has(x.date+"|"+x.time));let moved=0;
  pend.forEach((l,i)=>{const f=free[i];if(!f)return;if(l.date!==f.date||l.time!==f.time){l.date=f.date;l.time=f.time;moved++}});return moved}
 
+/* ----- kalendarium från Excel: klistra in rader (eller CSV) med datum, slutdatum, namn, typ ----- */
+function parseDateLoose(t,yearHint){t=String(t||"").trim();if(!t)return null;let m;
+ if(m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))return fmtD(new Date(+m[1],+m[2]-1,+m[3]));
+ if(m=t.match(/^(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?$/)){let y=m[3]?+m[3]:yearHint;if(y<100)y+=2000;if(!y)return null;return fmtD(new Date(y,+m[2]-1,+m[1]))}
+ if(m=t.match(/^(\d{5})$/)){const d=new Date(Date.UTC(1899,11,30)+(+m[1])*864e5);return fmtD(new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()))}
+ return null}
+function guessType(name,typ){const t=(String(typ||"")+" "+String(name||"")).toLowerCase();
+ if(/studiedag|kompetensutveckl|planeringsdag|\bapt\b/.test(t))return "studiedag";
+ if(/\blov\b|lov$|lovet|sommarlov|jullov|sportlov|påsklov|höstlov|ledig|klämdag|röd dag/.test(t))return "lov";
+ if(/deadline|sista dag|inlämning/.test(t))return "deadline";
+ if(/aktivitet|friluftsdag|prao|temadag|utflykt|idrottsdag/.test(t))return "aktivitet";
+ return "annat"}
+function parseCalendarRows(text,yearHint){const out=[];const lines=String(text||"").split(/\r?\n/).filter(l=>l.trim());
+ for(const line of lines){const sep=line.includes("\t")?"\t":line.includes(";")?";":",";const c=line.split(sep).map(x=>x.trim().replace(/^"|"$/g,""));
+  const dates=[];const rest=[];c.forEach(x=>{const d=parseDateLoose(x,yearHint);if(d&&dates.length<2)dates.push(d);else if(x)rest.push(x)});
+  if(!dates.length)continue;const title=rest[0]||"Händelse";const typ=rest[1]||"";let [a,b]=dates;if(!b)b=a;if(b<a)[a,b]=[b,a];
+  const type=Object.keys(EVENT_TYPES).find(k=>EVENT_TYPES[k].toLowerCase()===typ.toLowerCase())||guessType(title,typ);
+  out.push({title,start:a,end:b,type})}
+ return out}
+/* lägger till nya och uppdaterar befintliga (samma namn och startdatum) */
+function mergeEvents(s,rows){let added=0,updated=0;rows.forEach(r=>{const e=s.events.find(x=>x.title.toLowerCase()===r.title.toLowerCase()&&x.start===r.start);
+  if(e){if(e.end!==r.end||e.type!==r.type){e.end=r.end;e.type=r.type;updated++}}else{s.events.push({id:uid(),title:r.title,start:r.start,end:r.end,type:r.type,groups:[],from:"",to:""});added++}});return {added,updated}}
+
 /* ===== 04-storage.js ===== */
 /* ---------- lagring ----------
    Två lägen med samma kod:
@@ -719,13 +794,15 @@ let state=null;
 if(!DESKTOP){try{const raw=document.getElementById("pbdata").textContent.trim();if(raw&&raw!=="null"&&raw!==TOK)state=normalize(JSON.parse(raw))}catch(e){}}
 let FIRST=!state;
 if(!state)state=exampleState();
-let ui=Object.assign({course:null,subject:"sv",subjFilter:"all",gapsOnly:false,group:null,acourse:"all",wheel:"all"},state.ui||{});
+/* filter som bara gäller stunden sparas inte i filen, så att "Allt" alltid är förvalt nästa gång */
+const uiToSave=()=>{const o=Object.assign({},ui);delete o.gapsOnly;delete o.fullApp;return o};
+let ui=Object.assign({course:null,subject:"sv",subjFilter:"all",gapsOnly:false,group:null,acourse:"all",wheel:"all"},state.ui||{});ui.gapsOnly=false;
 const saveUI=()=>{};
 let fileHandle=null,filePath=null,dirty=false,savedAt=null,saveT=null,saving=false,syncMode="clean";
 const canPick=typeof window.showSaveFilePicker==="function";
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
 /* läs data ur en exporterad .json eller ur en sparad lararbordet.html */
-function buildHTML(){state.ui=ui;const json=JSON.stringify(state).replace(/</g,"\\u003c");return TEMPLATE.replace(TOK,()=>json)}
+function buildHTML(){state.ui=uiToSave();const json=JSON.stringify(state).replace(/</g,"\\u003c");return TEMPLATE.replace(TOK,()=>json)}
 function setSync(m){if(m)syncMode=m;const el=$("#sync");if(!el)return;const hh=d=>String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
  let t,c="";
  if(READONLY){el.textContent="Läsläge";el.className="sync";el.title=RO_NAME;updateBar();return}
@@ -746,17 +823,18 @@ const IDB={open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("lar
  async set(k,v){const db=await this.open();return new Promise(res=>{const t=db.transaction("h","readwrite").objectStore("h").put(v,k);t.onsuccess=()=>res();t.onerror=()=>res()})}};
 if(!DESKTOP&&canPick){IDB.get(HKEY).then(h=>{storedHandle=h;updateBar()}).catch(()=>{})}
 function updateBar(){const b=document.getElementById("savebar");if(!b)return;
- if(DESKTOP||READONLY||!dirty||saving||fileHandle){b.hidden=true;return}
+ if(DESKTOP||READONLY||!dirty||saving||fileHandle||BAR_HIDDEN){b.hidden=true;return}
  let msg,btn;
  if(canPick&&storedHandle){msg=`Du har ändringar som inte är sparade. Spara dem i <b>${esc(storedHandle.name)}</b>?`;btn="Spara i filen"}
  else if(canPick){msg=`Du har ändringar som inte är sparade. Välj <b>${esc(FILENAME)}</b> för att spara direkt i filen. Sedan sparas allt automatiskt.`;btn="Spara i filen…"}
  else{msg=`Du har ändringar som inte är sparade. Ladda ner den uppdaterade filen och ersätt den gamla med den.`;btn="Ladda ner filen"}
- b.innerHTML=`<span>${msg}</span><button class="btn pri" data-a="bar-save">${btn}</button>`;b.hidden=false}
+ b.innerHTML=`<span>${msg}</span><button class="btn pri" data-a="bar-save">${btn}</button><button class="x" data-a="bar-hide" aria-label="Stäng rutan" title="Stäng. Du kan spara senare med Spara uppe till höger eller Ctrl/Cmd+S.">×</button>`;b.hidden=false}
+let BAR_HIDDEN=false;
 async function barSave(){if(canPick&&storedHandle&&!fileHandle){try{const st=await storedHandle.requestPermission({mode:"readwrite"});if(st==="granted")fileHandle=storedHandle}catch(e){}}saveFile(false)}
 async function tryStored(){if(fileHandle||!storedHandle)return false;try{if((await storedHandle.queryPermission({mode:"readwrite"}))==="granted"){fileHandle=storedHandle;return true}}catch(e){}return false}
 /* ---------- läsläge (t.ex. i telefonen): visar en fil men sparar aldrig något ---------- */
 let READONLY=false,RO_SNAP=null,RO_NAME="";
-function openReadOnly(text,name){const d=parsePlanbok(text);READONLY=true;RO_SNAP=JSON.stringify(d);RO_NAME=name||"";state=d;ui=Object.assign(ui,d.ui||{});dirty=false;document.body.classList.add("ro");closeModal();PH={course:null,student:null,group:null,week:0,open:{},nav:[],tab:"idag"};location.hash=isPhone()?"idag":"oversikt";render();setSync()}
+function openReadOnly(text,name){const d=parsePlanbok(text);READONLY=true;RO_SNAP=JSON.stringify(d);RO_NAME=name||"";state=d;ui=Object.assign(ui,d.ui||{});ui.gapsOnly=false;dirty=false;document.body.classList.add("ro");closeModal();PH={course:null,student:null,group:null,week:0,open:{},nav:[],tab:"idag"};location.hash=isPhone()?"idag":"oversikt";render();setSync()}
 async function pickReadOnlyApp(){try{const p=await T.dialog.open({multiple:false,directory:false});if(!p)return true;const path=typeof p==="string"?p:p.path;openReadOnly(await T.fs.readTextFile(path),decodeURIComponent(String(path).split(/[\/]/).pop()||"fil"));return true}catch(e){return false}}
 function pickReadOnly(){if(IS_MOBILE_APP){pickReadOnlyApp().then(ok=>{if(!ok)pickReadOnlyInput()});return}pickReadOnlyInput()}
 function pickReadOnlyInput(){const inp=document.createElement("input");inp.type="file";inp.accept=".json,.html,application/json,text/html";
@@ -769,20 +847,20 @@ function downloadBlob(name,data,mime){const url=URL.createObjectURL(new Blob([da
 
 /* skrivbordsläge */
 async function rememberPath(p){try{const d=await T.path.appConfigDir();await T.fs.mkdir(d,{recursive:true});await T.fs.writeTextFile(await T.path.join(d,"senaste-fil.txt"),p)}catch(e){}}
-async function desktopWrite(force){state.ui=ui;const dir=await T.path.dirname(filePath);await T.fs.mkdir(dir,{recursive:true});
+async function desktopWrite(force){state.ui=uiToSave();const dir=await T.path.dirname(filePath);await T.fs.mkdir(dir,{recursive:true});
  if(!force&&fileMtime){const m=await fileStatMs(filePath);if(m&&m>fileMtime+1500){showConflict();throw {conflict:true}}}
  await T.fs.writeTextFile(filePath,JSON.stringify(state,null,1));fileMtime=(await fileStatMs(filePath))||Date.now();await rememberPath(filePath);if(!lockTimer)startLock()}
 async function desktopInit(){
  try{let p=null;try{const cfg=await T.path.join(await T.path.appConfigDir(),"senaste-fil.txt");if(await T.fs.exists(cfg))p=(await T.fs.readTextFile(cfg)).trim()}catch(e){}
   if(!p||!(await T.fs.exists(p).catch(()=>false)))p=await T.path.join(await T.path.documentDir(),"Lärarbordet","lararbordet.json");
   filePath=p;
-  if(await T.fs.exists(p)){state=parsePlanbok(await T.fs.readTextFile(p));ui=Object.assign(ui,state.ui||{});savedAt=new Date();syncMode="file";FIRST=false;fileMtime=await fileStatMs(p)}else FIRST=true;
+  if(await T.fs.exists(p)){state=parsePlanbok(await T.fs.readTextFile(p));ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;savedAt=new Date();syncMode="file";FIRST=false;fileMtime=await fileStatMs(p)}else FIRST=true;
  }catch(e){syncMode="readerr"}
  render();setSync();if(FIRST)welcomeModal();else afterFileOpened()}
 async function desktopOpen(){try{const p=await T.dialog.open({multiple:false,directory:false,filters:[{name:"Lärarbordet",extensions:["json","html"]}]});if(!p)return;const path=typeof p==="string"?p:p.path;
   const d=parsePlanbok(await T.fs.readTextFile(path));
   if(/\.html?$/i.test(path)){state=d;state.example=false;filePath=path.replace(/\.html?$/i,".json");await desktopWrite()}else{state=d;filePath=path;await rememberPath(path)}
-  ui=Object.assign(ui,state.ui||{});dirty=false;savedAt=new Date();syncMode="file";fileMtime=await fileStatMs(filePath);render();setSync();afterFileOpened()}
+  ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;dirty=false;savedAt=new Date();syncMode="file";fileMtime=await fileStatMs(filePath);render();setSync();afterFileOpened()}
  catch(e){modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en lararbordet.json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}}
 
 async function saveFile(forcePicker){if(saving){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(forcePicker),600);return}
@@ -831,7 +909,7 @@ async function updateHtmlFile(){const st=$("#dlstatus");const say=t=>{if(st)st.i
  let html;try{const r=await fetch(WEB_URL+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;html=await r.text()}catch(e){say("Kunde inte nå GitHub. Kontrollera internet och försök igen.");return}
  const m=html.match(/APP_VERSION="([^"]+)"/);const ver=m?m[1]:"?";
  if(!/id="pbdata"/.test(html)){say("Den hämtade filen ser inte ut som Lärarbordet. Ladda ner den från nedladdningssidan i stället.");return}
- state.ui=ui;const json=JSON.stringify(state).replace(/</g,"\\u003c");
+ state.ui=uiToSave();const json=JSON.stringify(state).replace(/</g,"\\u003c");
  const out=html.replace(/(<script type="application\/json" id="pbdata">)[\s\S]*?(<\/script>)/,(x,a,b)=>a+json+b);
  if(canPick){try{if(!fileHandle&&storedHandle){try{if((await storedHandle.requestPermission({mode:"readwrite"}))==="granted")fileHandle=storedHandle}catch(e){}}
    if(!fileHandle){fileHandle=await window.showSaveFilePicker({suggestedName:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});storedHandle=fileHandle;IDB.set(HKEY,fileHandle).catch(()=>{})}
@@ -871,7 +949,7 @@ async function afterFileOpened(){if(!DESKTOP||!filePath)return;const l=await rea
 async function reloadFromFile(quiet){try{
   if(DESKTOP){state=parsePlanbok(await T.fs.readTextFile(filePath));fileMtime=await fileStatMs(filePath)}
   else if(fileHandle){const f=await fileHandle.getFile();state=parsePlanbok(await f.text());htmlMtime=f.lastModified}
-  ui=Object.assign(ui,state.ui||{});dirty=false;syncMode="file";savedAt=new Date();render();setSync();
+  ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;dirty=false;syncMode="file";savedAt=new Date();render();setSync();
   if(!quiet)toast("Uppdaterad med ändringarna från den andra datorn.")}catch(e){toast("Kunde inte läsa filen. Den kanske håller på att synkas, försök igen om en stund.")}}
 function toast(t){const b=document.getElementById("savebar");if(!b)return;b.innerHTML=`<span>${esc(t)}</span><button class="btn pri" data-a="close-toast">OK</button>`;b.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{b.hidden=true;updateBar()},6000)}
 function showConflict(force){if(conflictShown&&!force)return;conflictShown=true;
@@ -892,7 +970,7 @@ if(DESKTOP&&T.window&&T.window.getCurrentWindow){try{T.window.getCurrentWindow()
 /* ===== 05-views.js ===== */
 /* ---------- rendering ---------- */
 function route(){const h=(location.hash||"").slice(1);return TABS.some(t=>t[0]===h)?h:"oversikt"}
-function renderTabs(){const r=route();$("#tabs").innerHTML=TABS.map(([id,l])=>`<a href="#${id}" class="tab-${id}" ${r===id?'aria-current="page"':""}>${ICON[id]}<span>${l==="Centralt innehåll"?"Innehåll":l}</span></a>`).join("");const g=document.getElementById("hdrgear");if(g)g.setAttribute("aria-current",r==="installningar"?"page":"false")}
+function renderTabs(){const r=route();$("#tabs").innerHTML=TABS.map(([id,l])=>`<a href="#${id}" class="tab-${id}" ${r===id?'aria-current="page"':""}>${ICON[id]}<span>${l==="Centralt innehåll"?"Innehåll":l}</span></a>`).join("");const g=document.getElementById("hdrgear");if(g){g.setAttribute("href","#installningar");g.setAttribute("aria-label","Inställningar");g.setAttribute("aria-current",r==="installningar"?"page":"false")}}
 function roBanner(){return READONLY?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Läsläge</b>${RO_NAME?" · "+esc(RO_NAME):""}. Du kan titta men inte ändra. Ändringar gör du på datorn.</span><button class="btn" data-a="open-ro">Öppna en nyare fil</button>${window.matchMedia("(max-width: 700px)").matches?'<button class="btn" data-a="p-phone">Telefonvy</button>':""}<button class="btn" data-a="close-ro">Stäng</button></div>`:""}
 function exampleBanner(){return state.example&&!READONLY?`<div class="example"><span class="sp"><b>Exempeldata.</b> Kurserna, eleverna och omdömena här är påhittade så att du ser hur allt hänger ihop.</span><button class="btn" data-a="clear-example">Börja med tomt bord</button></div>`:""}
 function render(){if(isPhone()){renderPhone();return}document.body.classList.remove("phone");renderTabs();const r=route();const m=$("#main");
@@ -906,7 +984,7 @@ function weekPanel(){const mon=mondayOf(TODAY);
   return `<section class="panel"><div class="panel-h"><h2>Den här veckan</h2><span class="muted small">v.${isoWeek(TODAY)}</span><span class="sp"></span><span class="small muted">${all.length} lektioner${nc?` · <span class="lowtag">${nc} inställda</span>`:""}</span><a class="btn ghost" href="#schema">Schema</a></div><div class="week">${days}</div></section>`}
  const ls=lessonsInWeek(state,mon);
  const days=[1,2,3,4,5].map(i=>{const d=addDays(mon,i-1);const ds=fmtD(d);const l=ls.filter(x=>x.date===ds);
-  return `<div class="day ${ds===fmtD(TODAY)?"today":""}"><div class="dh"><b>${DAY[d.getDay()].slice(0,3)}</b> <span class="muted small">${d.getDate()}/${d.getMonth()+1}</span></div>${l.map(x=>{const u=unit(x.unitId)||{};const c=course(u.courseId)||{};return `<button class="lesson ${x.done?"done":""}" data-a="edit-lesson" data-id="${x.id}" style="border-left-color:${c.color||"var(--line)"}"><span class="small muted">${esc(c.name||"")}</span><b>${esc(x.title||"Lektion")}</b>${x.done?'<span class="small" style="color:var(--ok)">Genomförd</span>':""}</button>`}).join("")||'<span class="small muted">–</span>'}</div>`}).join("");
+  return `<div class="day ${ds===fmtD(TODAY)?"today":""}"><div class="dh"><b>${DAY[d.getDay()].slice(0,3)}</b> <span class="muted small">${d.getDate()}/${d.getMonth()+1}</span></div>${l.map(x=>{const u=unit(x.unitId)||{};const c=course(u.courseId)||{};return `<button class="lesson ${x.done?"done":""}" data-a="edit-lesson" data-id="${x.id}" style="border-left-color:${c.color||"var(--line)"}"><span class="small muted">${esc(c.name||"")}</span><b>${esc(x.title||"Lektion")}</b>${x.plan?`<span class="occ-p">${esc(x.plan)}</span>`:""}${x.done?'<span class="small" style="color:var(--ok)">Genomförd</span>':""}</button>`}).join("")||'<span class="small muted">–</span>'}</div>`}).join("");
  return `<section class="panel"><div class="panel-h"><h2>Den här veckan</h2><span class="muted small">v.${isoWeek(TODAY)}</span><span class="sp"></span>${ls.length?`<span class="small muted">${ls.filter(x=>x.done).length} av ${ls.length} lektioner genomförda</span>`:""}</div>
   ${ls.length?`<div class="week">${days}</div>`:`<div class="empty">Inga lektioner planerade den här veckan. Öppna ett arbetsområde under Planering och lägg till lektioner.</div>`}</section>`}
 function updateBanner(){return UPDATE?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Version ${esc(UPDATE.version)} finns.</b> Du har ${esc(APP_VERSION)}. Din data följer med när du uppdaterar.</span><button class="btn pri" data-a="download-latest">${DESKTOP?"Ladda ner":"Uppdatera nu"}</button><button class="btn" data-a="open-update">Visa hur</button><span id="dlstatus" class="small" style="flex-basis:100%"></span></div>`:""}
@@ -929,7 +1007,7 @@ function vOverview(){
    <p style="margin:10px 0 0"><b>${DAY[TODAY.getDay()][0].toUpperCase()+DAY[TODAY.getDay()].slice(1)} ${TODAY.getDate()} ${MON[TODAY.getMonth()]}</b> <span class="muted">· läsår ${state.year.start.slice(2,4)}/${state.year.end.slice(2,4)}</span></p>
    <div class="yearbar" aria-label="${pct} procent av läsåret"><i style="width:${pct}%"></i></div><span class="small muted num">${pct} % av läsåret har gått</span>
    <h2 style="margin-top:18px">Just nu</h2><div class="now-list">${nowHtml}</div></div>
-  <div><a href="#arshjul" aria-label="Öppna årshjulet" style="display:block">${wheelSVG("all",true)}</a></div>
+  <div><a href="#arshjul" aria-label="Öppna årshjulet" style="display:block">${wheelSVG("all",true)}</a><div class="wheel-leg">${state.courses.map(c=>`<span><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join("")}</div></div>
  </section>
  <div class="grid2">
   <section class="panel"><div class="panel-h"><h2>Täckning av centralt innehåll</h2><span class="sp"></span><a class="btn ghost" href="#innehall">Visa luckor</a></div>${cov}
@@ -954,7 +1032,7 @@ function vPlanning(){
  const g=group(c.groupId);
  const cards=us.length?`<div class="units">${us.map(u=>{const na=state.assessments.filter(a=>a.unitId===u.id).length;const ls=lessonsOf(u.id);return `<button class="ucard" data-a="edit-unit" data-id="${u.id}" style="border-left-color:${c.color}"><span class="meta"><span class="pill p-${u.status}">${STATUS[u.status]}</span><span class="num">${wkRange(u.start,u.end)}</span></span><b>${esc(u.title)}</b>${u.desc?`<span class="small muted">${esc(u.desc)}</span>`:""}<span class="meta"><span>${(u.contentIds||[]).length} delar av centralt innehåll</span>${na?`<span>· ${na} bedömning${na>1?"ar":""}</span>`:""}${ls.length?`<span>· ${ls.filter(l=>l.done).length}/${ls.length} lektioner</span>`:""}${(()=>{const k=unitCapacity(state,u);return k?`<span>· ${k.available} pass i schemat${k.cancelled?` <span class="lowtag">(${k.cancelled} inställda)</span>`:""}</span>`:""})()}</span></button>`}).join("")}</div>`:`<div class="empty">Inga arbetsområden ännu.</div>`;
  const sum=covSummary(c.subjectId,c.id);
- return `<section class="panel"><div class="toolbar"><div class="chips">${chips}</div><span class="sp"></span><button class="btn" data-a="import-course">Importera kurs</button><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>
+ return `<section class="panel"><div class="toolbar"><div class="chips">${chips}</div><span class="sp"></span><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="import-course">Importera kurs</button><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>
  <section class="panel"><div class="panel-h"><span class="dot" style="background:${c.color};width:14px;height:14px"></span><h1>${esc(c.name)}</h1><span class="sp"></span><button class="btn" data-a="share-course" data-id="${c.id}">Dela kurs</button><button class="btn" data-a="edit-course" data-id="${c.id}">Redigera kurs</button><button class="btn pri" data-a="new-unit">+ Arbetsområde</button></div>
   <p class="muted small" style="margin:-4px 0 14px">${esc((subj(c.subjectId)||{}).name||"Inget ämne")} ${esc((subj(c.subjectId)||{}).stage||"")} · ${g?esc(g.name)+", "+g.students.length+" elever":"ingen elevgrupp"} · <b>${sum.pct} %</b> av centralt innehåll genomfört, ${sum.gap} luckor</p>
   ${strip}<p class="small muted" style="margin:6px 0 16px">Veckonummer. Randiga veckor är lov. Streckade staplar är planerade.</p>${cards}</section>`;
@@ -973,7 +1051,7 @@ function wheelSVG(filter,mini){
 
   state.units.filter(u=>u.courseId===c.id).forEach(u=>{const a1=ang(u.start),a2=ang(fmtD(addDays(parseD(u.end),1)));if(a2<=a1)return;
    const op=u.status==="planerad"?.45:u.status==="pagar"?.85:1;s+=`<path class="arc" ${mini?"":`data-a="edit-unit" data-id="${u.id}" tabindex="0"`} d="${arcPath(r1,r2,a1,a2-0.004)}" fill="${c.color}" opacity="${op}"><title>${esc(c.name)}: ${esc(u.title)} (${wkRange(u.start,u.end)})</title></path>`})});
- if(!mini)cs.forEach((c,i)=>{const r=R0+(i+.5)*rw;s+=`<text class="rlabel" x="-8" y="${(-r+4).toFixed(1)}" text-anchor="end" style="font-size:${Math.max(10,Math.min(13,rw*.5)).toFixed(0)}px">${esc(c.name)}</text>`});
+ if(!mini)cs.forEach((c,i)=>{const r=R0+(i+.5)*rw;s+=`<text class="rlabel" x="0" y="${(-r).toFixed(1)}" text-anchor="middle" dominant-baseline="central" style="font-size:${Math.max(10,Math.min(13,rw*.5)).toFixed(0)}px">${esc(c.name)}</text>`});
  state.events.forEach(e=>{const a1=ang(e.start),a2=ang(fmtD(addDays(parseD(e.end),1)));const col=e.type==="lov"?"var(--muted)":e.type==="deadline"?"var(--bad)":"var(--warn)";
   if(a2-a1>0.03)s+=`<path d="${arcPath(201,211,a1,a2)}" fill="${col}" opacity=".7"><title>${esc(e.title)}</title></path>`;else s+=`<circle cx="${206*Math.cos(a1)}" cy="${206*Math.sin(a1)}" r="5" fill="${col}"><title>${esc(e.title)} ${shortD(e.start)}</title></circle>`});
  const at=ang(TODAY);s+=`<line x1="${(R0-10)*Math.cos(at)}" y1="${(R0-10)*Math.sin(at)}" x2="${216*Math.cos(at)}" y2="${216*Math.sin(at)}" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/><circle cx="${216*Math.cos(at)}" cy="${216*Math.sin(at)}" r="5" fill="var(--ink)"/>`;
@@ -1026,17 +1104,27 @@ function vWheel(){
  const modes=[["hjul","Hjul","arshjul"],["band","Band",""],["manader","Månader",""],["veckor","Veckor",""]];
  const seg=`<div class="seg" role="group" aria-label="Visa läsåret som">${modes.map(([k,l])=>`<button aria-pressed="${mode===k}" data-a="wheelmode" data-v="${k}">${l}</button>`).join("")}</div>`;
  const ev=[...state.events].sort((a,b)=>a.start<b.start?-1:1);
- const tl={lov:"Lov",deadline:"Deadline",annat:"Händelse"};
- const evPanel=`<section class="panel"><div class="panel-h"><h2>Händelser och lov</h2><span class="sp"></span><button class="btn pri" data-a="new-event">+ Händelse</button></div>
+ const tl=EVENT_TYPES;
+ const evPanel=`<section class="panel"><div class="panel-h"><h2>Händelser och lov</h2><span class="sp"></span><button class="btn" data-a="import-cal">Importera</button><button class="btn pri" data-a="new-event">+ Händelse</button></div>
   ${ev.length?`<div class="list">${ev.map(e=>`<div class="li" style="cursor:pointer" data-a="edit-event" data-id="${e.id}"><span class="when num">${wkRange(e.start,e.end)}</span><span class="what"><b>${esc(e.title)}</b><br><span class="small muted">${shortD(e.start)}${e.end!==e.start?" – "+shortD(e.end):""}</span></span><span class="pill ${e.type==="lov"?"p-planerad":e.type==="deadline"?"p-gap":"p-warn"}">${tl[e.type]||"Händelse"}</span></div>`).join("")}</div>`:`<div class="empty">Inga händelser ännu.</div>`}</section>`;
  const head=`<section class="panel"><div class="toolbar">${seg}<span class="sp"></span><div class="chips">${chips}</div></div></section>`;
  if(mode==="hjul")return head+`<div class="grid2 wide-l"><section class="panel">${wheelSVG(ui.wheel,false)}
+  <div class="wheel-leg">${cs.map(c=>`<span><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join("")}</div>
   <div class="legend" style="justify-content:center"><span><i style="background:var(--muted)"></i>Lov (yttersta ringen)</span><span><i style="background:var(--bad)"></i>Deadline</span><span><i style="background:var(--warn)"></i>Händelse</span></div>
   <p class="small muted" style="text-align:center;margin:8px 0 0">Kursens namn står vid ringen. Starka färger är genomförda, ljusa är planerade. Tryck på en båge för att öppna arbetsområdet.</p></section>${evPanel}</div>`;
  const body=mode==="band"?yearBand(cs):mode==="manader"?yearMonths(cs):yearWeekList(cs);
  const hint={band:"En rad per kurs. Tryck på ett arbetsområde för att öppna det.",manader:"Vad som pågår varje månad, som en väggkalender.",veckor:"Läsåret vecka för vecka. Den här veckan är markerad."}[mode];
  if(mode==="veckor")setTimeout(()=>{const el=document.getElementById("thisweek"),box=document.getElementById("weekbox");if(el&&box)box.scrollTop=el.offsetTop-box.offsetTop-60},0);
  return head+`<section class="panel"><p class="small muted" style="margin:0 0 12px">${hint}</p>${body}</section>${evPanel}`}
+
+/* betygskriterierna för ämnet, uppdelade i delar, med hur ofta varje del bedömts */
+function critView(s,cs){const cr=s.official?critFor(s.id):null;
+ if(!cr)return `<div class="empty">Det finns inga betygskriterier från Skolverket för ${esc(s.name)} ${esc(s.stage||"")} i Lärarbordet.</div>`;
+ const ids=cs.map(c=>c.id);const used={};state.assessments.filter(a=>ids.includes(a.courseId)).forEach(a=>(a.aspects||[]).forEach(i=>(used[i]=used[i]||[]).push(a)));
+ return `<p class="small muted" style="margin:0 0 10px">Betygskriterierna${cr.year?" för slutet av åk "+esc(cr.year):""}, uppdelade i delar. Varje ruta med tjock kant är ett helt kriterium. Siffran visar hur många uppgifter som bedömer delen, så att du ser om någon del får för lite eller för mycket fokus.</p>
+ <div class="crit-list">${cr.aspects.map((A,i)=>{const lv=cr.levels.filter(k=>A[k]);const n=(used[i]||[]).length;
+  return `<div class="cm"><div class="cm-h"><span>Del ${i+1}</span><span class="sp"></span><span class="pill ${n?"p-warn":"p-gap"}" title="${esc((used[i]||[]).map(a=>a.title).join(", "))}">${n?"bedömd i "+n+" uppgift"+(n>1?"er":""):"inte bedömd än"}</span></div><div class="cm-g" style="--n:${lv.length}">${lv.map(k=>`<div class="cm-c" style="cursor:default"><span class="lvn">${esc(cr.names[k])}</span><span>${critText(A[k])}</span></div>`).join("")}</div></div>`}).join("")}</div>
+ <p class="small muted" style="margin-top:12px">Ordagrant från Skolverkets betygskriterier.</p>`}
 
 function vContent(){
  const subs=usedSubjects().map(subj);
@@ -1048,20 +1136,43 @@ function vContent(){
  const notAssessed=Object.values(cov).filter(r=>r.state==="covered"&&!r.assessed&&!r.manual).length;
  const areas=s.areas.map(a=>{const items=a.items.filter(i=>!ui.gapsOnly||cov[i.id].state==="gap");const ac=a.items.filter(i=>cov[i.id].state==="covered").length;
   if(ui.gapsOnly&&!items.length)return "";
-  return `<div class="area"><div class="area-h"><h3>${esc(a.name)}</h3><span class="small muted num">${ac}/${a.items.length} genomförda</span><span class="sp" style="flex:1"></span><button class="btn ghost small" data-a="add-item" data-area="${a.id}">+ Eget innehåll</button></div>
+  return `<div class="area"><div class="area-h"><h3>${esc(a.name)}</h3><span class="small muted num">${ac}/${a.items.length} genomförda${(()=>{const n=new Set(a.items.flatMap(i=>cov[i.id].tests)).size;return n?` · bedömt i ${n} uppgift${n>1?"er":""}`:""})()}</span><span class="sp" style="flex:1"></span><button class="btn ghost small" data-a="add-item" data-area="${a.id}">+ Eget innehåll</button></div>
   ${items.map(i=>{const r=cov[i.id];const lab={covered:"Genomfört",ongoing:"Pågår",planned:"Planerat",gap:"Lucka"}[r.state];
    return `<div class="item ${r.state==="gap"?"gap":""}"><button class="check" role="checkbox" aria-checked="${r.manual}" aria-label="Markera som täckt utanför planeringen" title="Markera som täckt utanför planeringen" data-a="toggle-manual" data-id="${i.id}">${r.manual?CHECK:""}</button>
-   <div class="txt">${esc(i.text)}${i.custom?' <span class="small muted">(eget)</span>':""}<div class="links"><span class="pill p-${r.state}">${lab}</span>${r.manual?'<span class="pill p-covered">Manuellt avbockat</span>':""}${r.assessed?'<span class="pill p-warn">Bedömt</span>':""}${r.units.map(u=>`<button class="ulink" data-a="edit-unit" data-id="${u.id}"><span class="dot" style="background:${(course(u.courseId)||{}).color};width:7px;height:7px"></span> ${esc(u.title)}</button>`).join("")}${i.custom?`<button class="ulink" data-a="del-item" data-id="${i.id}">Ta bort</button>`:""}</div></div></div>`}).join("")}</div>`}).join("");
+   <div class="txt">${esc(i.text)}${i.custom?' <span class="small muted">(eget)</span>':""}<div class="links"><span class="pill p-${r.state}">${lab}</span>${r.manual?'<span class="pill p-covered">Manuellt avbockat</span>':""}${r.assessed?`<span class="pill p-warn" title="${esc(r.tests.map(a=>a.title).join(", "))}">Bedömt${r.tests.length>1?" "+r.tests.length+" gånger":r.tests.length?" 1 gång":""}</span>`:""}${r.units.map(u=>`<button class="ulink" data-a="edit-unit" data-id="${u.id}"><span class="dot" style="background:${(course(u.courseId)||{}).color};width:7px;height:7px"></span> ${esc(u.title)}</button>`).join("")}${i.custom?`<button class="ulink" data-a="del-item" data-id="${i.id}">Ta bort</button>`:""}</div></div></div>`}).join("")}</div>`}).join("");
  return `<section class="panel"><div class="toolbar"><div class="chips">${chips}</div><span class="sp"></span><button class="btn" data-a="picker">Välj ämnen</button></div></section>
  <section class="panel"><div class="panel-h"><div><h1>${esc(s.name)} <span class="muted" style="font-weight:500">${esc(s.stage||"")}</span></h1><span class="small muted">${esc(FORM_LABEL[s.form||"X"])}</span></div><span class="sp"></span>
   ${cs.length>1?`<select class="inline" id="subjfilter" aria-label="Filtrera på kurs"><option value="all">Alla kurser i ämnet</option>${cs.map(c=>`<option value="${c.id}" ${ui.subjFilter===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>`:""}
-  <div class="seg"><button aria-pressed="${!ui.gapsOnly}" data-a="gaps" data-v="0">Allt</button><button aria-pressed="${ui.gapsOnly}" data-a="gaps" data-v="1">Bara luckor</button></div></div>
+  <div class="seg"><button aria-pressed="${ui.cview!=="krit"}" data-a="cview" data-v="ci">Centralt innehåll</button><button aria-pressed="${ui.cview==="krit"}" data-a="cview" data-v="krit">Betygskriterier</button></div>
+  ${ui.cview==="krit"?"":`<div class="seg"><button aria-pressed="${!ui.gapsOnly}" data-a="gaps" data-v="0">Allt</button><button aria-pressed="${ui.gapsOnly}" data-a="gaps" data-v="1">Bara luckor</button></div>`}</div>
   <div class="kpis" style="margin-bottom:10px"><div class="kpi"><b class="num">${sum.pct} %</b><span>genomfört</span></div><div class="kpi"><b class="num">${sum.ongoing+sum.planned}</b><span>pågår eller planerat</span></div><div class="kpi"><b class="num" style="color:${sum.gap?"var(--bad)":"inherit"}">${sum.gap}</b><span>luckor</span></div><div class="kpi"><b class="num">${notAssessed}</b><span>genomfört men ej bedömt</span></div></div>
   <span class="stack" style="margin-bottom:16px"><i class="s-c" style="width:${sum.covered/(sum.n||1)*100}%"></i><i class="s-o" style="width:${sum.ongoing/(sum.n||1)*100}%"></i><i class="s-p" style="width:${sum.planned/(sum.n||1)*100}%"></i></span>
   ${cs.length?"":`<p class="example" style="margin-bottom:12px">Ingen kurs är kopplad till ${esc(s.name)} ännu, så allt räknas som lucka. Skapa en kurs under Planering.</p>`}
-  ${areas||'<div class="empty">Inga luckor. Allt centralt innehåll är planerat eller genomfört.</div>'}
+  ${ui.cview==="krit"?critView(s,cs):(areas||'<div class="empty">Inga luckor. Allt centralt innehåll är planerat eller genomfört.</div>')}
   <p class="small muted" style="margin-top:16px">${s.official?`Centralt innehåll ordagrant från Skolverkets kurs- och ämnesplaner (hämtat ${esc(CAT.fetched)}). `:""}Bocka i rutan när innehållet täckts utanför planeringen, t.ex. i ett ämnesövergripande projekt.</p></section>`;
 }
+
+/* fördelning för en bedömning: antal och procent per steg (eller genomfört/ej), samt snittpoäng */
+function howModal(){modal("Så hänger det ihop",`<div class="helpbox"><b>Kurs</b> är ett ämne med en elevgrupp, t.ex. Engelska 1 PO. Den har en färg som syns i årshjulet och schemat.</div>
+ <div class="helpbox"><b>Arbetsområde</b> är en period i kursen, t.ex. Novellen v.45–49. Du bockar i vilket <b>centralt innehåll</b> det täcker. Status Planerad, Pågår, Genomförd och Genomförd och bedömd syns under Centralt innehåll, så att du ser luckor.</div>
+ <div class="helpbox"><b>Lektioner</b> hör till ett arbetsområde. Lägger du in ditt schema räknar Lärarbordet ut vilka lektioner som blir inställda av lov och aktiviteter. Tryck på en lektion i veckovyn för att skriva planen direkt.</div>
+ <div class="helpbox"><b>Uppgifter och bedömningar</b> skapar du i ett arbetsområde eller under Bedömning. De <b>behöver inte</b> finnas: ett arbetsområde kan vara genomfört utan att något bedöms. Kopplar du en bedömning till ett arbetsområde räknas dess innehåll som bedömt.</div>
+ <div class="helpbox"><b>Bedömning</b> görs per elev mot de betygskriterier du väljer för uppgiften. Tryck på kriterietexterna (gult delvis, grönt visat, rött inte visat), sätt ett betygssteg direkt, eller välj Genomfört / ej genomfört. Poäng kan läggas till.</div>
+ <div class="actions"><span class="sp"></span><button class="btn pri" data-a="close">Klart</button></div>`)}
+function resultOf(a,g){const gs=state.grades[a.id]||{};const sc=scale();
+ const lv=a.mode==="gk"?[{k:"G",l:"Genomfört",t:1},{k:"EG",l:"Ej genomfört",t:0}]:sc.levels.map((l,i)=>({k:l.k,l:l.l,t:i/(sc.levels.length-1)}));
+ const ks=g.students.map(s=>(gs[s.id]||{}).k).filter(k=>k&&lv.some(x=>x.k===k));const done=ks.length;
+ const rows=lv.map(x=>{const n=ks.filter(k=>k===x.k).length;return Object.assign({},x,{n,pct:done?Math.round(n/done*100):0})});
+ const ps=g.students.map(s=>(gs[s.id]||{}).p).filter(p=>p!=null);const avg=ps.length?Math.round(ps.reduce((x,y)=>x+y,0)/ps.length*10)/10:null;
+ return {rows,done,avg,np:ps.length}}
+function resultsModal(){const g=group(ui.group);if(!g)return;const as=state.assessments.filter(a=>a.groupId===g.id&&(ui.acourse==="all"||a.courseId===ui.acourse)).sort((x,y)=>x.date<y.date?-1:1);
+ let f=ui.resType||"alla";const types=[...new Set(as.map(a=>a.type).filter(Boolean))];
+ const draw=()=>{const list=as.filter(a=>f==="alla"||(f==="np"?["np","diagnos","halvkurs"].includes(a.type):a.type===f));
+  return `<div class="chips" style="margin-bottom:10px"><button class="chip" aria-pressed="${f==="alla"}" data-rf="alla">Alla</button><button class="chip" aria-pressed="${f==="np"}" data-rf="np">NP, diagnoser, halvkursprov</button>${types.filter(t=>!["np","diagnos","halvkurs"].includes(t)).map(t=>`<button class="chip" aria-pressed="${f===t}" data-rf="${t}">${esc(ATYPES[t]||t)}</button>`).join("")}</div>
+  ${list.length?`<div class="mx-wrap"><table class="res-t"><thead><tr><th>Uppgift</th><th>Fördelning</th><th>Andel per steg</th><th>Poäng</th></tr></thead><tbody>${list.map(a=>{const r=resultOf(a,g);
+   return `<tr><td><b>${esc(a.title)}</b><br><span class="small muted">${shortD(a.date)}${a.type?" · "+esc(ATYPES[a.type]||""):""} · ${r.done}/${g.students.length} bedömda</span></td><td><div class="res-bar">${r.rows.map(x=>x.n?`<i style="width:${x.pct}%;background:hsl(${hueT(x.t)} 55% 55%)" title="${esc(x.l)}: ${x.pct} %"></i>`:"").join("")}</div></td>
+    <td class="small" style="text-align:left">${r.done?r.rows.filter(x=>x.n).map(x=>`<span style="white-space:nowrap"><b>${esc(x.l)}</b> ${x.pct}&nbsp;%</span>`).join(" · "):"–"}</td><td class="small num">${r.avg!=null?`snitt ${r.avg}${a.max?" av "+a.max:""}`:"–"}</td></tr>`}).join("")}</tbody></table></div>`:`<div class="empty">Inga uppgifter av den typen. Välj typ, t.ex. Nationellt prov, när du skapar en bedömning.</div>`}`};
+ modal("Resultat för "+g.name,`<div id="resb">${draw()}</div><div class="actions"><span class="sp"></span><button class="btn pri" data-a="close">Klart</button></div>`,m=>{const bind=()=>m.querySelectorAll("[data-rf]").forEach(b=>b.onclick=()=>{f=ui.resType=b.dataset.rf;m.querySelector("#resb").innerHTML=draw();bind()});bind()})}
 
 function vAssess(){
  if(!state.groups.length)return `<section class="panel"><div class="empty"><p>Lägg till en elevgrupp för att börja bedöma.</p><button class="btn pri" data-a="edit-group">+ Elevgrupp</button></div></section>`;
@@ -1070,18 +1181,18 @@ function vAssess(){
  if(ui.acourse!=="all"&&!gcourses.some(c=>c.id===ui.acourse))ui.acourse="all";
  const as=state.assessments.filter(a=>a.groupId===g.id&&(ui.acourse==="all"||a.courseId===ui.acourse)).sort((a,b)=>(a.courseId+a.date)<(b.courseId+b.date)?-1:1);
  const sc=scale();
- const head=as.map(a=>{const c=course(a.courseId)||{};return `<th data-a="edit-assess" data-id="${a.id}" style="box-shadow:inset 0 3px 0 ${c.color||"transparent"}" title="${esc(c.name||"")}">${esc(a.title)}<span class="d">${shortD(a.date)}${ui.acourse==="all"?" · "+esc((c.name||"").split(" ")[0]):""}</span></th>`}).join("");
+ const head=as.map(a=>{const c=course(a.courseId)||{};return `<th data-a="edit-assess" data-id="${a.id}" style="box-shadow:inset 0 3px 0 ${c.color||"transparent"}" title="${esc(c.name||"")}">${esc(a.title)}<span class="d">${shortD(a.date)}${a.type?" · "+esc(ATYPES[a.type]||""):""}${ui.acourse==="all"?" · "+esc((c.name||"").split(" ")[0]):""}</span></th>`}).join("");
  const rows=g.students.map(s=>{const sm=studentSummary(g.id,s.id,ui.acourse);const mk=sm.m==null?null:sc.levels[sm.m];
-  return `<tr><td class="name"><button data-a="student" data-g="${g.id}" data-id="${s.id}">${esc(s.name)}</button></td>${as.map(a=>{const v=(state.grades[a.id]||{})[s.id];const t=v?lvT(v.k):null;
-   return `<td><button class="cell ${t!=null?"g":""}" style="${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${s.id}" aria-label="${esc(s.name)}, ${esc(a.title)}: ${v?esc(v.k):"ej bedömt"}">${v?esc(v.k):'<span class="muted">·</span>'}${v&&v.note?'<span class="n" title="Anteckning"></span>':""}</button></td>`}).join("")}
+  return `<tr><td class="name"><button data-a="student" data-g="${g.id}" data-id="${s.id}">${esc(s.name)}</button></td>${as.map(a=>{const v=(state.grades[a.id]||{})[s.id];const t=v?gradeT(v.k):null;
+   return `<td><button class="cell ${t!=null?"g":""}" style="${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${s.id}" aria-label="${esc(s.name)}, ${esc(a.title)}: ${v&&v.k?esc(v.k):"ej bedömt"}">${v&&v.k?esc(v.k):v&&v.p!=null?"":'<span class="muted">·</span>'}${v&&v.p!=null?`<span class="small num" style="display:block;font-weight:500;font-size:.7rem">${v.p}p</span>`:""}${v&&v.note?'<span class="n" title="Anteckning"></span>':""}</button></td>`}).join("")}
    <td class="sum ${mk&&mk.low?"lowtag":""}">${mk?esc(mk.k):"–"}</td><td class="sum">${sm.low?`<span class="lowtag">${sm.low}</span>`:"0"}</td></tr>`}).join("");
- const foot=as.map(a=>{const counts=sc.levels.map(l=>g.students.filter(s=>((state.grades[a.id]||{})[s.id]||{}).k===l.k).length);const mx=Math.max(1,...counts);const done=counts.reduce((x,y)=>x+y,0);
-  return `<td><div class="dist" title="${sc.levels.map((l,i)=>l.k+": "+counts[i]).join(", ")}">${counts.map((n,i)=>`<i style="height:${Math.max(2,n/mx*22)}px;--h:${hueT(i/(sc.levels.length-1))}"></i>`).join("")}</div><span class="small muted num">${done}/${g.students.length}</span></td>`}).join("");
+ const foot=as.map(a=>{const r=resultOf(a,g);const mx=Math.max(1,...r.rows.map(x=>x.n));
+  return `<td><div class="dist" title="${r.rows.map(x=>x.l+": "+x.n+" ("+x.pct+" %)").join(", ")}">${r.rows.map(x=>`<i style="height:${Math.max(2,x.n/mx*22)}px;--h:${hueT(x.t)}"></i>`).join("")}</div><span class="small muted num">${r.done}/${g.students.length}</span></td>`}).join("");
  const total=as.length*g.students.length;const done=as.reduce((n,a)=>n+g.students.filter(s=>(state.grades[a.id]||{})[s.id]).length,0);
  return `<section class="panel"><div class="toolbar"><div class="chips">${state.groups.map(x=>`<button class="chip" aria-pressed="${x.id===g.id}" data-a="sel-group" data-id="${x.id}">${esc(x.name)}</button>`).join("")}</div><button class="btn" data-a="edit-group">+ Elevgrupp</button><span class="sp"></span>
   <select class="inline" id="acourse" aria-label="Filtrera på kurs"><option value="all">Alla kurser</option>${gcourses.map(c=>`<option value="${c.id}" ${ui.acourse===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div></section>
  <section class="panel"><div class="panel-h"><h1>${esc(g.name)}</h1><span class="muted small num">${g.students.length} elever · ${done}/${total} omdömen · skala: ${esc(sc.name)}</span><span class="sp"></span>
-  <button class="btn" data-a="edit-group" data-id="${g.id}">Elever</button><button class="btn" data-a="export-csv">Exportera CSV</button><button class="btn pri" data-a="new-assess">+ Bedömning</button></div>
+  <button class="btn" data-a="edit-group" data-id="${g.id}">Elever</button><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="results">Resultat</button><button class="btn" data-a="export-csv">Exportera CSV</button><button class="btn pri" data-a="new-assess">+ Bedömning</button></div>
   ${!g.students.length?`<div class="empty">Gruppen har inga elever. Tryck på Elever och klistra in namnen.</div>`:!as.length?`<div class="empty">Inga bedömningar ännu för det här urvalet.</div>`:
   `<div class="mx-wrap"><table class="mx"><thead><tr><th class="name">Elev</th>${head}<th title="Medianen av elevens omdömen">Typnivå</th><th title="Antal omdömen under godtagbar nivå">Låga</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td class="name small muted" style="padding:8px 10px">Fördelning</td>${foot}<td></td><td></td></tr></tfoot></table></div>
   <p class="small muted" style="margin:8px 0 0">Tryck på en ruta för att sätta omdöme och anteckning. Typnivå är medianen av elevens omdömen och ersätter inte en samlad bedömning mot betygskriterierna. En prick betyder att det finns en anteckning.</p>`}</section>`;
@@ -1157,7 +1268,7 @@ function dayOccurrences(date){const d=parseD(date);if(date<state.year.start||dat
   return {slot:sl,course:c,date,cancel:cancellation(state,sl,date),lesson,unit:active}})}
 const occCard=(o,compact)=>`<button class="occ ${o.cancel?"cancelled":""}" data-a="occ" data-slot="${o.slot.id}" data-date="${o.date}" style="--cc:${o.course.color}">
   <span class="occ-t num">${esc(o.slot.start)}–${esc(o.slot.end)}${o.slot.room&&!compact?` · ${esc(o.slot.room)}`:""}</span><b>${esc(o.course.name)}</b>
-  ${o.cancel?`<span class="occ-x">Inställd: ${esc(o.cancel.reason)}</span>`:o.lesson?`<span class="occ-l">${o.lesson.done?"✓ ":""}${esc(o.lesson.title)}</span>`:o.unit?`<span class="occ-l muted">${esc(o.unit.title)}</span>`:""}</button>`;
+  ${o.cancel?`<span class="occ-x">Inställd: ${esc(o.cancel.reason)}</span>`:o.lesson?`<span class="occ-l">${o.lesson.done?"✓ ":""}${esc(o.lesson.title)}</span>${o.lesson.plan?`<span class="occ-p">${esc(o.lesson.plan)}</span>`:""}`:o.unit?`<span class="occ-l muted">${esc(o.unit.title)}</span>`:""}</button>`;
 
 function vSchedule(){
  const has=(state.schedule||[]).length;
@@ -1168,18 +1279,18 @@ function vSchedule(){
  const withSched=state.courses.filter(c=>hasSchedule(state,c.id));
  const stats=withSched.map(c=>{const all=courseStats(state,c.id);const t=fmtD(TODAY);const ahead=all.list.filter(x=>x.date>=t);const past=all.list.length-ahead.length;
   const units=state.units.filter(u=>u.courseId===c.id&&u.end>=t).sort((a,b)=>a.start<b.start?-1:1).map(u=>{const k=unitCapacity(state,u);return k?`<div class="small"><span class="muted">${esc(u.title)}:</span> ${k.available} lektioner${k.cancelled?` <span class="lowtag">(${k.cancelled} inställda)</span>`:""}${k.planned?`, ${k.planned} planerade`:""}</div>`:""}).join("");
-  return `<div class="cstat"><div class="cstat-h"><span class="dot" style="background:${c.color}"></span><b>${esc(c.name)}</b><span class="sp"></span><span class="small num">${all.held} av ${all.total} pass blir av</span></div>
+  return `<div class="cstat"><div class="cstat-h"><span class="dot" style="background:${c.color}"></span><b>${esc(c.name)}</b><span class="sp"></span><span class="small num">${all.held} av ${all.total} pass blir av${all.total-all.held?` · <span class="lowtag">${all.total-all.held} inställda</span>`:""}</span></div>
    <div class="stack" style="height:8px;margin:6px 0"><i class="s-c" style="width:${all.total?all.held/all.total*100:0}%"></i></div>
-   ${ahead.length?`<div class="small"><b>Inställda framåt (${ahead.length})</b></div><div class="list">${ahead.slice(0,8).map(x=>`<div class="li" style="padding:6px 0"><span class="when num">${DAY[parseD(x.date).getDay()].slice(0,3)} ${shortD(x.date)}<br><span class="small">${esc(x.slot.start)}</span></span><span class="what small">${esc(x.cancel.reason)}</span></div>`).join("")}${ahead.length>8?`<span class="small muted">och ${ahead.length-8} till</span>`:""}</div>`:`<p class="small muted" style="margin:0">Inga inställda lektioner framåt.</p>`}
+   ${ahead.length?`<div class="small"><b>Inställda framåt (${ahead.length})</b></div><div class="list">${ahead.slice(0,8).map(x=>`<div class="li" style="padding:6px 0"><span class="when num">${DAY[parseD(x.date).getDay()].slice(0,3)} ${shortD(x.date)}<br><span class="small">${esc(x.slot.start)}</span></span><span class="what small">${esc(x.cancel.reason)}</span></div>`).join("")}${ahead.length>8?`<span class="small muted">och ${ahead.length-8} till</span>`:""}</div>`:`<p class="small muted" style="margin:0">Alla lektioner framåt blir av.</p>`}
    ${past?`<p class="small muted" style="margin:6px 0 0">${past} inställda tidigare i läsåret.</p>`:""}
    ${units?`<div style="margin-top:8px;display:grid;gap:2px"><b class="small">Arbetsområden framåt</b>${units}</div>`:""}</div>`}).join("");
  const ev=[...state.events].sort((a,b)=>a.start<b.start?-1:1);
  const affects=e=>!CANCELS[e.type]?"Påverkar inte lektioner":e.type!=="aktivitet"?"Alla lektioner ställs in":`${(e.groups||[]).length?e.groups.map(g=>(group(g)||{}).name).filter(Boolean).join(", "):"Alla grupper"}${e.from&&e.to?`, ${e.from}–${e.to}`:", hela dagen"}`;
- return `${has?`<section class="panel"><div class="panel-h"><button class="btn ghost" data-a="sched-week" data-v="-1" aria-label="Föregående vecka">‹</button><h2>Vecka ${wn}</h2><button class="btn ghost" data-a="sched-week" data-v="1" aria-label="Nästa vecka">›</button>${ui.schedWeek?`<button class="btn ghost" data-a="sched-week" data-v="0">Den här veckan</button>`:""}<span class="sp"></span><span class="small muted">Tryck på en lektion för att ställa in den eller planera den.</span></div>${weekView}</section>`:""}
+ return `${has?`<section class="panel"><div class="panel-h"><button class="btn ghost" data-a="sched-week" data-v="-1" aria-label="Föregående vecka">‹</button><h2>Vecka ${wn}</h2><button class="btn ghost" data-a="sched-week" data-v="1" aria-label="Nästa vecka">›</button>${ui.schedWeek?`<button class="btn ghost" data-a="sched-week" data-v="0">Den här veckan</button>`:""}<span class="sp"></span><span class="small muted">Tryck på en lektion för att skriva planen eller ställa in den.</span></div>${weekView}</section>`:""}
  <section class="panel"><div class="panel-h"><h2>Mitt veckoschema</h2><span class="sp"></span><button class="btn pri" data-a="new-slot">+ Lektion i schemat</button></div>
   ${has?grid:`<div class="empty"><p>Lägg in dina lektioner en gång, till exempel <b>Svenska 8B, måndag 08:20–09:20</b>. Sedan räknar Lärarbordet ut vilka lektioner som blir inställda av lov, studiedagar och aktiviteter i kalendariet, och hur många lektioner varje arbetsområde faktiskt får.</p><button class="btn pri" data-a="new-slot">Lägg in första lektionen</button></div>`}</section>
- ${has?`<div class="grid2"><section class="panel"><div class="panel-h"><h2>Inställda lektioner</h2></div>${stats||'<p class="muted">Ingen kurs har schema än.</p>'}</section>`:'<div class="grid2">'}
- <section class="panel"><div class="panel-h"><h2>Kalendarium</h2><span class="sp"></span><button class="btn pri" data-a="new-event">+ Händelse</button></div>
+ ${has?`<div class="grid2"><section class="panel"><div class="panel-h"><h2>Lektioner som blir av</h2></div>${stats||'<p class="muted">Ingen kurs har schema än.</p>'}</section>`:'<div class="grid2">'}
+ <section class="panel"><div class="panel-h"><h2>Kalendarium</h2><span class="sp"></span><button class="btn" data-a="import-cal">Importera från Excel</button><button class="btn pri" data-a="new-event">+ Händelse</button></div>
   <p class="small muted" style="margin:-4px 0 10px">Lov och studiedagar ställer in alla lektioner. Aktiviteter som friluftsdag och prao ställer in lektionerna för de grupper du väljer.</p>
   ${ev.length?`<div class="list">${ev.map(e=>`<div class="li" style="cursor:pointer" data-a="edit-event" data-id="${e.id}"><span class="when num">${wkRange(e.start,e.end)}</span><span class="what"><b>${esc(e.title)}</b><br><span class="small muted">${shortD(e.start)}${e.end!==e.start?" – "+shortD(e.end):""} · ${esc(affects(e))}</span></span><span class="pill ${e.type==="lov"||e.type==="studiedag"?"p-planerad":e.type==="deadline"?"p-gap":e.type==="aktivitet"?"p-pagar":"p-warn"}">${EVENT_TYPES[e.type]||"Händelse"}</span></div>`).join("")}</div>`:`<div class="empty">Kalendariet är tomt.</div>`}</section></div>`}
 
@@ -1198,17 +1309,24 @@ function slotModal(id){const sl=id?(state.schedule||[]).find(x=>x.id===id):null;
   const more=m.querySelector("#slmore");if(more)more.onclick=()=>{if(save())slotModal()};
   const del=m.querySelector("#sldel");if(del)del.onclick=()=>{state.schedule=state.schedule.filter(x=>x!==sl);Object.keys(state.cancel).forEach(k=>{if(k.startsWith(sl.id+"|"))delete state.cancel[k]});closeModal();commit()}})}
 
-function occModal(slotId,date){const o=dayOccurrences(date).find(x=>x.slot.id===slotId);if(!o)return;const key=slotId+"|"+date;const manual=state.cancel[key]!=null;const byEvent=o.cancel&&!manual;
- modal(o.course.name,`<p class="small muted" style="margin:-8px 0 0">${cap(DAY[parseD(date).getDay()])} ${shortD(date)} · ${esc(o.slot.start)}–${esc(o.slot.end)}${o.slot.room?" · "+esc(o.slot.room):""}</p>
- ${byEvent?`<p class="example" style="background:var(--bad-bg);color:var(--bad);margin:0"><span>Inställd enligt kalendariet: <b>${esc(o.cancel.reason)}</b>.</span></p>`
-  :`<div class="f"><label for="ocr">${manual?"Lektionen är inställd. Orsak:":"Ställ in den här lektionen"}</label><input id="ocr" value="${esc(manual?state.cancel[key]:"")}" placeholder="t.ex. Sjuk, fortbildning, nationella prov"></div>`}
- ${o.lesson?`<p style="margin:0">Planerad lektion: <b>${esc(o.lesson.title)}</b></p>`:o.unit?`<p class="small muted" style="margin:0">Pågående arbetsområde: ${esc(o.unit.title)}</p>`:""}
- <div class="actions">${o.lesson?`<button class="btn" id="ocl">Öppna lektionen</button>`:o.unit&&!o.cancel?`<button class="btn" id="ocp">Planera lektion</button>`:""}<span class="sp"></span>
- ${byEvent?"":manual?`<button class="btn" id="ocun">Lektionen blir av ändå</button><button class="btn pri" id="ocok">Spara orsak</button>`:`<button class="btn pri" id="ocok">Ställ in</button>`}</div>`,m=>{
+function occModal(slotId,date){const o=dayOccurrences(date).find(x=>x.slot.id===slotId);if(!o)return;const key=slotId+"|"+date;const manual=state.cancel[key]!=null;const byEvent=o.cancel&&!manual;const L=o.lesson;
+ const canPlan=!o.cancel&&(L||o.unit);
+ modal(o.course.name,`<p class="small muted" style="margin:-8px 0 0">${cap(DAY[parseD(date).getDay()])} ${shortD(date)} · ${esc(o.slot.start)}–${esc(o.slot.end)}${o.slot.room?" · "+esc(o.slot.room):""}${o.unit?" · "+esc(o.unit.title):""}</p>
+ ${byEvent?`<p class="example" style="background:var(--bad-bg);color:var(--bad);margin:0"><span>Inställd enligt kalendariet: <b>${esc(o.cancel.reason)}</b>.</span></p>`:""}
+ ${manual?`<p class="example" style="background:var(--bad-bg);color:var(--bad);margin:0"><span>Du har ställt in lektionen: <b>${esc(state.cancel[key])}</b>.</span></p>`:""}
+ ${canPlan?`<div class="f"><label for="opl">Planen för lektionen</label><textarea id="opl" placeholder="Mål, aktiviteter, material, läxa…">${esc(L?L.plan||"":"")}</textarea><span class="small muted">Visas direkt i veckovyn.</span></div>
+  <div class="f"><label for="ono">Anteckning efter lektionen</label><textarea id="ono" style="min-height:60px" placeholder="Hur gick det? Vad behöver följas upp?">${esc(L?L.note||"":"")}</textarea></div>
+  <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="odone" ${L&&L.done?"checked":""}> Genomförd</label>`
+  :!o.cancel?`<p class="small muted" style="margin:0">Det finns inget arbetsområde för ${esc(o.course.name)} den här dagen. Lägg till ett under Planering så kan du skriva planen för lektionen här.</p>`:""}
+ ${byEvent?"":`<details ${manual?"open":""}><summary class="small" style="cursor:pointer">${manual?"Ändra inställningen":"Ställ in lektionen"}</summary><div class="f" style="margin-top:8px"><label for="ocr">Orsak</label><input id="ocr" value="${esc(manual?state.cancel[key]:"")}" placeholder="t.ex. Sjuk, fortbildning, nationella prov"></div>
+  <div class="actions" style="justify-content:flex-start">${manual?`<button class="btn" id="ocun">Lektionen blir av ändå</button><button class="btn" id="ocok">Spara orsak</button>`:`<button class="btn" id="ocok">Ställ in lektionen</button>`}</div></details>`}
+ <div class="actions">${L?`<button class="btn" id="ocl">Alla detaljer</button>`:""}<span class="sp"></span><button class="btn" data-a="close">Stäng</button>${canPlan?`<button class="btn pri" id="osave">Spara</button>`:""}</div>`,m=>{
   const ok=m.querySelector("#ocok");if(ok)ok.onclick=()=>{state.cancel[key]=val("ocr").trim()||"Inställd";closeModal();commit()};
   const un=m.querySelector("#ocun");if(un)un.onclick=()=>{delete state.cancel[key];closeModal();commit()};
-  const ol=m.querySelector("#ocl");if(ol)ol.onclick=()=>lessonModal(o.lesson.id);
-  const op=m.querySelector("#ocp");if(op)op.onclick=()=>lessonModal(null,o.unit.id,{date,time:o.slot.start,title:"Lektion "+(lessonsOf(o.unit.id).length+1)})})}
+  const ol=m.querySelector("#ocl");if(ol)ol.onclick=()=>lessonModal(L.id);
+  const sv=m.querySelector("#osave");if(sv)sv.onclick=()=>{const plan=val("opl").trim(),note=val("ono").trim(),done=m.querySelector("#odone").checked;
+   if(L)Object.assign(L,{plan,note,done});else if(plan||note||done)state.lessons.push({id:uid(),unitId:o.unit.id,date,time:o.slot.start,title:"Lektion "+(lessonsOf(o.unit.id).length+1),plan,note,done});
+   closeModal();commit()}})}
 
 /* ===== 05c-phone.js ===== */
 /* ---------- telefonvy ----------
@@ -1224,11 +1342,12 @@ const proute=()=>{const h=(location.hash||"").slice(1);return PTABS.some(t=>t[0]
 function renderPhone(){document.body.classList.add("phone");const h=(location.hash||"").slice(1);const m=h.match(/^v(\d+)$/);
  if(m){const n=+m[1];if(n>PH.nav.length||n<1){location.hash=PH.tab||"idag";return}PH.nav.length=n}else{PH.tab=proute();PH.nav=[]}
  const r=PH.tab||"idag";
- $("#tabs").innerHTML=PTABS.map(([id,l])=>`<a href="#${id}" ${r===id?'aria-current="page"':""}>${PICON[id]}<span>${l}</span></a>`).join("");
+ $("#tabs").innerHTML=PTABS.filter(t=>t[0]!=="fil").map(([id,l])=>`<a href="#${id}" ${r===id?'aria-current="page"':""}>${PICON[id]}<span>${l}</span></a>`).join("");
+ const gr=document.getElementById("hdrgear");if(gr){gr.setAttribute("href","#fil");gr.setAttribute("aria-label","Inställningar och fil");gr.setAttribute("aria-current",r==="fil"&&!PH.nav.length?"page":"false")}
  $("#main").innerHTML=PH.nav.length?pDetail(PH.nav[PH.nav.length-1]):({idag:pToday,vecka:pWeek,kurser:pCourses,elever:pStudents,fil:pFile}[r])()}
 function pOcc(o){return goBtn("occ",o.slot.id+"|"+o.date,`<span class="p-time num">${esc(o.slot.start)}<small>${esc(o.slot.end)}</small></span>
   <span class="p-what"><b>${esc(o.course.name)}</b>${o.slot.room?`<span class="p-room">${esc(o.slot.room)}</span>`:""}
-  ${o.cancel?`<span class="p-cancel">Inställd · ${esc(o.cancel.reason)}</span>`:o.lesson?`<span class="p-title">${o.lesson.done?"✓ ":""}${esc(o.lesson.title)}</span>`:o.unit?`<span class="p-sub">${esc(o.unit.title)}</span>`:""}</span>`,"p-row p-occrow"+(o.cancel?" x":""),`--cc:${o.course.color}`)}
+  ${o.cancel?`<span class="p-cancel">Inställd · ${esc(o.cancel.reason)}</span>`:o.lesson?`<span class="p-title">${o.lesson.done?"✓ ":""}${esc(o.lesson.title)}</span>${o.lesson.plan?`<span class="p-sub" style="white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(o.lesson.plan)}</span>`:""}`:o.unit?`<span class="p-sub">${esc(o.unit.title)}</span>`:""}</span>`,"p-row p-occrow"+(o.cancel?" x":""),`--cc:${o.course.color}`)}
 function pDay(date,emptyText){const occ=(state.schedule||[]).length?dayOccurrences(date):[];const ev=eventsIn(parseD(date),parseD(date));
  const lessonsNoSched=(state.schedule||[]).length?[]:(state.lessons||[]).filter(l=>l.date===date);
  return `${ev.length?`<div class="p-events">${ev.map(e=>`<button class="evtag ${e.type}" data-a="p-go" data-t="event" data-id="${e.id}">${esc(e.title)}</button>`).join("")}</div>`:""}
@@ -1288,7 +1407,7 @@ async function pCheckUpdate(){PUPD={state:"busy",msg:"Söker efter uppdatering�
 async function pUpdateGo(){if(IS_MOBILE_APP){PUPD={state:"busy",msg:"Öppnar nedladdningen… Tryck sedan på filen och välj Installera. Första gången kan Android fråga om du tillåter installation från den här källan."};render();await downloadInstaller();return}
  try{const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg)await reg.update();if(window.caches){for(const k of await caches.keys())await caches.delete(k)}}catch(e){}
  location.reload()}
-function pFile(){return `<h2 class="p-h">Fil</h2>
+function pFile(){return `<h2 class="p-h">Inställningar och fil</h2>
  <div class="p-card">${READONLY?`<span class="p-label">Öppen i läsläge</span><b>${esc(RO_NAME||"Fil")}</b><span class="p-sub">Läsår ${esc(yearLabel(state.year))} · ${state.courses.length} kurser</span>`:`<span class="p-label">Ingen fil öppen</span><b>${state.example?"Exempeldata":"Lärarbordet"}</b>`}</div>
  <button class="p-big" data-a="open-ro">${READONLY?"Öppna en nyare fil":"Öppna min fil"}</button>
  <p class="p-muted">Välj din <b>lararbordet.json</b> eller <b>lararbordet.html</b>, till exempel från skolans Google Drive eller OneDrive. Telefonen kan bara läsa. Ingenting ändras eller skrivs över, så filen på datorn är alltid den som gäller.</p>
@@ -1341,7 +1460,7 @@ function dLesson(id,occ){const l=(state.lessons||[]).find(x=>x.id===id);if(!l)re
 function dUnit(id){const u=unit(id);if(!u)return "";const c=course(u.courseId)||{};const k=unitCapacity(state,u);const ls=lessonsOf(u.id);const as=state.assessments.filter(a=>a.unitId===u.id);
  const s=subj(c.subjectId);const items=s?s.areas.flatMap(a=>a.items.filter(i=>(u.contentIds||[]).includes(i.id)).map(i=>({i,a}))):[];
  return `<header class="p-hero" style="--cc:${c.color}"><span class="p-label">${esc(c.name||"")}</span><span class="p-date">${esc(u.title)}</span><span class="p-week">${wkRange(u.start,u.end)} · ${shortD(u.start)} – ${shortD(u.end)}</span></header>
- <div class="p-pill ${u.status==="klar"?"ok":u.status==="pagar"?"info":""}">${STATUS[u.status]}</div>
+ <div class="p-pill ${(u.status==="klar"||u.status==="bedomd")?"ok":u.status==="pagar"?"info":""}">${STATUS[u.status]}</div>
  ${u.desc?`<div class="p-card"><p>${esc(u.desc).replace(/\n/g,"<br>")}</p></div>`:""}
  ${k?`<div class="p-stats"><div><b>${k.available}</b><span>lektioner enligt schemat</span></div><div><b>${k.cancelled}</b><span>inställda</span></div><div><b>${ls.length}</b><span>planerade</span></div><div><b>${ls.filter(l=>l.done).length}</b><span>genomförda</span></div></div>`:""}
  ${pSec(`Lektioner (${ls.length})`,ls.length?ls.map(lessonRow).join(""):`<p class="p-empty">Inga lektioner planerade.</p>`)}
@@ -1417,13 +1536,14 @@ function unitModal(id){const u=id?unit(id):null;const c=course(u?u.courseId:ui.c
  <div class="f"><label for="ust">Status</label><select id="ust">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${d.status===k?"selected":""}>${l}</option>`).join("")}</select></div>
  <div class="f"><label for="ud">Beskrivning, syfte och arbetssätt</label><textarea id="ud">${esc(d.desc||"")}</textarea></div>
  <div class="f"><label>Centralt innehåll som arbetsområdet täcker</label>${contentChecklist(c.subjectId,d.contentIds||[])}</div>
- ${asl.length?`<p class="small">Bedömningar: ${asl.map(a=>esc(a.title)).join(", ")}</p>`:""}
+ ${u?`<div class="f"><label>Uppgifter och bedömningar i arbetsområdet</label>${asl.length?`<div class="list">${asl.map(a=>`<div class="li" style="cursor:pointer;padding:6px 0" data-a="edit-assess" data-id="${a.id}"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b> ${a.type?`<span class="tag">${esc(ATYPES[a.type]||a.type)}</span>`:""}</span></div>`).join("")}</div>`:`<span class="small muted">Inga ännu. Ett arbetsområde behöver inte ha en bedömd uppgift.</span>`}<button class="btn small" id="uas" style="justify-self:start;align-self:flex-start">+ Uppgift eller bedömning</button></div>`:`<p class="small muted" style="margin:0">När arbetsområdet är sparat kan du lägga till lektioner och uppgifter eller bedömningar i det.</p>`}
  <div class="actions">${u?'<button class="btn danger" id="udel">Ta bort</button><button class="btn" id="ules">Lektioner ('+lessonsOf(u.id).length+')</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="usave">Spara</button></div>`,m=>{
   m.querySelector("#usave").onclick=()=>{const t=val("ut").trim();if(!t){$("#ut").focus();return}let s=val("us"),e=val("ue");if(e<s)[s,e]=[e,s];
    const ids=[...m.querySelectorAll(".cl input:checked")].map(x=>x.value);const o={title:t,start:s,end:e,status:val("ust"),desc:val("ud"),contentIds:ids};
    if(u)Object.assign(u,o);else state.units.push(Object.assign({id:uid(),courseId:c.id},o));closeModal();commit()};
   const del=m.querySelector("#udel");if(del)del.onclick=()=>confirmBox(`Ta bort “${esc(u.title)}” och dess lektioner? Kopplade bedömningar finns kvar.`,()=>{state.units=state.units.filter(x=>x!==u);state.lessons=state.lessons.filter(l=>l.unitId!==u.id);commit()});
-  const ul=m.querySelector("#ules");if(ul)ul.onclick=()=>lessonsModal(u.id)})}
+  const ul=m.querySelector("#ules");if(ul)ul.onclick=()=>lessonsModal(u.id);
+  const ua=m.querySelector("#uas");if(ua)ua.onclick=()=>{if(!c.groupId&&!state.groups.length){modal("Elevgrupp saknas",`<p style="margin:0">En bedömning görs för en elevgrupp. Koppla kursen till en grupp först.</p><div class="actions"><button class="btn pri" data-a="edit-course" data-id="${c.id}">Redigera kursen</button></div>`);return}assessModal(null,{courseId:c.id,unitId:u.id,groupId:c.groupId||state.groups[0].id})}})}
 
 /* ---------- lektioner ---------- */
 function lessonsModal(unitId){const u=unit(unitId);if(!u)return;const c=course(u.courseId)||{};const ls=lessonsOf(unitId);
@@ -1463,17 +1583,36 @@ function seriesModal(unitId){const u=unit(unitId);if(!u)return;
   const sch=m.querySelector("#ssched");if(sch)sch.onclick=()=>{const n0=lessonsOf(unitId).length;const have=new Set(lessonsOf(unitId).map(l=>l.date+"|"+(l.time||"")));const ds=scheduleDates(state,u.courseId,val("sfrom"),val("sto")).filter(x=>!have.has(x.date+"|"+x.time));ds.forEach((x,i)=>state.lessons.push({id:uid(),unitId,date:x.date,time:x.time,title:"Lektion "+(n0+i+1),plan:"",note:"",done:false}));commit();lessonsModal(unitId);toast(ds.length+" lektioner skapades enligt schemat.")};
   m.querySelector("#sok").onclick=()=>{const n0=lessonsOf(unitId).length;dates().forEach((dt,i)=>state.lessons.push({id:uid(),unitId,date:dt,title:"Lektion "+(n0+i+1),plan:"",note:"",done:false}));commit();lessonsModal(unitId)}})}
 
+/* kursnamn föreslås ur ämne och grupp, t.ex. "Engelska 1 PO" eller "Svenska 8B" */
+function autoCourseName(sid,gname){const x=subj(sid);if(!x)return gname||"";let st="";if(x.form==="GY"||x.form==="GYOLD"){const m=String(x.stage||"").match(/(\d+[a-z]?)/i);st=m?m[1]:""}
+ return [x.name,st,gname].filter(Boolean).join(" ")}
+/* nyanser av en färg, för t.ex. olika nivåer i samma ämne */
+function shadesOf(hex){const h=hex.replace("#","");const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+ return [-.45,-.25,0,.25,.45].map(t=>"#"+[r,g,b].map(v=>Math.round(t<0?v*(1+t):v+(255-v)*t).toString(16).padStart(2,"0")).join(""))}
 function courseModal(id){const c=id?course(id):null;const opts=usedSubjects();if(!c&&!opts.length){modal("Välj dina ämnen först",`<p style="margin:0">En kurs hör till ett ämne. Välj först vilka ämnen du undervisar i.</p><div class="actions"><button class="btn pri" data-a="picker">Välj ämnen</button></div>`);return}
- const d=c||{name:"",subjectId:opts[0],groupId:(state.groups[0]||{}).id||"",color:COLORS[state.courses.length%COLORS.length]};let color=d.color;
- modal(c?"Redigera kurs":"Ny kurs",`<div class="f"><label for="cn">Kursnamn</label><input id="cn" value="${esc(d.name)}" placeholder="t.ex. Svenska 8B"></div>
+ const sameSubj=sid=>state.courses.find(x=>x.subjectId===sid&&x!==c);
+ const d=c||{name:"",subjectId:opts[0],groupId:(state.groups[0]||{}).id||"",color:(sameSubj(opts[0])||{}).color||COLORS[state.courses.length%COLORS.length]};let color=d.color;
+ let touched=!!c&&c.name!==autoCourseName(c.subjectId,(group(c.groupId)||{}).name);
+ const sw=()=>`${COLORS.map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Färg ${x}"></button>`).join("")}<input type="color" class="cpick" id="ccol" value="${/^#[0-9a-f]{6}$/i.test(color)?color:"#4f46e5"}" title="Välj valfri färg" aria-label="Välj valfri färg">`;
+ const shades=()=>/^#[0-9a-f]{6}$/i.test(color)?`<div class="shades"><span class="small muted" style="align-self:center">Nyanser:</span>${shadesOf(color).map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Nyans ${x}"></button>`).join("")}</div>`:"";
+ modal(c?"Redigera kurs":"Ny kurs",`
  <div class="row"><div class="f"><label for="cs">Ämne</label><select id="cs">${Object.keys(FORM_LABEL).map(fk=>{const l=opts.filter(id=>formOf(id)===fk);return l.length?`<optgroup label="${esc(FORM_LABEL[fk])}">${l.map(id=>`<option value="${esc(id)}" ${d.subjectId===id?"selected":""}>${esc(subjTitle(id))}</option>`).join("")}</optgroup>`:""}).join("")}</select><button class="btn ghost small" data-a="picker" style="align-self:flex-start;margin-top:4px">Fler ämnen…</button></div>
  <div class="f"><label for="cg">Elevgrupp</label><select id="cg"><option value="">Ingen</option>${state.groups.map(g=>`<option value="${g.id}" ${d.groupId===g.id?"selected":""}>${esc(g.name)}</option>`).join("")}<option value="__new">+ Ny grupp…</option></select></div></div>
- <div class="f" id="cgnw" hidden><label for="cgn">Namn på ny grupp</label><input id="cgn" placeholder="t.ex. 9A"></div>
- <div class="f"><label>Färg</label><div class="swatches">${COLORS.map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Färg ${x}"></button>`).join("")}</div></div>
+ <div class="f" id="cgnw" hidden><label for="cgn">Namn på den nya gruppen</label><input id="cgn" placeholder="t.ex. 9A"><span class="small muted">Eleverna lägger du in under Bedömning → Elever.</span></div>
+ <div class="f"><label for="cn">Kursnamn</label><input id="cn" value="${esc(d.name)}" placeholder="Fylls i av ämne och grupp"><span class="small muted">Föreslås utifrån ämne och grupp. Skriv något annat om du vill.</span></div>
+ <div class="f"><label>Färg</label><div class="swatches" id="csw">${sw()}</div><div id="csh">${shades()}</div><span class="small muted">Tips: ge ett ämne samma färg och olika nyanser för olika nivåer eller grupper.</span></div>
  <div class="actions">${c?'<button class="btn danger" id="cdel">Ta bort kurs</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="csave">Spara</button></div>`,m=>{
-  m.querySelectorAll(".sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;m.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b))});
-  m.querySelector("#cg").onchange=e=>{m.querySelector("#cgnw").hidden=e.target.value!=="__new"};
-  m.querySelector("#csave").onclick=()=>{const n=val("cn").trim();if(!n){$("#cn").focus();return}let gid=val("cg");
+  const gname=()=>{const v=val("cg");return v==="__new"?val("cgn").trim():(group(v)||{}).name||""};
+  const auto=()=>{if(!touched)m.querySelector("#cn").value=autoCourseName(val("cs"),gname())};
+  const paintC=()=>{m.querySelector("#csw").innerHTML=sw();m.querySelector("#csh").innerHTML=shades();bindC()};
+  const bindC=()=>{m.querySelectorAll(".sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;paintC()});const cp=m.querySelector("#ccol");cp.oninput=()=>{color=cp.value;m.querySelector("#csh").innerHTML=shades();m.querySelectorAll("#csw .sw").forEach(x=>x.setAttribute("aria-pressed","false"));m.querySelectorAll("#csh .sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;paintC()})}};
+  bindC();
+  m.querySelector("#cn").oninput=e=>{touched=!!e.target.value.trim()};
+  m.querySelector("#cs").onchange=e=>{auto();if(!c){const o=sameSubj(e.target.value);if(o&&o.color&&/^#/.test(o.color)){const sh=shadesOf(o.color);color=sh.find(x=>!state.courses.some(k=>k.color===x))||o.color;paintC()}}};
+  m.querySelector("#cg").onchange=e=>{m.querySelector("#cgnw").hidden=e.target.value!=="__new";auto();if(e.target.value==="__new")m.querySelector("#cgn").focus()};
+  m.querySelector("#cgn").oninput=auto;
+  if(!c)auto();
+  m.querySelector("#csave").onclick=()=>{let n=val("cn").trim();if(!n)n=autoCourseName(val("cs"),gname())||"Kurs";let gid=val("cg");
    if(gid==="__new"){const gn=val("cgn").trim()||"Ny grupp";gid=uid();state.groups.push({id:gid,name:gn,students:[]})}
    const o={name:n,subjectId:val("cs"),groupId:gid,color};if(c)Object.assign(c,o);else{const nc=Object.assign({id:uid()},o);state.courses.push(nc);ui.course=nc.id;saveUI()}closeModal();commit()};
   const del=m.querySelector("#cdel");if(del)del.onclick=()=>confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden och bedömningar?`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);ui.course=null;commit()})})}
@@ -1515,36 +1654,57 @@ const critText=t=>esc(t).replace(/\*([^*]+)\*/g,"<b>$1</b>");
 function critChecklist(courseId,sel){const c=course(courseId);const cr=c&&critFor(c.subjectId);
  if(!cr)return `<p class="small muted" style="margin:0">Det finns inga betygskriterier från Skolverket för det här ämnet och stadiet. Beskriv bedömningen i rutan nedan.</p>`;
  return `<div class="cl">${cr.aspects.map((a,i)=>`<label><input type="checkbox" value="${i}" ${sel.includes(i)?"checked":""}><span>${critText(aspectLabel(a))}</span></label>`).join("")}</div><span class="small muted">Från Skolverkets betygskriterier${cr.year?" för slutet av åk "+esc(cr.year):""}. Varje vald del bedöms för sig.</span>`}
-function assessModal(id){const a=id?state.assessments.find(x=>x.id===id):null;const g=group(ui.group);
- const cs=state.courses;const d=a||{title:"",date:fmtD(TODAY),courseId:ui.acourse!=="all"?ui.acourse:((cs.find(c=>c.groupId===(g||{}).id)||cs[0]||{}).id||""),unitId:"",desc:""};
+function assessModal(id,preset){const a=id?state.assessments.find(x=>x.id===id):null;const g=group(a?a.groupId:(preset&&preset.groupId)||ui.group);if(!g)return;
+ const cs=state.courses;const d=a||Object.assign({title:"",date:fmtD(TODAY),type:"",mode:"betyg",max:"",courseId:ui.acourse!=="all"?ui.acourse:((cs.find(c=>c.groupId===g.id)||cs[0]||{}).id||""),unitId:"",desc:""},preset||{});
  const unitOpts=cid=>`<option value="">Inget</option>`+state.units.filter(u=>u.courseId===cid).map(u=>`<option value="${u.id}" ${d.unitId===u.id?"selected":""}>${esc(u.title)}</option>`).join("");
- modal(a?"Bedömning":"Ny bedömning",`<div class="f"><label for="at">Namn</label><input id="at" value="${esc(d.title)}" placeholder="t.ex. Skriftligt prov algebra"></div>
- <div class="row"><div class="f"><label for="ad">Datum</label><input type="date" id="ad" value="${d.date}"></div><div class="f"><label for="ac">Kurs</label><select id="ac">${cs.map(c=>`<option value="${c.id}" ${d.courseId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div></div>
- <div class="f"><label for="au">Arbetsområde</label><select id="au">${unitOpts(d.courseId)}</select><span class="small muted">Kopplingen gör att innehållet räknas som bedömt.</span></div>
- <div class="f"><label>Betygskriterier som uppgiften bedömer</label><div id="acrit">${critChecklist(d.courseId,d.aspects||[])}</div></div>
+ modal(a?"Bedömning":"Ny uppgift eller bedömning",`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)}</p>
+ <div class="f"><label for="at">Namn</label><input id="at" value="${esc(d.title)}" placeholder="t.ex. Skriftligt prov algebra"></div>
+ <div class="row"><div class="f"><label for="aty">Typ av uppgift</label><select id="aty"><option value="">Välj…</option>${Object.entries(ATYPES).map(([k,l])=>`<option value="${k}" ${d.type===k?"selected":""}>${l}</option>`).join("")}</select></div><div class="f"><label for="ad">Datum</label><input type="date" id="ad" value="${d.date}"></div></div>
+ <div class="row"><div class="f"><label for="ac">Kurs</label><select id="ac">${cs.map(c=>`<option value="${c.id}" ${d.courseId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div><div class="f"><label for="au">Arbetsområde</label><select id="au">${unitOpts(d.courseId)}</select></div></div>
+ <span class="small muted" style="margin-top:-6px">Kopplingen till ett arbetsområde gör att dess centrala innehåll räknas som bedömt.</span>
+ <div class="row"><div class="f"><label for="amo">Bedöms som</label><select id="amo">${Object.entries(AMODES).map(([k,l])=>`<option value="${k}" ${(d.mode||"betyg")===k?"selected":""}>${k==="betyg"?esc(scale().name):l}</option>`).join("")}</select></div>
+  <div class="f"><label for="amax">Maxpoäng (valfritt)</label><input type="number" min="0" step="0.5" id="amax" value="${esc(d.max==null?"":String(d.max))}" placeholder="t.ex. 40"></div></div>
+ <div class="f" id="acritw" ${(d.mode||"betyg")==="gk"?"hidden":""}><label>Betygskriterier som uppgiften bedömer</label><div id="acrit">${critChecklist(d.courseId,d.aspects||[])}</div></div>
  <div class="f"><label for="ade">Uppgift och instruktioner</label><textarea id="ade" placeholder="Vad ska eleverna göra?">${esc(d.desc||"")}</textarea></div>
  <div class="actions">${a?'<button class="btn danger" id="adel">Ta bort</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="asave">Spara</button></div>`,m=>{
   m.querySelector("#ac").onchange=e=>{d.unitId="";m.querySelector("#au").innerHTML=unitOpts(e.target.value);m.querySelector("#acrit").innerHTML=critChecklist(e.target.value,[])};
-  m.querySelector("#asave").onclick=()=>{const t=val("at").trim();if(!t){$("#at").focus();return}if(!val("ac"))return;const o={title:t,date:val("ad"),courseId:val("ac"),unitId:val("au"),desc:val("ade"),aspects:[...m.querySelectorAll("#acrit input:checked")].map(x=>+x.value)};
-   if(a)Object.assign(a,o);else state.assessments.push(Object.assign({id:uid(),groupId:g.id},o));closeModal();commit()};
+  m.querySelector("#amo").onchange=e=>{m.querySelector("#acritw").hidden=e.target.value==="gk"};
+  m.querySelector("#asave").onclick=()=>{const t=val("at").trim();if(!t){$("#at").focus();return}if(!val("ac"))return;const mx=parseFloat(val("amax"));const mode=val("amo")||"betyg";
+   const o={title:t,date:val("ad"),courseId:val("ac"),unitId:val("au"),desc:val("ade"),type:val("aty"),mode,max:isFinite(mx)&&mx>0?mx:null,aspects:mode==="gk"?[]:[...m.querySelectorAll("#acrit input:checked")].map(x=>+x.value)};
+   if(a)Object.assign(a,o);else{state.assessments.push(Object.assign({id:uid(),groupId:g.id},o));ui.group=g.id;saveUI()}closeModal();commit()};
   const del=m.querySelector("#adel");if(del)del.onclick=()=>confirmBox(`Ta bort “${esc(a.title)}” och alla omdömen på den?`,()=>{delete state.grades[a.id];state.assessments=state.assessments.filter(x=>x!==a);commit()})})}
 
-function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const g=group(a.groupId);const s=g.students.find(x=>x.id===sid);if(!a||!s)return;
- const cur=(state.grades[aid]||{})[sid]||{k:"",note:""};let pick=cur.k;const asp=Object.assign({},cur.asp||{});let manual=!!cur.manual;const sc=scale();const idx=g.students.indexOf(s);const next=g.students[idx+1];
- const c=course(a.courseId);const cr=(a.aspects||[]).length&&c?critFor(c.subjectId):null;
+const MARK_NEXT={"":"y",y:"g",g:"r",r:""};
+function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const g=a&&group(a.groupId);const s=g&&g.students.find(x=>x.id===sid);if(!a||!s)return;
+ const cur=(state.grades[aid]||{})[sid]||{k:"",note:""};let pick=cur.k;const asp=Object.assign({},cur.asp||{});const asm=JSON.parse(JSON.stringify(cur.asm||{}));let manual=!!cur.manual;const sc=scale();const idx=g.students.indexOf(s);const next=g.students[idx+1];
+ const c=course(a.courseId);const gk=a.mode==="gk";const cr=!gk&&(a.aspects||[]).length&&c?critFor(c.subjectId):null;
+ const eca=cr&&cr.levels.includes("E");
  const btns=(sel,attr)=>`<div class="levels">${sc.levels.map((l,i)=>`<button class="lv" style="--h:${hueT(i/(sc.levels.length-1))}" aria-pressed="${sel===l.k}" ${attr} data-k="${l.k}">${esc(l.l)}</button>`).join("")}</div>`;
- const aspHtml=cr?a.aspects.filter(i=>cr.aspects[i]).map(i=>{const A=cr.aspects[i];return `<div class="asp"><details><summary>${critText(aspectLabel(A))}</summary>${cr.levels.map(k=>A[k]?`<p class="small"><b>${esc(cr.names[k])}:</b> ${critText(A[k])}</p>`:"").join("")}</details>${btns(asp[i],`data-asp="${i}"`)}</div>`}).join(""):"";
- modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(a.title)} · ${shortD(a.date)} · ${esc((c||{}).name||"")}</p>
- ${cr?`<h3 style="margin:0">Per kriterium</h3>${aspHtml}<h3 style="margin:0">Samlat omdöme <span class="small muted" id="gsug" style="font-weight:400"></span></h3>`:""}
- <div id="gmain">${btns(pick,'data-main="1"')}</div>
+ const gkBtns=`<div class="levels"><button class="lv" style="--h:140" aria-pressed="${pick==="G"}" data-main="1" data-k="G">Genomfört</button><button class="lv" style="--h:8" aria-pressed="${pick==="EG"}" data-main="1" data-k="EG">Ej genomfört</button></div>`;
+ const aspHtml=cr?a.aspects.filter(i=>cr.aspects[i]).map(i=>{const A=cr.aspects[i];const lv=cr.levels.filter(k=>A[k]);
+  return `<div class="cm" data-i="${i}"><div class="cm-h"><span>Kriterium ${a.aspects.indexOf(i)+1}</span><span class="sp"></span><span class="small" data-aspk="${i}"></span></div>
+   <div class="cm-g" style="--n:${lv.length}">${lv.map(k=>`<button class="cm-c" data-cm="${i}" data-lv="${k}" ${asm[i]&&asm[i][k]?`data-m="${asm[i][k]}"`:""}><span class="lvn">${esc(cr.names[k])}</span><span>${critText(A[k])}</span></button>`).join("")}</div>
+   <details style="padding:6px 10px 10px"><summary class="small muted">Sätt betygssteg för kriteriet direkt</summary>${btns(asp[i],`data-asp="${i}"`)}</details></div>`}).join(""):"";
+ const pts=a.max?`<div class="f"><label for="gpts">Poäng (av ${esc(String(a.max))})</label><input type="number" id="gpts" min="0" max="${a.max}" step="0.5" value="${cur.p==null?"":cur.p}" style="max-width:140px"></div>`:"";
+ modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(a.title)} · ${shortD(a.date)} · ${esc((c||{}).name||"")}${a.type?" · "+esc(ATYPES[a.type]||""):""}</p>
+ ${s.note?`<p class="example" style="margin:0;background:var(--info-bg);color:var(--info)"><span><b>Om eleven:</b> ${esc(s.note)}</span></p>`:""}
+ ${cr?`<h3 style="margin:0">Kriterier</h3><div class="cm-legend"><span>Tryck på texten: </span><span><i style="background:#fde68a"></i>ett tryck: delvis</span><span><i style="background:#86efac"></i>två: visat</span><span><i style="background:#fca5a5"></i>tre: inte visat</span><span>fyra: rensa</span></div>${aspHtml}<h3 style="margin:0">Samlat omdöme <span class="small muted" id="gsug" style="font-weight:400"></span></h3>`:""}
+ <div id="gmain">${gk?gkBtns:btns(pick,'data-main="1"')}</div>
+ ${pts}
  <div class="f"><label for="gnote">Anteckning till eleven eller dig själv</label><textarea id="gnote" placeholder="Styrkor, nästa steg, anpassningar…">${esc(cur.note||"")}</textarea></div>
- <div class="actions">${cur.k||Object.keys(asp).length?'<button class="btn danger" id="gclr">Rensa</button>':""}<span class="sp"></span>${next?'<button class="btn" id="gnext">Spara och nästa elev</button>':""}<button class="btn pri" id="gsave">Spara</button></div>`,m=>{
+ <div class="actions">${cur.k||Object.keys(asp).length||cur.p!=null?'<button class="btn danger" id="gclr">Rensa</button>':""}<span class="sp"></span>${next?'<button class="btn" id="gnext">Spara och nästa elev</button>':""}<button class="btn pri" id="gsave">Spara</button></div>`,m=>{
   const paint=()=>{m.querySelectorAll("[data-main]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.k===pick));m.querySelectorAll("[data-asp]").forEach(x=>x.setAttribute("aria-pressed",asp[x.dataset.asp]===x.dataset.k));
-   const sg=m.querySelector("#gsug");if(sg){const ag=aggregateAspects(asp);sg.textContent=ag?(manual?"(förslag utifrån kriterierna: "+ag+")":"(förslag utifrån kriterierna)"):""}};
+   m.querySelectorAll("[data-cm]").forEach(x=>{const v=(asm[x.dataset.cm]||{})[x.dataset.lv];if(v)x.dataset.m=v;else delete x.dataset.m});
+   m.querySelectorAll("[data-aspk]").forEach(x=>{const k=asp[x.dataset.aspk];const l=sc.levels.find(z=>z.k===k);x.innerHTML=l?`Steg: <b>${esc(l.l)}</b>`:""});
+   const sg=m.querySelector("#gsug");if(sg){const ag=aggregateAspects(asp);sg.textContent=ag?(manual?"(förslag utifrån kriterierna: "+(sc.levels.find(z=>z.k===ag)||{}).l+")":"(förslag utifrån kriterierna)"):""}};
+  const reagg=()=>{if(!manual)pick=aggregateAspects(asp)||""};
   m.querySelectorAll("[data-main]").forEach(b=>b.onclick=()=>{pick=pick===b.dataset.k?"":b.dataset.k;manual=!!pick;if(!pick&&cr){pick=aggregateAspects(asp)||"";manual=false}paint()});
-  m.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{const i=b.dataset.asp;asp[i]=asp[i]===b.dataset.k?undefined:b.dataset.k;if(asp[i]===undefined)delete asp[i];if(!manual)pick=aggregateAspects(asp)||"";paint()});
+  m.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{const i=b.dataset.asp;asp[i]=asp[i]===b.dataset.k?undefined:b.dataset.k;if(asp[i]===undefined)delete asp[i];delete asm[i];reagg();paint()});
+  m.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{const i=b.dataset.cm,k=b.dataset.lv;asm[i]=asm[i]||{};const nx=MARK_NEXT[asm[i][k]||""];if(nx)asm[i][k]=nx;else delete asm[i][k];if(!Object.keys(asm[i]).length)delete asm[i];
+   if(eca){const gr=markToGrade(asm[i],state.scale);if(gr)asp[i]=gr;else delete asp[i]}reagg();paint()});
   paint();
-  const save=()=>{state.grades[aid]=state.grades[aid]||{};const note=val("gnote").trim();if(pick||note||Object.keys(asp).length)state.grades[aid][sid]=Object.assign({k:pick,note},Object.keys(asp).length?{asp,manual}:{});else delete state.grades[aid][sid];commit()};
+  const save=()=>{state.grades[aid]=state.grades[aid]||{};const note=val("gnote").trim();const pv=parseFloat(val("gpts"));const p=isFinite(pv)?pv:null;
+   if(pick||note||Object.keys(asp).length||Object.keys(asm).length||p!=null)state.grades[aid][sid]=Object.assign({k:pick,note},Object.keys(asp).length||Object.keys(asm).length?{asp,manual}:{},Object.keys(asm).length?{asm}:{},p!=null?{p}:{});else delete state.grades[aid][sid];commit()};
   m.querySelector("#gsave").onclick=()=>{closeModal();save()};
   const nx=m.querySelector("#gnext");if(nx)nx.onclick=()=>{save();gradeModal(aid,next.id)};
   const cl=m.querySelector("#gclr");if(cl)cl.onclick=()=>{delete state.grades[aid][sid];closeModal();commit()}})}
@@ -1555,9 +1715,11 @@ function studentModal(gid,sid){const g=group(gid);const s=g&&g.students.find(x=>
   return `<div><div class="area-h"><span class="dot" style="background:${c.color}"></span><h3>${esc(c.name)}</h3><span class="sp" style="flex:1"></span><span class="small">Typnivå <b class="${mk&&mk.low?"lowtag":""}">${mk?esc(mk.l):"–"}</b></span></div>
   ${(()=>{const cr=critFor((course(cid)||{}).subjectId);const ev=aspectEvidence(state,cid,sid);const ks=Object.keys(ev);if(!cr||!ks.length)return "";
     return `<div class="evid"><b class="small">Underlag per kriterium</b>${ks.sort((x,y)=>x-y).map(i=>{const e=ev[i];const t=lvT(e.k);return `<div class="evrow"><span class="small">${critText(aspectLabel(cr.aspects[i]||{}))}</span><span class="cell g" style="width:auto;min-width:44px;border-radius:8px;--h:${hueT(t)}">${esc(e.k)}</span><span class="small muted">${e.n} st</span></div>`}).join("")}</div>`})()}
-  <div class="list">${list.map(a=>{const v=(state.grades[a.id]||{})[sid];const t=v?lvT(v.k):null;return `<div class="li"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b>${v&&v.note?`<br><span class="small muted">${esc(v.note)}</span>`:""}</span><button class="cell ${t!=null?"g":""}" style="width:auto;min-width:52px;border-radius:8px;${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${sid}">${v&&v.k?esc(v.k):'<span class="muted small">Ej bedömt</span>'}</button></div>`}).join("")}</div></div>`}).join("");
+  <div class="list">${list.map(a=>{const v=(state.grades[a.id]||{})[sid];const t=v?gradeT(v.k):null;return `<div class="li"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b>${v&&v.note?`<br><span class="small muted">${esc(v.note)}</span>`:""}</span><button class="cell ${t!=null?"g":""}" style="width:auto;min-width:52px;border-radius:8px;${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${sid}">${v&&v.k?esc(v.k):'<span class="muted small">Ej bedömt</span>'}${v&&v.p!=null?` <span class="small">${v.p}${a.max?"/"+a.max:""}p</span>`:""}</button></div>`}).join("")}</div></div>`}).join("");
  const all=studentSummary(gid,sid,"all");
- modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)} · ${all.count} omdömen · ${all.low} under godtagbar nivå · ${all.missing} saknas</p>${body||'<div class="empty">Inga bedömningar ännu.</div>'}`)}
+ modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)} · ${all.count} omdömen · ${all.low} under godtagbar nivå · ${all.missing} saknas</p>
+ <div class="f"><label for="snote">Om eleven</label><textarea id="snote" placeholder="T.ex. anpassningar, stöd, sådant du vill komma ihåg">${esc(s.note||"")}</textarea><span class="small muted">Visas när du bedömer eleven. Skriv bara det du behöver i undervisningen. Känsliga uppgifter, t.ex. diagnoser, hör hemma i skolans system för elevhälsa.</span>${READONLY?"":`<button class="btn small" id="snsave" style="align-self:flex-start;margin-top:4px">Spara anteckningen</button>`}</div>
+ ${body||'<div class="empty">Inga bedömningar ännu.</div>'}`,m=>{const b=m.querySelector("#snsave");if(b)b.onclick=()=>{const v=val("snote").trim();if(v)s.note=v;else delete s.note;commit();toast("Anteckningen är sparad.")}})}
 
 function subjectModal(){modal("Eget ämne",`<div class="row"><div class="f"><label for="sn">Ämne</label><input id="sn" placeholder="t.ex. Bild"></div><div class="f"><label for="sst">Stadium</label><input id="sst" placeholder="t.ex. åk 7–9"></div></div>
  <div class="f"><label for="sc">Centralt innehåll</label><textarea id="sc" style="min-height:220px" placeholder="# Bildframställning&#10;Framställning av berättande och informativa bilder&#10;Tekniker för teckning och måleri&#10;# Redskap för bildframställning&#10;..."></textarea><span class="small muted">Rader som börjar med # blir kunskapsområden. Övriga rader blir punkter. Kopiera gärna från kursplanen på skolverket.se.</span></div>
@@ -1640,6 +1802,23 @@ async function offerFile(filename,data,mime){
 function csv(){const g=group(ui.group);const as=state.assessments.filter(a=>a.groupId===g.id&&(ui.acourse==="all"||a.courseId===ui.acourse));const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
  return [["Elev",...as.map(a=>a.title+" ("+a.date+")")].map(q).join(";"),...g.students.map(s=>[s.name,...as.map(a=>((state.grades[a.id]||{})[s.id]||{}).k||"")].map(q).join(";"))].join("\r\n")}
 
+/* ---------- kalendarium från Excel ---------- */
+function importCalModal(){const yh=parseD(state.year.start).getFullYear();let rows=[];
+ modal("Importera kalendarium",`<p class="small" style="margin:0">Markera raderna i Excel eller Google Kalkylark och klistra in dem här. Du kan också välja en CSV-fil. Varje rad behöver ett <b>datum</b> och ett <b>namn</b>. Ett slutdatum och en typ (Lov, Studiedag, Aktivitet, Deadline, Händelse) är valfria.</p>
+ <pre class="small" style="margin:0;background:var(--soft);padding:8px 10px;border-radius:8px;overflow:auto">2026-10-26   2026-10-30   Höstlov
+2026-12-03                Friluftsdag     Aktivitet
+2027-01-08                Studiedag</pre>
+ <div class="f"><label for="icx">Rader från kalkylarket</label><textarea id="icx" style="min-height:160px" placeholder="Klistra in här"></textarea></div>
+ <div class="actions" style="justify-content:flex-start;margin:0"><label class="btn" style="cursor:pointer">Välj CSV-fil…<input type="file" id="icf" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label></div>
+ <div id="icp" class="small muted">Inga rader än.</div>
+ <p class="small muted" style="margin:0">Importerar du igen efter att kalendariet ändrats uppdateras händelser med samma namn och startdatum, och nya läggs till. Inget tas bort.</p>
+ <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="icok" disabled>Importera</button></div>`,m=>{
+  const prev=()=>{rows=parseCalendarRows(val("icx"),yh);const p=m.querySelector("#icp");m.querySelector("#icok").disabled=!rows.length;
+   p.innerHTML=rows.length?`<b>${rows.length} händelser hittades:</b><div class="list" style="max-height:180px;overflow:auto;margin-top:4px">${rows.slice(0,60).map(r=>`<div class="li" style="padding:4px 0"><span class="when num">${shortD(r.start)}${r.end!==r.start?"–"+shortD(r.end):""}</span><span class="what">${esc(r.title)}</span><span class="pill">${esc(EVENT_TYPES[r.type])}</span></div>`).join("")}</div>`:(val("icx").trim()?"Hittade inga datum. Kontrollera att varje rad har ett datum, t.ex. 2026-10-26 eller 26/10.":"Inga rader än.")};
+  m.querySelector("#icx").oninput=prev;
+  m.querySelector("#icf").onchange=async e=>{const f=e.target.files[0];if(!f)return;m.querySelector("#icx").value=await f.text();prev()};
+  m.querySelector("#icok").onclick=()=>{if(!rows.length)return;const r=mergeEvents(state,rows);closeModal();commit();toast(`${r.added} ${r.added===1?"ny händelse":"nya händelser"}${r.updated?`, ${r.updated} ${r.updated===1?"uppdaterad":"uppdaterade"}`:""}. Kontrollera gärna typen på aktiviteter, så att rätt grupper får inställda lektioner.`)}})}
+
 /* ===== 06b-guide.js ===== */
 /* ---------- guide: synka till rätt fil på rätt ställe ---------- */
 let GUIDE={step:0,svc:"google"};
@@ -1712,7 +1891,7 @@ const A={
  "bar-save":()=>barSave(),
  unmine:el=>{state.mine=state.mine.filter(x=>x!==el.dataset.id);commit()},
  "sel-course":el=>{ui.course=el.dataset.id;saveUI();render()},
- "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
+ "bar-hide":()=>{BAR_HIDDEN=true;updateBar();toast("Rutan visas inte mer i dag. Kom ihåg att spara med Spara eller Ctrl/Cmd+S.")}, "import-cal":()=>importCalModal(), how:()=>howModal(), results:()=>resultsModal(), cview:el=>{ui.cview=el.dataset.v;saveUI();render()}, "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
  "new-unit":()=>unitModal(), "edit-unit":el=>unitModal(el.dataset.id),
  wheel:el=>{ui.wheel=el.dataset.id;saveUI();render()},
  wheelmode:el=>{ui.wheelMode=el.dataset.v;render()},
@@ -1753,6 +1932,8 @@ if(IS_MOBILE_APP){location.hash="fil";render()}
 else if(DESKTOP)desktopInit();
 else if(FIRST&&narrow){FIRST_PHONE=true;location.hash="fil";render()}
 else if(FIRST)welcomeModal();
+/* sparar också med jämna mellanrum, som en extra säkerhet om något sparande har missats */
+setInterval(()=>{if(dirty&&!saving&&!READONLY&&(DESKTOP?filePath:fileHandle))saveFile(false)},45000);
 
 </script>
 </body>

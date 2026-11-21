@@ -1,11 +1,13 @@
 /* ---------- bedömningsskalor ---------- */
 const SCALES={
- af:{name:"A–F (betygsstegen i Lgr22)",levels:[{k:"F",l:"F",low:1},{k:"E",l:"E"},{k:"D",l:"D"},{k:"C",l:"C"},{k:"B",l:"B"},{k:"A",l:"A"}]},
+ af:{name:"A–F (betygsstegen)",levels:[{k:"F",l:"F",low:1},{k:"E",l:"E"},{k:"D",l:"D"},{k:"C",l:"C"},{k:"B",l:"B"},{k:"A",l:"A"}]},
  lokal:{name:"Lokal femgradig skala",levels:[{k:"1",l:"Ej visat",low:1},{k:"2",l:"På väg",low:1},{k:"3",l:"Godtagbart"},{k:"4",l:"Väl godtagbart"},{k:"5",l:"Mycket väl godtagbart"}]}
 };
 const scale=()=>SCALES[state.scale]||SCALES.af;
 const lvIdx=k=>scale().levels.findIndex(l=>l.k===k);
 const lvT=k=>{const i=lvIdx(k);return i<0?null:i/(scale().levels.length-1)};
+const gradeT=k=>k==="G"?1:k==="EG"?0:lvT(k);
+const gradeL=k=>k==="G"?"G":k==="EG"?"EG":k;
 const hueT=t=>Math.round(8+t*132);
 const isLow=k=>{const l=scale().levels.find(x=>x.k===k);return !!(l&&l.low)};
 function median(arr){if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);return s[Math.floor((s.length-1)/2)]}
@@ -85,11 +87,11 @@ const unit=id=>state.units.find(u=>u.id===id);
 const group=id=>state.groups.find(g=>g.id===id);
 const allItems=sid=>{const s=subj(sid);return s?s.areas.flatMap(a=>a.items):[]};
 function coverage(sid,courseFilter){
- const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,manual:!!state.manual[i.id]});
- const rank={gap:0,planned:1,ongoing:2,covered:3};const map={planerad:"planned",pagar:"ongoing",klar:"covered"};
+ const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,tests:[],manual:!!state.manual[i.id]});
+ const rank={gap:0,planned:1,ongoing:2,covered:3};const map={planerad:"planned",pagar:"ongoing",klar:"covered",bedomd:"covered"};
  const cs=state.courses.filter(c=>c.subjectId===sid&&(courseFilter==="all"||!courseFilter||c.id===courseFilter)).map(c=>c.id);
- state.units.filter(u=>cs.includes(u.courseId)).forEach(u=>(u.contentIds||[]).forEach(id=>{const r=res[id];if(!r)return;r.units.push(u);const st=map[u.status]||"planned";if(rank[st]>rank[r.state])r.state=st}));
- state.assessments.filter(a=>cs.includes(a.courseId)).forEach(a=>{const u=unit(a.unitId);(u?u.contentIds:[]).forEach(id=>{if(res[id])res[id].assessed=true})});
+ state.units.filter(u=>cs.includes(u.courseId)).forEach(u=>(u.contentIds||[]).forEach(id=>{const r=res[id];if(!r)return;r.units.push(u);if(u.status==="bedomd")r.assessed=true;const st=map[u.status]||"planned";if(rank[st]>rank[r.state])r.state=st}));
+ state.assessments.filter(a=>cs.includes(a.courseId)).forEach(a=>{const u=unit(a.unitId);(u?u.contentIds||[]:[]).concat(a.contentIds||[]).forEach(id=>{if(res[id]){res[id].assessed=true;if(!res[id].tests.includes(a))res[id].tests.push(a)}})});
  Object.values(res).forEach(r=>{if(r.manual)r.state="covered"});
  return res}
 function covSummary(sid,cf){const c=coverage(sid,cf);const v=Object.values(c);const n=v.length||1;const k=s=>v.filter(x=>x.state===s).length;return {n:v.length,covered:k("covered"),ongoing:k("ongoing"),planned:k("planned"),gap:k("gap"),pct:Math.round(k("covered")/n*100)}}

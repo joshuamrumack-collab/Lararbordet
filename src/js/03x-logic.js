@@ -74,6 +74,13 @@ function critFor(planId){const r=PLAN[planId];if(!r)return null;let all;try{all=
  const n=Math.max(...order.map(k=>set[k].length));const aspects=[];for(let i=0;i<n;i++){const o={};order.forEach(k=>o[k]=set[k][i]||"");aspects.push(o)}
  const names={E:"E",C:"C",A:"A",G:"Grundläggande",F:"Fördjupade"};
  return {levels:order,names,aspects,year:r.f.id.startsWith("GR")?(planId.split("/")[1]||"").split("-").pop():null}}
+/* Kriteriematris (Vklass-stil): markeringar per nivå, "y" delvis (gult), "g" uppnått (grönt), "r" inte uppnått (rött).
+   Ger ett betygssteg för aspekten: A grönt = A, C grönt + A gult = B, C grönt = C, E grönt + C gult = D, E grönt = E, annars F. */
+function markToGrade(m,scaleKey){m=m||{};const has=Object.values(m).some(Boolean);if(!has)return null;
+ const g=k=>m[k]==="g",y=k=>m[k]==="y";let step;
+ if(g("A"))step=5;else if(g("C")&&y("A"))step=4;else if(g("C"))step=3;else if(g("E")&&y("C"))step=2;else if(g("E"))step=1;else step=0;
+ if(scaleKey==="lokal")return String([y("E")?2:1,3,4,4,5,5][step]);
+ return ["F","E","D","C","B","A"][step]}
 /* Ett kort namn på en aspekt: början av E-texten */
 function aspectLabel(asp){const t=String(asp.E||asp.G||Object.values(asp)[0]||"").replace(/\*/g,"");return t.length>110?t.slice(0,107).replace(/\s+\S*$/,"")+"…":t}
 /* Samlat omdöme ur aspektomdömen: medianen på skalan */
@@ -117,3 +124,26 @@ function reflowLessons(s,unitId){const u=s.units.find(x=>x.id===unitId);if(!u||!
  const taken=new Set((s.lessons||[]).filter(l=>l.done||l.unitId!==unitId).filter(l=>{const v=s.units.find(x=>x.id===l.unitId);return v&&v.courseId===u.courseId}).map(l=>l.date+"|"+(l.time||"")));
  const free=scheduleDates(s,u.courseId,pend[0].date,s.year.end).filter(x=>!taken.has(x.date+"|"+x.time));let moved=0;
  pend.forEach((l,i)=>{const f=free[i];if(!f)return;if(l.date!==f.date||l.time!==f.time){l.date=f.date;l.time=f.time;moved++}});return moved}
+
+/* ----- kalendarium från Excel: klistra in rader (eller CSV) med datum, slutdatum, namn, typ ----- */
+function parseDateLoose(t,yearHint){t=String(t||"").trim();if(!t)return null;let m;
+ if(m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))return fmtD(new Date(+m[1],+m[2]-1,+m[3]));
+ if(m=t.match(/^(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?$/)){let y=m[3]?+m[3]:yearHint;if(y<100)y+=2000;if(!y)return null;return fmtD(new Date(y,+m[2]-1,+m[1]))}
+ if(m=t.match(/^(\d{5})$/)){const d=new Date(Date.UTC(1899,11,30)+(+m[1])*864e5);return fmtD(new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()))}
+ return null}
+function guessType(name,typ){const t=(String(typ||"")+" "+String(name||"")).toLowerCase();
+ if(/studiedag|kompetensutveckl|planeringsdag|\bapt\b/.test(t))return "studiedag";
+ if(/\blov\b|lov$|lovet|sommarlov|jullov|sportlov|påsklov|höstlov|ledig|klämdag|röd dag/.test(t))return "lov";
+ if(/deadline|sista dag|inlämning/.test(t))return "deadline";
+ if(/aktivitet|friluftsdag|prao|temadag|utflykt|idrottsdag/.test(t))return "aktivitet";
+ return "annat"}
+function parseCalendarRows(text,yearHint){const out=[];const lines=String(text||"").split(/\r?\n/).filter(l=>l.trim());
+ for(const line of lines){const sep=line.includes("\t")?"\t":line.includes(";")?";":",";const c=line.split(sep).map(x=>x.trim().replace(/^"|"$/g,""));
+  const dates=[];const rest=[];c.forEach(x=>{const d=parseDateLoose(x,yearHint);if(d&&dates.length<2)dates.push(d);else if(x)rest.push(x)});
+  if(!dates.length)continue;const title=rest[0]||"Händelse";const typ=rest[1]||"";let [a,b]=dates;if(!b)b=a;if(b<a)[a,b]=[b,a];
+  const type=Object.keys(EVENT_TYPES).find(k=>EVENT_TYPES[k].toLowerCase()===typ.toLowerCase())||guessType(title,typ);
+  out.push({title,start:a,end:b,type})}
+ return out}
+/* lägger till nya och uppdaterar befintliga (samma namn och startdatum) */
+function mergeEvents(s,rows){let added=0,updated=0;rows.forEach(r=>{const e=s.events.find(x=>x.title.toLowerCase()===r.title.toLowerCase()&&x.start===r.start);
+  if(e){if(e.end!==r.end||e.type!==r.type){e.end=r.end;e.type=r.type;updated++}}else{s.events.push({id:uid(),title:r.title,start:r.start,end:r.end,type:r.type,groups:[],from:"",to:""});added++}});return {added,updated}}

@@ -11,11 +11,12 @@ const proute=()=>{const h=(location.hash||"").slice(1);return PTABS.some(t=>t[0]
 function renderPhone(){document.body.classList.add("phone");const h=(location.hash||"").slice(1);const m=h.match(/^v(\d+)$/);
  if(m){const n=+m[1];if(n>PH.nav.length||n<1){location.hash=PH.tab||"idag";return}PH.nav.length=n}else{PH.tab=proute();PH.nav=[]}
  const r=PH.tab||"idag";
- $("#tabs").innerHTML=PTABS.map(([id,l])=>`<a href="#${id}" ${r===id?'aria-current="page"':""}>${PICON[id]}<span>${l}</span></a>`).join("");
+ $("#tabs").innerHTML=PTABS.filter(t=>t[0]!=="fil").map(([id,l])=>`<a href="#${id}" ${r===id?'aria-current="page"':""}>${PICON[id]}<span>${l}</span></a>`).join("");
+ const gr=document.getElementById("hdrgear");if(gr){gr.setAttribute("href","#fil");gr.setAttribute("aria-label","Inställningar och fil");gr.setAttribute("aria-current",r==="fil"&&!PH.nav.length?"page":"false")}
  $("#main").innerHTML=PH.nav.length?pDetail(PH.nav[PH.nav.length-1]):({idag:pToday,vecka:pWeek,kurser:pCourses,elever:pStudents,fil:pFile}[r])()}
 function pOcc(o){return goBtn("occ",o.slot.id+"|"+o.date,`<span class="p-time num">${esc(o.slot.start)}<small>${esc(o.slot.end)}</small></span>
   <span class="p-what"><b>${esc(o.course.name)}</b>${o.slot.room?`<span class="p-room">${esc(o.slot.room)}</span>`:""}
-  ${o.cancel?`<span class="p-cancel">Inställd · ${esc(o.cancel.reason)}</span>`:o.lesson?`<span class="p-title">${o.lesson.done?"✓ ":""}${esc(o.lesson.title)}</span>`:o.unit?`<span class="p-sub">${esc(o.unit.title)}</span>`:""}</span>`,"p-row p-occrow"+(o.cancel?" x":""),`--cc:${o.course.color}`)}
+  ${o.cancel?`<span class="p-cancel">Inställd · ${esc(o.cancel.reason)}</span>`:o.lesson?`<span class="p-title">${o.lesson.done?"✓ ":""}${esc(o.lesson.title)}</span>${o.lesson.plan?`<span class="p-sub" style="white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(o.lesson.plan)}</span>`:""}`:o.unit?`<span class="p-sub">${esc(o.unit.title)}</span>`:""}</span>`,"p-row p-occrow"+(o.cancel?" x":""),`--cc:${o.course.color}`)}
 function pDay(date,emptyText){const occ=(state.schedule||[]).length?dayOccurrences(date):[];const ev=eventsIn(parseD(date),parseD(date));
  const lessonsNoSched=(state.schedule||[]).length?[]:(state.lessons||[]).filter(l=>l.date===date);
  return `${ev.length?`<div class="p-events">${ev.map(e=>`<button class="evtag ${e.type}" data-a="p-go" data-t="event" data-id="${e.id}">${esc(e.title)}</button>`).join("")}</div>`:""}
@@ -75,7 +76,7 @@ async function pCheckUpdate(){PUPD={state:"busy",msg:"Söker efter uppdatering�
 async function pUpdateGo(){if(IS_MOBILE_APP){PUPD={state:"busy",msg:"Öppnar nedladdningen… Tryck sedan på filen och välj Installera. Första gången kan Android fråga om du tillåter installation från den här källan."};render();await downloadInstaller();return}
  try{const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg)await reg.update();if(window.caches){for(const k of await caches.keys())await caches.delete(k)}}catch(e){}
  location.reload()}
-function pFile(){return `<h2 class="p-h">Fil</h2>
+function pFile(){return `<h2 class="p-h">Inställningar och fil</h2>
  <div class="p-card">${READONLY?`<span class="p-label">Öppen i läsläge</span><b>${esc(RO_NAME||"Fil")}</b><span class="p-sub">Läsår ${esc(yearLabel(state.year))} · ${state.courses.length} kurser</span>`:`<span class="p-label">Ingen fil öppen</span><b>${state.example?"Exempeldata":"Lärarbordet"}</b>`}</div>
  <button class="p-big" data-a="open-ro">${READONLY?"Öppna en nyare fil":"Öppna min fil"}</button>
  <p class="p-muted">Välj din <b>lararbordet.json</b> eller <b>lararbordet.html</b>, till exempel från skolans Google Drive eller OneDrive. Telefonen kan bara läsa. Ingenting ändras eller skrivs över, så filen på datorn är alltid den som gäller.</p>

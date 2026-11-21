@@ -18,13 +18,14 @@ function unitModal(id){const u=id?unit(id):null;const c=course(u?u.courseId:ui.c
  <div class="f"><label for="ust">Status</label><select id="ust">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${d.status===k?"selected":""}>${l}</option>`).join("")}</select></div>
  <div class="f"><label for="ud">Beskrivning, syfte och arbetssätt</label><textarea id="ud">${esc(d.desc||"")}</textarea></div>
  <div class="f"><label>Centralt innehåll som arbetsområdet täcker</label>${contentChecklist(c.subjectId,d.contentIds||[])}</div>
- ${asl.length?`<p class="small">Bedömningar: ${asl.map(a=>esc(a.title)).join(", ")}</p>`:""}
+ ${u?`<div class="f"><label>Uppgifter och bedömningar i arbetsområdet</label>${asl.length?`<div class="list">${asl.map(a=>`<div class="li" style="cursor:pointer;padding:6px 0" data-a="edit-assess" data-id="${a.id}"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b> ${a.type?`<span class="tag">${esc(ATYPES[a.type]||a.type)}</span>`:""}</span></div>`).join("")}</div>`:`<span class="small muted">Inga ännu. Ett arbetsområde behöver inte ha en bedömd uppgift.</span>`}<button class="btn small" id="uas" style="justify-self:start;align-self:flex-start">+ Uppgift eller bedömning</button></div>`:`<p class="small muted" style="margin:0">När arbetsområdet är sparat kan du lägga till lektioner och uppgifter eller bedömningar i det.</p>`}
  <div class="actions">${u?'<button class="btn danger" id="udel">Ta bort</button><button class="btn" id="ules">Lektioner ('+lessonsOf(u.id).length+')</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="usave">Spara</button></div>`,m=>{
   m.querySelector("#usave").onclick=()=>{const t=val("ut").trim();if(!t){$("#ut").focus();return}let s=val("us"),e=val("ue");if(e<s)[s,e]=[e,s];
    const ids=[...m.querySelectorAll(".cl input:checked")].map(x=>x.value);const o={title:t,start:s,end:e,status:val("ust"),desc:val("ud"),contentIds:ids};
    if(u)Object.assign(u,o);else state.units.push(Object.assign({id:uid(),courseId:c.id},o));closeModal();commit()};
   const del=m.querySelector("#udel");if(del)del.onclick=()=>confirmBox(`Ta bort “${esc(u.title)}” och dess lektioner? Kopplade bedömningar finns kvar.`,()=>{state.units=state.units.filter(x=>x!==u);state.lessons=state.lessons.filter(l=>l.unitId!==u.id);commit()});
-  const ul=m.querySelector("#ules");if(ul)ul.onclick=()=>lessonsModal(u.id)})}
+  const ul=m.querySelector("#ules");if(ul)ul.onclick=()=>lessonsModal(u.id);
+  const ua=m.querySelector("#uas");if(ua)ua.onclick=()=>{if(!c.groupId&&!state.groups.length){modal("Elevgrupp saknas",`<p style="margin:0">En bedömning görs för en elevgrupp. Koppla kursen till en grupp först.</p><div class="actions"><button class="btn pri" data-a="edit-course" data-id="${c.id}">Redigera kursen</button></div>`);return}assessModal(null,{courseId:c.id,unitId:u.id,groupId:c.groupId||state.groups[0].id})}})}
 
 /* ---------- lektioner ---------- */
 function lessonsModal(unitId){const u=unit(unitId);if(!u)return;const c=course(u.courseId)||{};const ls=lessonsOf(unitId);
@@ -64,17 +65,36 @@ function seriesModal(unitId){const u=unit(unitId);if(!u)return;
   const sch=m.querySelector("#ssched");if(sch)sch.onclick=()=>{const n0=lessonsOf(unitId).length;const have=new Set(lessonsOf(unitId).map(l=>l.date+"|"+(l.time||"")));const ds=scheduleDates(state,u.courseId,val("sfrom"),val("sto")).filter(x=>!have.has(x.date+"|"+x.time));ds.forEach((x,i)=>state.lessons.push({id:uid(),unitId,date:x.date,time:x.time,title:"Lektion "+(n0+i+1),plan:"",note:"",done:false}));commit();lessonsModal(unitId);toast(ds.length+" lektioner skapades enligt schemat.")};
   m.querySelector("#sok").onclick=()=>{const n0=lessonsOf(unitId).length;dates().forEach((dt,i)=>state.lessons.push({id:uid(),unitId,date:dt,title:"Lektion "+(n0+i+1),plan:"",note:"",done:false}));commit();lessonsModal(unitId)}})}
 
+/* kursnamn föreslås ur ämne och grupp, t.ex. "Engelska 1 PO" eller "Svenska 8B" */
+function autoCourseName(sid,gname){const x=subj(sid);if(!x)return gname||"";let st="";if(x.form==="GY"||x.form==="GYOLD"){const m=String(x.stage||"").match(/(\d+[a-z]?)/i);st=m?m[1]:""}
+ return [x.name,st,gname].filter(Boolean).join(" ")}
+/* nyanser av en färg, för t.ex. olika nivåer i samma ämne */
+function shadesOf(hex){const h=hex.replace("#","");const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+ return [-.45,-.25,0,.25,.45].map(t=>"#"+[r,g,b].map(v=>Math.round(t<0?v*(1+t):v+(255-v)*t).toString(16).padStart(2,"0")).join(""))}
 function courseModal(id){const c=id?course(id):null;const opts=usedSubjects();if(!c&&!opts.length){modal("Välj dina ämnen först",`<p style="margin:0">En kurs hör till ett ämne. Välj först vilka ämnen du undervisar i.</p><div class="actions"><button class="btn pri" data-a="picker">Välj ämnen</button></div>`);return}
- const d=c||{name:"",subjectId:opts[0],groupId:(state.groups[0]||{}).id||"",color:COLORS[state.courses.length%COLORS.length]};let color=d.color;
- modal(c?"Redigera kurs":"Ny kurs",`<div class="f"><label for="cn">Kursnamn</label><input id="cn" value="${esc(d.name)}" placeholder="t.ex. Svenska 8B"></div>
+ const sameSubj=sid=>state.courses.find(x=>x.subjectId===sid&&x!==c);
+ const d=c||{name:"",subjectId:opts[0],groupId:(state.groups[0]||{}).id||"",color:(sameSubj(opts[0])||{}).color||COLORS[state.courses.length%COLORS.length]};let color=d.color;
+ let touched=!!c&&c.name!==autoCourseName(c.subjectId,(group(c.groupId)||{}).name);
+ const sw=()=>`${COLORS.map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Färg ${x}"></button>`).join("")}<input type="color" class="cpick" id="ccol" value="${/^#[0-9a-f]{6}$/i.test(color)?color:"#4f46e5"}" title="Välj valfri färg" aria-label="Välj valfri färg">`;
+ const shades=()=>/^#[0-9a-f]{6}$/i.test(color)?`<div class="shades"><span class="small muted" style="align-self:center">Nyanser:</span>${shadesOf(color).map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Nyans ${x}"></button>`).join("")}</div>`:"";
+ modal(c?"Redigera kurs":"Ny kurs",`
  <div class="row"><div class="f"><label for="cs">Ämne</label><select id="cs">${Object.keys(FORM_LABEL).map(fk=>{const l=opts.filter(id=>formOf(id)===fk);return l.length?`<optgroup label="${esc(FORM_LABEL[fk])}">${l.map(id=>`<option value="${esc(id)}" ${d.subjectId===id?"selected":""}>${esc(subjTitle(id))}</option>`).join("")}</optgroup>`:""}).join("")}</select><button class="btn ghost small" data-a="picker" style="align-self:flex-start;margin-top:4px">Fler ämnen…</button></div>
  <div class="f"><label for="cg">Elevgrupp</label><select id="cg"><option value="">Ingen</option>${state.groups.map(g=>`<option value="${g.id}" ${d.groupId===g.id?"selected":""}>${esc(g.name)}</option>`).join("")}<option value="__new">+ Ny grupp…</option></select></div></div>
- <div class="f" id="cgnw" hidden><label for="cgn">Namn på ny grupp</label><input id="cgn" placeholder="t.ex. 9A"></div>
- <div class="f"><label>Färg</label><div class="swatches">${COLORS.map(x=>`<button class="sw" style="background:${x}" aria-pressed="${x===color}" data-c="${x}" aria-label="Färg ${x}"></button>`).join("")}</div></div>
+ <div class="f" id="cgnw" hidden><label for="cgn">Namn på den nya gruppen</label><input id="cgn" placeholder="t.ex. 9A"><span class="small muted">Eleverna lägger du in under Bedömning → Elever.</span></div>
+ <div class="f"><label for="cn">Kursnamn</label><input id="cn" value="${esc(d.name)}" placeholder="Fylls i av ämne och grupp"><span class="small muted">Föreslås utifrån ämne och grupp. Skriv något annat om du vill.</span></div>
+ <div class="f"><label>Färg</label><div class="swatches" id="csw">${sw()}</div><div id="csh">${shades()}</div><span class="small muted">Tips: ge ett ämne samma färg och olika nyanser för olika nivåer eller grupper.</span></div>
  <div class="actions">${c?'<button class="btn danger" id="cdel">Ta bort kurs</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="csave">Spara</button></div>`,m=>{
-  m.querySelectorAll(".sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;m.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-pressed",x===b))});
-  m.querySelector("#cg").onchange=e=>{m.querySelector("#cgnw").hidden=e.target.value!=="__new"};
-  m.querySelector("#csave").onclick=()=>{const n=val("cn").trim();if(!n){$("#cn").focus();return}let gid=val("cg");
+  const gname=()=>{const v=val("cg");return v==="__new"?val("cgn").trim():(group(v)||{}).name||""};
+  const auto=()=>{if(!touched)m.querySelector("#cn").value=autoCourseName(val("cs"),gname())};
+  const paintC=()=>{m.querySelector("#csw").innerHTML=sw();m.querySelector("#csh").innerHTML=shades();bindC()};
+  const bindC=()=>{m.querySelectorAll(".sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;paintC()});const cp=m.querySelector("#ccol");cp.oninput=()=>{color=cp.value;m.querySelector("#csh").innerHTML=shades();m.querySelectorAll("#csw .sw").forEach(x=>x.setAttribute("aria-pressed","false"));m.querySelectorAll("#csh .sw").forEach(b=>b.onclick=()=>{color=b.dataset.c;paintC()})}};
+  bindC();
+  m.querySelector("#cn").oninput=e=>{touched=!!e.target.value.trim()};
+  m.querySelector("#cs").onchange=e=>{auto();if(!c){const o=sameSubj(e.target.value);if(o&&o.color&&/^#/.test(o.color)){const sh=shadesOf(o.color);color=sh.find(x=>!state.courses.some(k=>k.color===x))||o.color;paintC()}}};
+  m.querySelector("#cg").onchange=e=>{m.querySelector("#cgnw").hidden=e.target.value!=="__new";auto();if(e.target.value==="__new")m.querySelector("#cgn").focus()};
+  m.querySelector("#cgn").oninput=auto;
+  if(!c)auto();
+  m.querySelector("#csave").onclick=()=>{let n=val("cn").trim();if(!n)n=autoCourseName(val("cs"),gname())||"Kurs";let gid=val("cg");
    if(gid==="__new"){const gn=val("cgn").trim()||"Ny grupp";gid=uid();state.groups.push({id:gid,name:gn,students:[]})}
    const o={name:n,subjectId:val("cs"),groupId:gid,color};if(c)Object.assign(c,o);else{const nc=Object.assign({id:uid()},o);state.courses.push(nc);ui.course=nc.id;saveUI()}closeModal();commit()};
   const del=m.querySelector("#cdel");if(del)del.onclick=()=>confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden och bedömningar?`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);ui.course=null;commit()})})}
@@ -116,36 +136,57 @@ const critText=t=>esc(t).replace(/\*([^*]+)\*/g,"<b>$1</b>");
 function critChecklist(courseId,sel){const c=course(courseId);const cr=c&&critFor(c.subjectId);
  if(!cr)return `<p class="small muted" style="margin:0">Det finns inga betygskriterier från Skolverket för det här ämnet och stadiet. Beskriv bedömningen i rutan nedan.</p>`;
  return `<div class="cl">${cr.aspects.map((a,i)=>`<label><input type="checkbox" value="${i}" ${sel.includes(i)?"checked":""}><span>${critText(aspectLabel(a))}</span></label>`).join("")}</div><span class="small muted">Från Skolverkets betygskriterier${cr.year?" för slutet av åk "+esc(cr.year):""}. Varje vald del bedöms för sig.</span>`}
-function assessModal(id){const a=id?state.assessments.find(x=>x.id===id):null;const g=group(ui.group);
- const cs=state.courses;const d=a||{title:"",date:fmtD(TODAY),courseId:ui.acourse!=="all"?ui.acourse:((cs.find(c=>c.groupId===(g||{}).id)||cs[0]||{}).id||""),unitId:"",desc:""};
+function assessModal(id,preset){const a=id?state.assessments.find(x=>x.id===id):null;const g=group(a?a.groupId:(preset&&preset.groupId)||ui.group);if(!g)return;
+ const cs=state.courses;const d=a||Object.assign({title:"",date:fmtD(TODAY),type:"",mode:"betyg",max:"",courseId:ui.acourse!=="all"?ui.acourse:((cs.find(c=>c.groupId===g.id)||cs[0]||{}).id||""),unitId:"",desc:""},preset||{});
  const unitOpts=cid=>`<option value="">Inget</option>`+state.units.filter(u=>u.courseId===cid).map(u=>`<option value="${u.id}" ${d.unitId===u.id?"selected":""}>${esc(u.title)}</option>`).join("");
- modal(a?"Bedömning":"Ny bedömning",`<div class="f"><label for="at">Namn</label><input id="at" value="${esc(d.title)}" placeholder="t.ex. Skriftligt prov algebra"></div>
- <div class="row"><div class="f"><label for="ad">Datum</label><input type="date" id="ad" value="${d.date}"></div><div class="f"><label for="ac">Kurs</label><select id="ac">${cs.map(c=>`<option value="${c.id}" ${d.courseId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div></div>
- <div class="f"><label for="au">Arbetsområde</label><select id="au">${unitOpts(d.courseId)}</select><span class="small muted">Kopplingen gör att innehållet räknas som bedömt.</span></div>
- <div class="f"><label>Betygskriterier som uppgiften bedömer</label><div id="acrit">${critChecklist(d.courseId,d.aspects||[])}</div></div>
+ modal(a?"Bedömning":"Ny uppgift eller bedömning",`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)}</p>
+ <div class="f"><label for="at">Namn</label><input id="at" value="${esc(d.title)}" placeholder="t.ex. Skriftligt prov algebra"></div>
+ <div class="row"><div class="f"><label for="aty">Typ av uppgift</label><select id="aty"><option value="">Välj…</option>${Object.entries(ATYPES).map(([k,l])=>`<option value="${k}" ${d.type===k?"selected":""}>${l}</option>`).join("")}</select></div><div class="f"><label for="ad">Datum</label><input type="date" id="ad" value="${d.date}"></div></div>
+ <div class="row"><div class="f"><label for="ac">Kurs</label><select id="ac">${cs.map(c=>`<option value="${c.id}" ${d.courseId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div><div class="f"><label for="au">Arbetsområde</label><select id="au">${unitOpts(d.courseId)}</select></div></div>
+ <span class="small muted" style="margin-top:-6px">Kopplingen till ett arbetsområde gör att dess centrala innehåll räknas som bedömt.</span>
+ <div class="row"><div class="f"><label for="amo">Bedöms som</label><select id="amo">${Object.entries(AMODES).map(([k,l])=>`<option value="${k}" ${(d.mode||"betyg")===k?"selected":""}>${k==="betyg"?esc(scale().name):l}</option>`).join("")}</select></div>
+  <div class="f"><label for="amax">Maxpoäng (valfritt)</label><input type="number" min="0" step="0.5" id="amax" value="${esc(d.max==null?"":String(d.max))}" placeholder="t.ex. 40"></div></div>
+ <div class="f" id="acritw" ${(d.mode||"betyg")==="gk"?"hidden":""}><label>Betygskriterier som uppgiften bedömer</label><div id="acrit">${critChecklist(d.courseId,d.aspects||[])}</div></div>
  <div class="f"><label for="ade">Uppgift och instruktioner</label><textarea id="ade" placeholder="Vad ska eleverna göra?">${esc(d.desc||"")}</textarea></div>
  <div class="actions">${a?'<button class="btn danger" id="adel">Ta bort</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="asave">Spara</button></div>`,m=>{
   m.querySelector("#ac").onchange=e=>{d.unitId="";m.querySelector("#au").innerHTML=unitOpts(e.target.value);m.querySelector("#acrit").innerHTML=critChecklist(e.target.value,[])};
-  m.querySelector("#asave").onclick=()=>{const t=val("at").trim();if(!t){$("#at").focus();return}if(!val("ac"))return;const o={title:t,date:val("ad"),courseId:val("ac"),unitId:val("au"),desc:val("ade"),aspects:[...m.querySelectorAll("#acrit input:checked")].map(x=>+x.value)};
-   if(a)Object.assign(a,o);else state.assessments.push(Object.assign({id:uid(),groupId:g.id},o));closeModal();commit()};
+  m.querySelector("#amo").onchange=e=>{m.querySelector("#acritw").hidden=e.target.value==="gk"};
+  m.querySelector("#asave").onclick=()=>{const t=val("at").trim();if(!t){$("#at").focus();return}if(!val("ac"))return;const mx=parseFloat(val("amax"));const mode=val("amo")||"betyg";
+   const o={title:t,date:val("ad"),courseId:val("ac"),unitId:val("au"),desc:val("ade"),type:val("aty"),mode,max:isFinite(mx)&&mx>0?mx:null,aspects:mode==="gk"?[]:[...m.querySelectorAll("#acrit input:checked")].map(x=>+x.value)};
+   if(a)Object.assign(a,o);else{state.assessments.push(Object.assign({id:uid(),groupId:g.id},o));ui.group=g.id;saveUI()}closeModal();commit()};
   const del=m.querySelector("#adel");if(del)del.onclick=()=>confirmBox(`Ta bort “${esc(a.title)}” och alla omdömen på den?`,()=>{delete state.grades[a.id];state.assessments=state.assessments.filter(x=>x!==a);commit()})})}
 
-function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const g=group(a.groupId);const s=g.students.find(x=>x.id===sid);if(!a||!s)return;
- const cur=(state.grades[aid]||{})[sid]||{k:"",note:""};let pick=cur.k;const asp=Object.assign({},cur.asp||{});let manual=!!cur.manual;const sc=scale();const idx=g.students.indexOf(s);const next=g.students[idx+1];
- const c=course(a.courseId);const cr=(a.aspects||[]).length&&c?critFor(c.subjectId):null;
+const MARK_NEXT={"":"y",y:"g",g:"r",r:""};
+function gradeModal(aid,sid){const a=state.assessments.find(x=>x.id===aid);const g=a&&group(a.groupId);const s=g&&g.students.find(x=>x.id===sid);if(!a||!s)return;
+ const cur=(state.grades[aid]||{})[sid]||{k:"",note:""};let pick=cur.k;const asp=Object.assign({},cur.asp||{});const asm=JSON.parse(JSON.stringify(cur.asm||{}));let manual=!!cur.manual;const sc=scale();const idx=g.students.indexOf(s);const next=g.students[idx+1];
+ const c=course(a.courseId);const gk=a.mode==="gk";const cr=!gk&&(a.aspects||[]).length&&c?critFor(c.subjectId):null;
+ const eca=cr&&cr.levels.includes("E");
  const btns=(sel,attr)=>`<div class="levels">${sc.levels.map((l,i)=>`<button class="lv" style="--h:${hueT(i/(sc.levels.length-1))}" aria-pressed="${sel===l.k}" ${attr} data-k="${l.k}">${esc(l.l)}</button>`).join("")}</div>`;
- const aspHtml=cr?a.aspects.filter(i=>cr.aspects[i]).map(i=>{const A=cr.aspects[i];return `<div class="asp"><details><summary>${critText(aspectLabel(A))}</summary>${cr.levels.map(k=>A[k]?`<p class="small"><b>${esc(cr.names[k])}:</b> ${critText(A[k])}</p>`:"").join("")}</details>${btns(asp[i],`data-asp="${i}"`)}</div>`}).join(""):"";
- modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(a.title)} · ${shortD(a.date)} · ${esc((c||{}).name||"")}</p>
- ${cr?`<h3 style="margin:0">Per kriterium</h3>${aspHtml}<h3 style="margin:0">Samlat omdöme <span class="small muted" id="gsug" style="font-weight:400"></span></h3>`:""}
- <div id="gmain">${btns(pick,'data-main="1"')}</div>
+ const gkBtns=`<div class="levels"><button class="lv" style="--h:140" aria-pressed="${pick==="G"}" data-main="1" data-k="G">Genomfört</button><button class="lv" style="--h:8" aria-pressed="${pick==="EG"}" data-main="1" data-k="EG">Ej genomfört</button></div>`;
+ const aspHtml=cr?a.aspects.filter(i=>cr.aspects[i]).map(i=>{const A=cr.aspects[i];const lv=cr.levels.filter(k=>A[k]);
+  return `<div class="cm" data-i="${i}"><div class="cm-h"><span>Kriterium ${a.aspects.indexOf(i)+1}</span><span class="sp"></span><span class="small" data-aspk="${i}"></span></div>
+   <div class="cm-g" style="--n:${lv.length}">${lv.map(k=>`<button class="cm-c" data-cm="${i}" data-lv="${k}" ${asm[i]&&asm[i][k]?`data-m="${asm[i][k]}"`:""}><span class="lvn">${esc(cr.names[k])}</span><span>${critText(A[k])}</span></button>`).join("")}</div>
+   <details style="padding:6px 10px 10px"><summary class="small muted">Sätt betygssteg för kriteriet direkt</summary>${btns(asp[i],`data-asp="${i}"`)}</details></div>`}).join(""):"";
+ const pts=a.max?`<div class="f"><label for="gpts">Poäng (av ${esc(String(a.max))})</label><input type="number" id="gpts" min="0" max="${a.max}" step="0.5" value="${cur.p==null?"":cur.p}" style="max-width:140px"></div>`:"";
+ modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(a.title)} · ${shortD(a.date)} · ${esc((c||{}).name||"")}${a.type?" · "+esc(ATYPES[a.type]||""):""}</p>
+ ${s.note?`<p class="example" style="margin:0;background:var(--info-bg);color:var(--info)"><span><b>Om eleven:</b> ${esc(s.note)}</span></p>`:""}
+ ${cr?`<h3 style="margin:0">Kriterier</h3><div class="cm-legend"><span>Tryck på texten: </span><span><i style="background:#fde68a"></i>ett tryck: delvis</span><span><i style="background:#86efac"></i>två: visat</span><span><i style="background:#fca5a5"></i>tre: inte visat</span><span>fyra: rensa</span></div>${aspHtml}<h3 style="margin:0">Samlat omdöme <span class="small muted" id="gsug" style="font-weight:400"></span></h3>`:""}
+ <div id="gmain">${gk?gkBtns:btns(pick,'data-main="1"')}</div>
+ ${pts}
  <div class="f"><label for="gnote">Anteckning till eleven eller dig själv</label><textarea id="gnote" placeholder="Styrkor, nästa steg, anpassningar…">${esc(cur.note||"")}</textarea></div>
- <div class="actions">${cur.k||Object.keys(asp).length?'<button class="btn danger" id="gclr">Rensa</button>':""}<span class="sp"></span>${next?'<button class="btn" id="gnext">Spara och nästa elev</button>':""}<button class="btn pri" id="gsave">Spara</button></div>`,m=>{
+ <div class="actions">${cur.k||Object.keys(asp).length||cur.p!=null?'<button class="btn danger" id="gclr">Rensa</button>':""}<span class="sp"></span>${next?'<button class="btn" id="gnext">Spara och nästa elev</button>':""}<button class="btn pri" id="gsave">Spara</button></div>`,m=>{
   const paint=()=>{m.querySelectorAll("[data-main]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.k===pick));m.querySelectorAll("[data-asp]").forEach(x=>x.setAttribute("aria-pressed",asp[x.dataset.asp]===x.dataset.k));
-   const sg=m.querySelector("#gsug");if(sg){const ag=aggregateAspects(asp);sg.textContent=ag?(manual?"(förslag utifrån kriterierna: "+ag+")":"(förslag utifrån kriterierna)"):""}};
+   m.querySelectorAll("[data-cm]").forEach(x=>{const v=(asm[x.dataset.cm]||{})[x.dataset.lv];if(v)x.dataset.m=v;else delete x.dataset.m});
+   m.querySelectorAll("[data-aspk]").forEach(x=>{const k=asp[x.dataset.aspk];const l=sc.levels.find(z=>z.k===k);x.innerHTML=l?`Steg: <b>${esc(l.l)}</b>`:""});
+   const sg=m.querySelector("#gsug");if(sg){const ag=aggregateAspects(asp);sg.textContent=ag?(manual?"(förslag utifrån kriterierna: "+(sc.levels.find(z=>z.k===ag)||{}).l+")":"(förslag utifrån kriterierna)"):""}};
+  const reagg=()=>{if(!manual)pick=aggregateAspects(asp)||""};
   m.querySelectorAll("[data-main]").forEach(b=>b.onclick=()=>{pick=pick===b.dataset.k?"":b.dataset.k;manual=!!pick;if(!pick&&cr){pick=aggregateAspects(asp)||"";manual=false}paint()});
-  m.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{const i=b.dataset.asp;asp[i]=asp[i]===b.dataset.k?undefined:b.dataset.k;if(asp[i]===undefined)delete asp[i];if(!manual)pick=aggregateAspects(asp)||"";paint()});
+  m.querySelectorAll("[data-asp]").forEach(b=>b.onclick=()=>{const i=b.dataset.asp;asp[i]=asp[i]===b.dataset.k?undefined:b.dataset.k;if(asp[i]===undefined)delete asp[i];delete asm[i];reagg();paint()});
+  m.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{const i=b.dataset.cm,k=b.dataset.lv;asm[i]=asm[i]||{};const nx=MARK_NEXT[asm[i][k]||""];if(nx)asm[i][k]=nx;else delete asm[i][k];if(!Object.keys(asm[i]).length)delete asm[i];
+   if(eca){const gr=markToGrade(asm[i],state.scale);if(gr)asp[i]=gr;else delete asp[i]}reagg();paint()});
   paint();
-  const save=()=>{state.grades[aid]=state.grades[aid]||{};const note=val("gnote").trim();if(pick||note||Object.keys(asp).length)state.grades[aid][sid]=Object.assign({k:pick,note},Object.keys(asp).length?{asp,manual}:{});else delete state.grades[aid][sid];commit()};
+  const save=()=>{state.grades[aid]=state.grades[aid]||{};const note=val("gnote").trim();const pv=parseFloat(val("gpts"));const p=isFinite(pv)?pv:null;
+   if(pick||note||Object.keys(asp).length||Object.keys(asm).length||p!=null)state.grades[aid][sid]=Object.assign({k:pick,note},Object.keys(asp).length||Object.keys(asm).length?{asp,manual}:{},Object.keys(asm).length?{asm}:{},p!=null?{p}:{});else delete state.grades[aid][sid];commit()};
   m.querySelector("#gsave").onclick=()=>{closeModal();save()};
   const nx=m.querySelector("#gnext");if(nx)nx.onclick=()=>{save();gradeModal(aid,next.id)};
   const cl=m.querySelector("#gclr");if(cl)cl.onclick=()=>{delete state.grades[aid][sid];closeModal();commit()}})}
@@ -156,9 +197,11 @@ function studentModal(gid,sid){const g=group(gid);const s=g&&g.students.find(x=>
   return `<div><div class="area-h"><span class="dot" style="background:${c.color}"></span><h3>${esc(c.name)}</h3><span class="sp" style="flex:1"></span><span class="small">Typnivå <b class="${mk&&mk.low?"lowtag":""}">${mk?esc(mk.l):"–"}</b></span></div>
   ${(()=>{const cr=critFor((course(cid)||{}).subjectId);const ev=aspectEvidence(state,cid,sid);const ks=Object.keys(ev);if(!cr||!ks.length)return "";
     return `<div class="evid"><b class="small">Underlag per kriterium</b>${ks.sort((x,y)=>x-y).map(i=>{const e=ev[i];const t=lvT(e.k);return `<div class="evrow"><span class="small">${critText(aspectLabel(cr.aspects[i]||{}))}</span><span class="cell g" style="width:auto;min-width:44px;border-radius:8px;--h:${hueT(t)}">${esc(e.k)}</span><span class="small muted">${e.n} st</span></div>`}).join("")}</div>`})()}
-  <div class="list">${list.map(a=>{const v=(state.grades[a.id]||{})[sid];const t=v?lvT(v.k):null;return `<div class="li"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b>${v&&v.note?`<br><span class="small muted">${esc(v.note)}</span>`:""}</span><button class="cell ${t!=null?"g":""}" style="width:auto;min-width:52px;border-radius:8px;${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${sid}">${v&&v.k?esc(v.k):'<span class="muted small">Ej bedömt</span>'}</button></div>`}).join("")}</div></div>`}).join("");
+  <div class="list">${list.map(a=>{const v=(state.grades[a.id]||{})[sid];const t=v?gradeT(v.k):null;return `<div class="li"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b>${v&&v.note?`<br><span class="small muted">${esc(v.note)}</span>`:""}</span><button class="cell ${t!=null?"g":""}" style="width:auto;min-width:52px;border-radius:8px;${t!=null?`--h:${hueT(t)}`:""}" data-a="grade" data-as="${a.id}" data-st="${sid}">${v&&v.k?esc(v.k):'<span class="muted small">Ej bedömt</span>'}${v&&v.p!=null?` <span class="small">${v.p}${a.max?"/"+a.max:""}p</span>`:""}</button></div>`}).join("")}</div></div>`}).join("");
  const all=studentSummary(gid,sid,"all");
- modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)} · ${all.count} omdömen · ${all.low} under godtagbar nivå · ${all.missing} saknas</p>${body||'<div class="empty">Inga bedömningar ännu.</div>'}`)}
+ modal(s.name,`<p class="small muted" style="margin:-8px 0 0">${esc(g.name)} · ${all.count} omdömen · ${all.low} under godtagbar nivå · ${all.missing} saknas</p>
+ <div class="f"><label for="snote">Om eleven</label><textarea id="snote" placeholder="T.ex. anpassningar, stöd, sådant du vill komma ihåg">${esc(s.note||"")}</textarea><span class="small muted">Visas när du bedömer eleven. Skriv bara det du behöver i undervisningen. Känsliga uppgifter, t.ex. diagnoser, hör hemma i skolans system för elevhälsa.</span>${READONLY?"":`<button class="btn small" id="snsave" style="align-self:flex-start;margin-top:4px">Spara anteckningen</button>`}</div>
+ ${body||'<div class="empty">Inga bedömningar ännu.</div>'}`,m=>{const b=m.querySelector("#snsave");if(b)b.onclick=()=>{const v=val("snote").trim();if(v)s.note=v;else delete s.note;commit();toast("Anteckningen är sparad.")}})}
 
 function subjectModal(){modal("Eget ämne",`<div class="row"><div class="f"><label for="sn">Ämne</label><input id="sn" placeholder="t.ex. Bild"></div><div class="f"><label for="sst">Stadium</label><input id="sst" placeholder="t.ex. åk 7–9"></div></div>
  <div class="f"><label for="sc">Centralt innehåll</label><textarea id="sc" style="min-height:220px" placeholder="# Bildframställning&#10;Framställning av berättande och informativa bilder&#10;Tekniker för teckning och måleri&#10;# Redskap för bildframställning&#10;..."></textarea><span class="small muted">Rader som börjar med # blir kunskapsområden. Övriga rader blir punkter. Kopiera gärna från kursplanen på skolverket.se.</span></div>
@@ -240,3 +283,20 @@ async function offerFile(filename,data,mime){
  try{downloadBlob(filename,data,mime)}catch(e){modal("Kopiera data",`<p class="small" style="margin:0">Nedladdning gick inte. Kopiera texten och spara den som <b>${esc(filename)}</b>.</p><div class="f"><textarea id="cp" style="min-height:220px" readonly>${esc(data)}</textarea></div>`)}}
 function csv(){const g=group(ui.group);const as=state.assessments.filter(a=>a.groupId===g.id&&(ui.acourse==="all"||a.courseId===ui.acourse));const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
  return [["Elev",...as.map(a=>a.title+" ("+a.date+")")].map(q).join(";"),...g.students.map(s=>[s.name,...as.map(a=>((state.grades[a.id]||{})[s.id]||{}).k||"")].map(q).join(";"))].join("\r\n")}
+
+/* ---------- kalendarium från Excel ---------- */
+function importCalModal(){const yh=parseD(state.year.start).getFullYear();let rows=[];
+ modal("Importera kalendarium",`<p class="small" style="margin:0">Markera raderna i Excel eller Google Kalkylark och klistra in dem här. Du kan också välja en CSV-fil. Varje rad behöver ett <b>datum</b> och ett <b>namn</b>. Ett slutdatum och en typ (Lov, Studiedag, Aktivitet, Deadline, Händelse) är valfria.</p>
+ <pre class="small" style="margin:0;background:var(--soft);padding:8px 10px;border-radius:8px;overflow:auto">2026-10-26   2026-10-30   Höstlov
+2026-12-03                Friluftsdag     Aktivitet
+2027-01-08                Studiedag</pre>
+ <div class="f"><label for="icx">Rader från kalkylarket</label><textarea id="icx" style="min-height:160px" placeholder="Klistra in här"></textarea></div>
+ <div class="actions" style="justify-content:flex-start;margin:0"><label class="btn" style="cursor:pointer">Välj CSV-fil…<input type="file" id="icf" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label></div>
+ <div id="icp" class="small muted">Inga rader än.</div>
+ <p class="small muted" style="margin:0">Importerar du igen efter att kalendariet ändrats uppdateras händelser med samma namn och startdatum, och nya läggs till. Inget tas bort.</p>
+ <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="icok" disabled>Importera</button></div>`,m=>{
+  const prev=()=>{rows=parseCalendarRows(val("icx"),yh);const p=m.querySelector("#icp");m.querySelector("#icok").disabled=!rows.length;
+   p.innerHTML=rows.length?`<b>${rows.length} händelser hittades:</b><div class="list" style="max-height:180px;overflow:auto;margin-top:4px">${rows.slice(0,60).map(r=>`<div class="li" style="padding:4px 0"><span class="when num">${shortD(r.start)}${r.end!==r.start?"–"+shortD(r.end):""}</span><span class="what">${esc(r.title)}</span><span class="pill">${esc(EVENT_TYPES[r.type])}</span></div>`).join("")}</div>`:(val("icx").trim()?"Hittade inga datum. Kontrollera att varje rad har ett datum, t.ex. 2026-10-26 eller 26/10.":"Inga rader än.")};
+  m.querySelector("#icx").oninput=prev;
+  m.querySelector("#icf").onchange=async e=>{const f=e.target.files[0];if(!f)return;m.querySelector("#icx").value=await f.text();prev()};
+  m.querySelector("#icok").onclick=()=>{if(!rows.length)return;const r=mergeEvents(state,rows);closeModal();commit();toast(`${r.added} ${r.added===1?"ny händelse":"nya händelser"}${r.updated?`, ${r.updated} ${r.updated===1?"uppdaterad":"uppdaterade"}`:""}. Kontrollera gärna typen på aktiviteter, så att rätt grupper får inställda lektioner.`)}})}

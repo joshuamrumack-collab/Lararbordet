@@ -26,7 +26,7 @@ async function afterFileOpened(){if(!DESKTOP||!filePath)return;const l=await rea
 async function reloadFromFile(quiet){try{
   if(DESKTOP){state=parsePlanbok(await T.fs.readTextFile(filePath));fileMtime=await fileStatMs(filePath)}
   else if(fileHandle){const f=await fileHandle.getFile();state=parsePlanbok(await f.text());htmlMtime=f.lastModified}
-  ui=Object.assign(ui,state.ui||{});dirty=false;syncMode="file";savedAt=new Date();render();setSync();
+  ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;dirty=false;syncMode="file";savedAt=new Date();render();setSync();
   if(!quiet)toast("Uppdaterad med ändringarna från den andra datorn.")}catch(e){toast("Kunde inte läsa filen. Den kanske håller på att synkas, försök igen om en stund.")}}
 function toast(t){const b=document.getElementById("savebar");if(!b)return;b.innerHTML=`<span>${esc(t)}</span><button class="btn pri" data-a="close-toast">OK</button>`;b.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{b.hidden=true;updateBar()},6000)}
 function showConflict(force){if(conflictShown&&!force)return;conflictShown=true;
