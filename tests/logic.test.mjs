@@ -301,3 +301,28 @@ test("process: förväntat antal ord per lektion", () => {
   assert.equal(run("procClass2('120',null,300)"), "plow");
   assert.equal(run("procClass2('gf',200,300)"), "pgf");
 });
+
+test("klockslag i 24-timmarsformat", () => {
+  const run = load();
+  assert.equal(run('normTime("820")'), "08:20");
+  assert.equal(run('normTime("8.20")'), "08:20");
+  assert.equal(run('normTime("1335")'), "13:35");
+  assert.equal(run('normTime("14")'), "14:00");
+  assert.equal(run('normTime("09:05")'), "09:05");
+  assert.equal(run('normTime("25:00")'), "25:00");
+});
+
+test("schema från PDF på engelska med AM/PM", () => {
+  const run = load();
+  const items = [
+    { str: "Monday", x: 100, y: 50, w: 40 }, { str: "Tuesday", x: 250, y: 50, w: 40 }, { str: "Wednesday", x: 400, y: 50, w: 50 },
+    { str: "Thursday", x: 550, y: 50, w: 50 }, { str: "Friday", x: 700, y: 50, w: 40 },
+    { str: "Torget", x: 100, y: 30, w: 30 },
+    { str: "1:35 PM", x: 90, y: 100, w: 30 }, { str: "English 5", x: 100, y: 112, w: 50 }, { str: "2:15 PM", x: 150, y: 140, w: 30 },
+    { str: "10:00 AM - 10:55 AM", x: 690, y: 200, w: 80 }, { str: "Swedish 1", x: 700, y: 212, w: 50 },
+  ];
+  const r = run(`parsePdfSchedule(${JSON.stringify(items)})`);
+  assert.equal(r.length, 2);
+  assert.deepEqual([r[0].day, r[0].start, r[0].end, r[0].text], [1, "13:35", "14:15", "English 5"]);
+  assert.deepEqual([r[1].day, r[1].start, r[1].end, r[1].text], [5, "10:00", "10:55", "Swedish 1"]);
+});

@@ -34,4 +34,5 @@ function bindStudents(){const b=document.getElementById("stsave");const g=group(
  if(b)b.onclick=()=>{s.adapt=[...m.querySelectorAll("#stad input:checked")].map(x=>x.value);if(!s.adapt.length)delete s.adapt;
   const o=val("stao").trim();if(o)s.adaptOther=o;else delete s.adaptOther;const n=val("stn").trim();if(n)s.note=n;else delete s.note;const d=val("stdg").trim();if(d)s.diag=d;else delete s.diag;commit();toast("Sparat.")}}
 /* liten gul markering på lektioner där gruppen har anpassningar */
-const adaptTag=c=>{const g=c&&group(c.groupId);return g&&adaptSummary(g).length?`<span class="adapt-tag" title="Tryck på lektionen för att läsa om anpassningarna">Anpassningar krävs</span>`:""};
+const adaptTag=c=>{const g=c&&group(c.groupId);const sum=g?adaptSummary(g):[];return sum.length?`<span class="adapt-a" title="Anpassningar krävs: ${esc(sum.map(x=>x.label).join(", "))}. Tryck på lektionen för att läsa mer." aria-label="Anpassningar krävs">A</span>`:""};
+const adaptPill=c=>{const g=c&&group(c.groupId);const sum=g?adaptSummary(g):[];return sum.length?`<span class="pill p-adapt" title="${esc(sum.map(x=>x.label+": "+x.names.join(", ")).join(" · "))}">Anpassningar</span>`:""};

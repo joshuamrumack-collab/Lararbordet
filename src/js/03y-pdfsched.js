@@ -1,20 +1,21 @@
 /* ---------- Schema från PDF (t.ex. utskrift från Skola24 eller annan schemavisare) ----------
    items: [{str,x,y,w,page}] där y växer nedåt. Hittar dagkolumner via rubrikerna Måndag–Fredag,
    och lektioner via klockslag: överst start, längst ned slut (eller "08:20-09:20" i samma text). */
-const PDF_DAYS=[["mån",1],["tis",2],["ons",3],["tor",4],["fre",5]];
-const TIME_RE=/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/g;
-const hhmm=(h,m)=>String(+h).padStart(2,"0")+":"+m;
+const PDF_DAYS=[["mån",1],["tis",2],["ons",3],["tor",4],["fre",5],["mon",1],["tue",2],["wed",3],["thu",4],["fri",5]];
+const TIME_RE=/\b([01]?\d|2[0-3])[:.]([0-5]\d)(?:\s?([ap])\.?m\b\.?)?/gi;
+const DAY_WORD=/^(måndag|mån|tisdag|tis|onsdag|ons|torsdag|tors|tor|fredag|fre|monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thu|friday|fri)(?=$|[\s.,:\/0-9(-])/;
+const hhmm=(h,m,ap)=>{h=+h;if(ap){ap=ap.toLowerCase();if(ap==="p"&&h<12)h+=12;if(ap==="a"&&h===12)h=0}return String(h).padStart(2,"0")+":"+m};
 function parsePdfSchedule(items){const out=[];const pages=[...new Set(items.map(i=>i.page||1))];
  for(const pg of pages){const its=items.filter(i=>(i.page||1)===pg&&String(i.str).trim());
   /* dagrubriker */
-  const heads=[];its.forEach(i=>{const t=i.str.trim().toLowerCase();const d=PDF_DAYS.find(([k])=>t.startsWith(k)&&!/\d{1,2}[:.]\d{2}/.test(t));if(d&&!heads.some(h=>h.day===d[1]))heads.push({day:d[1],x:i.x+(i.w||0)/2,l:i.x,y:i.y})});
+  const heads=[];its.forEach(i=>{const t=i.str.trim().toLowerCase();const dm=t.match(DAY_WORD);const d=dm&&!/\d{1,2}[:.]\d{2}/.test(t)?PDF_DAYS.find(([k])=>dm[1].startsWith(k)):null;if(d&&!heads.some(h=>h.day===d[1]))heads.push({day:d[1],x:i.x+(i.w||0)/2,l:i.x,y:i.y})});
   if(heads.length<2)continue;heads.sort((a,b)=>a.x-b.x);
   const gap=(heads[heads.length-1].x-heads[0].x)/(heads.length-1);const headY=Math.max(...heads.map(h=>h.y));
   const lo=Math.min(heads[0].x-gap/2,heads[0].l)-6,hi=heads[heads.length-1].x+gap*0.75;
   /* klockslag och övrig text under rubrikerna */
   let toks=[];const texts=[];
   its.forEach(i=>{if(i.y<=headY+2)return;const s=i.str.trim();const ts=[...s.matchAll(TIME_RE)];const w=i.w||0;
-   if(ts.length){const per=w/Math.max(1,ts.length);ts.forEach((m,k)=>toks.push({t:hhmm(m[1],m[2]),x:i.x+k*per,w:per,y:i.y+k*0.01,id:toks.length}));const rest=s.replace(TIME_RE,"").replace(/^[\s\-–—]+|[\s\-–—]+$/g,"").trim();if(rest.length>1)texts.push({s:rest,x:i.x,w,y:i.y})}
+   if(ts.length){const per=w/Math.max(1,ts.length);ts.forEach((m,k)=>toks.push({t:hhmm(m[1],m[2],m[3]),x:i.x+k*per,w:per,y:i.y+k*0.01,id:toks.length}));const rest=s.replace(TIME_RE,"").replace(/^[\s\-–—]+|[\s\-–—]+$/g,"").trim();if(rest.length>1)texts.push({s:rest,x:i.x,w,y:i.y})}
    else texts.push({s,x:i.x,w,y:i.y})});
   /* tidsaxeln till vänster (hela och halva timmar i en lodrät rad) räknas inte */
   const byX={};toks.forEach(t=>{const k=Math.round(t.x/4);(byX[k]=byX[k]||[]).push(t)});

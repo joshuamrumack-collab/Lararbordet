@@ -10,13 +10,13 @@ const shiftDate=(s,days)=>s?fmtD(addDays(parseD(s),days)):s;
 function weekShift(fromStart,toStart){return Math.round((mondayOf(parseD(toStart))-mondayOf(parseD(fromStart)))/dayMs/7)*7}
 
 /* ----- läsår ----- */
-const YEAR_KEYS=["year","courses","units","events","groups","assessments","grades","manual","lessons","schedule","cancel","process","kmat"];
+const YEAR_KEYS=["year","courses","units","events","groups","assessments","grades","manual","lessons","schedule","cancel","removed","process","kmat"];
 function yearLabel(y){return parseD(y.start).getFullYear()+"/"+String(parseD(y.end).getFullYear()).slice(2)}
-function snapshotYear(s){const o={id:uid(),archivedAt:fmtD(TODAY)};YEAR_KEYS.forEach(k=>o[k]=s[k]==null?(k==="process"?[]:k==="kmat"?{}:null):JSON.parse(JSON.stringify(s[k])));o.label=yearLabel(s.year);return o}
+function snapshotYear(s){const o={id:uid(),archivedAt:fmtD(TODAY)};YEAR_KEYS.forEach(k=>o[k]=s[k]==null?(k==="process"?[]:(k==="kmat"||k==="removed")?{}:null):JSON.parse(JSON.stringify(s[k])));o.label=yearLabel(s.year);return o}
 /* Bygger ett nytt läsår. opts: {start,end,courses,lessons,assessments,groups,events} */
 function rollover(s,opts){
  const shift=weekShift(s.year.start,opts.start);const out={};
- out.year={start:opts.start,end:opts.end};out.grades={};out.manual={};out.process=[];out.kmat={};
+ out.year={start:opts.start,end:opts.end};out.grades={};out.manual={};out.process=[];out.kmat={};out.removed={};
  const idm={};const nid=old=>idm[old]||(idm[old]=uid());
  out.groups=opts.groups?s.groups.map(g=>({id:nid(g.id),name:g.name,students:g.students.map(st=>Object.assign({},st,{id:nid(st.id)}))})):[];
  if(opts.courses){
@@ -31,7 +31,7 @@ function rollover(s,opts){
 /* Ersätter det aktuella läsåret med ett nytt och lägger det gamla i arkivet */
 function applyNewYear(s,newYear){s.archive=(s.archive||[]).concat([snapshotYear(s)]);YEAR_KEYS.forEach(k=>s[k]=newYear[k]);return s}
 /* Byter plats på det aktuella läsåret och ett arkiverat */
-function switchYear(s,archiveId){const i=(s.archive||[]).findIndex(a=>a.id===archiveId);if(i<0)return s;const target=s.archive[i];const cur=snapshotYear(s);s.archive.splice(i,1,cur);YEAR_KEYS.forEach(k=>s[k]=target[k]!==undefined&&target[k]!==null?target[k]:(k==="process"?[]:k==="kmat"?{}:target[k]));return s}
+function switchYear(s,archiveId){const i=(s.archive||[]).findIndex(a=>a.id===archiveId);if(i<0)return s;const target=s.archive[i];const cur=snapshotYear(s);s.archive.splice(i,1,cur);YEAR_KEYS.forEach(k=>s[k]=target[k]!==undefined&&target[k]!==null?target[k]:(k==="process"?[]:(k==="kmat"||k==="removed")?{}:target[k]));return s}
 
 /* ----- dela kurs i arbetslaget (utan elever och omdömen) ----- */
 function exportCourse(s,courseId){const c=s.courses.find(x=>x.id===courseId);if(!c)return null;
@@ -112,7 +112,7 @@ const CANCELS={lov:true,studiedag:true,aktivitet:true};
 const WEEKS_LABEL={alla:"Varje vecka",jamna:"Jämna veckor",udda:"Udda veckor"};
 function slotRunsInWeek(slot,d){if(!slot.weeks||slot.weeks==="alla")return true;const w=isoWeek(d);return slot.weeks==="jamna"?w%2===0:w%2===1}
 function slotDates(s,slot,from,to){const a=from>s.year.start?from:s.year.start,b=to<s.year.end?to:s.year.end;const out=[];
- for(let d=parseD(a);fmtD(d)<=b;d=addDays(d,1))if(d.getDay()===+slot.day&&slotRunsInWeek(slot,d))out.push(fmtD(d));return out}
+ for(let d=parseD(a);fmtD(d)<=b;d=addDays(d,1))if(d.getDay()===+slot.day&&slotRunsInWeek(slot,d)&&!(s.removed||{})[slot.id+"|"+fmtD(d)])out.push(fmtD(d));return out}
 /* Varför en lektion blir inställd, eller null om den blir av */
 function cancellation(s,slot,date){const c=(s.courses||[]).find(x=>x.id===slot.courseId)||{};
  const man=(s.cancel||{})[slot.id+"|"+date];if(man!=null)return {reason:man||"Inställd",type:"manuell"};

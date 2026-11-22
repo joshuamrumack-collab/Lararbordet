@@ -501,3 +501,14 @@ body.phone .hdrgear{margin-left:auto}
 .ptab td.pp.text .ptx{border-top:0}
 .pp-row{display:grid;grid-template-columns:minmax(0,1fr) 170px auto;gap:6px}
 .pp-row input,.pp-row select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
+input.tm{font-variant-numeric:tabular-nums;max-width:110px}
+.occ,.wt-i,.p-occrow{position:relative}
+.adapt-a{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:5px;background:#facc15;color:#422006;font-size:.7rem;font-weight:900;line-height:18px;text-align:center;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.p-adapt{background:#fde68a;color:#5b4300;box-shadow:inset 0 0 0 1px #eab308}
+.adapt-tag{display:none}
+.tab-order{display:grid;gap:4px;max-width:420px}
+.to-row{display:flex;gap:8px;align-items:center;padding:4px 8px;border:1px solid var(--line);border-radius:8px}
+.to-row .what{flex:1;font-weight:600}
+.to-i svg{width:18px;height:18px;vertical-align:middle}
+.ptab td.ptot{padding:6px 8px;white-space:nowrap}
+.ptab td .d{display:block;font-size:.7rem;font-weight:500;opacity:.85}

@@ -30,7 +30,7 @@ const ICON={
  elever:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.3c2.5.2 4.3 2 5 4.7"/></svg>',
  installningar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'
 };
-const TABS=[["oversikt","Översikt"],["planering","Planering"],["schema","Schema"],["arshjul","Årshjul"],["innehall","Centralt innehåll"],["bedomning","Bedömning"],["process","Process"],["elever","Elever"],["installningar","Inställningar"]];
+const TABS=[["oversikt","Översikt"],["schema","Schema"],["planering","Planering"],["elever","Elever"],["arshjul","Årshjul"],["bedomning","Bedömning"],["process","Process"],["innehall","Centralt innehåll"],["installningar","Inställningar"]];
 const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M5 12l5 5 9-10"/></svg>';
 
 /* ljust eller mörkt läge, sparas per dator/telefon */
@@ -43,3 +43,12 @@ const themeSeg=()=>`<div class="seg" role="group" aria-label="Utseende">${Object
 
 /* vanliga anpassningar (extra anpassningar i undervisningen) */
 const ADAPT={tid:"Extra tid",las:"Uppläst text eller talsyntes",ljud:"Ljudböcker",stav:"Rättstavningsprogram",tal:"Tal till text",munt:"Muntlig redovisning i stället för skriftlig",rum:"Avskild plats vid prov",instr:"Instruktioner skriftligt och i punktform",forf:"Förförståelse, genomgång i förväg",bild:"Bildstöd eller visuellt schema",delar:"Uppgifter i mindre delar",mall:"Mallar och stödstrukturer",dator:"Dator eller digitala verktyg",kapa:"Hörselkåpor",plats:"Särskild placering i klassrummet",paus:"Pauser eller rörelsepauser",forst:"Förstorad text",inl:"Förlängd inlämning"};
+/* klockslag alltid i 24-timmarsformat: "820", "8.20", "8:2" och "14" blir 08:20, 08:20, 08:02, 14:00 */
+function normTime(v){v=String(v||"").trim();if(!v)return "";let m=v.match(/^(\d{1,2})[:.,\s]?(\d{2})?$/)||v.match(/^(\d{1,2})[:.](\d)$/);
+ if(!m){const d=v.replace(/\D/g,"");if(d.length===3||d.length===4)m=[0,d.slice(0,-2),d.slice(-2)];else return v}
+ let h=+m[1],mi=m[2]!=null?+m[2]:0;if(String(m[2]||"").length===1)mi=+m[2];if(h>23||mi>59)return v;return String(h).padStart(2,"0")+":"+String(mi).padStart(2,"0")}
+if(typeof document!=="undefined")document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("tm")){const n=normTime(t.value);if(n!==t.value){t.value=n;t.dispatchEvent(new Event("change",{bubbles:true}))}}});
+const atypeL=a=>a.type==="annat"&&a.typeOther?a.typeOther:(ATYPES[a.type]||"");
+/* flikarnas ordning kan ändras under Inställningar */
+function tabsOrdered(){const o=(typeof ui!=="undefined"&&Array.isArray(ui.tabOrder))?ui.tabOrder:[];const ix=id=>{const k=o.indexOf(id);return k<0?100+TABS.findIndex(t=>t[0]===id):k};
+ return [...TABS].sort((a,b)=>a[0]==="installningar"?1:b[0]==="installningar"?-1:ix(a[0])-ix(b[0]))}
