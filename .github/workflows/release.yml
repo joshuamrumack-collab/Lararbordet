@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -29,7 +29,7 @@ jobs:
           python-version: "3.12"
       - name: Klicktest (Playwright)
         run: |
-          pip install playwright==1.56.0
+          pip install playwright
           python -m playwright install --with-deps chromium
           python tests/ui_test.py
 
