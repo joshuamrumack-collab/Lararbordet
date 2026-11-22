@@ -1,10 +1,16 @@
 // Gemensam start för skrivbord (Windows, Mac) och mobil (Android).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_opener::init());
+    // Automatiska uppdateringar finns bara i datorappen.
+    #[cfg(desktop)]
+    let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
+    builder
         .run(tauri::generate_context!())
         .expect("Lärarbordet kunde inte starta");
 }

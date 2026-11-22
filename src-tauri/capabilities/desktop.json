@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "desktop",
+  "description": "Automatiska uppdateringar i datorappen",
+  "windows": [
+    "main"
+  ],
+  "platforms": [
+    "windows",
+    "macOS",
+    "linux"
+  ],
+  "permissions": [
+    "updater:default",
+    "process:allow-restart"
+  ]
+}

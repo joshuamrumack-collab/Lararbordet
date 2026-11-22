@@ -13,12 +13,14 @@ const DATA = { catalog: gz("catalog"), crit: gz("crit") };
 
 /* Laddar de DOM-fria modulerna (hjälpfunktioner, katalog, modell, logik) i en egen kontext */
 function load() {
-  const ctx = vm.createContext({ PB_DATA: DATA, console, TextDecoder, structuredClone });
+  const ctx = vm.createContext({ PB_DATA: DATA, console, TextDecoder, TextEncoder, structuredClone, crypto: globalThis.crypto, btoa, atob });
   const files = readdirSync(join(root, "src/js")).filter((f) => /^0(1|2|3)/.test(f)).sort();
   vm.runInContext(files.map((f) => readFileSync(join(root, "src/js", f), "utf8")).join("\n"), ctx);
   vm.runInContext("var state=exampleState();", ctx);
   /* värden från kontexten kopieras så att jämförelser fungerar mellan olika "realms" */
-  return (code) => { const v = vm.runInContext(code, ctx); return v && typeof v === "object" ? JSON.parse(JSON.stringify(v)) : v; };
+  const run = (code) => { const v = vm.runInContext(code, ctx); return v && typeof v === "object" ? JSON.parse(JSON.stringify(v)) : v; };
+  run.ctx = ctx;
+  return run;
 }
 
 test("veckonummer och veckoförskjutning", () => {
@@ -325,4 +327,18 @@ test("schema från PDF på engelska med AM/PM", () => {
   assert.equal(r.length, 2);
   assert.deepEqual([r[0].day, r[0].start, r[0].end, r[0].text], [1, "13:35", "14:15", "English 5"]);
   assert.deepEqual([r[1].day, r[1].start, r[1].end, r[1].text], [5, "10:00", "10:55", "Swedish 1"]);
+});
+
+test("lösenordsskydd: kryptera och dekryptera", async () => {
+  const run = load();
+  const ctx = run.ctx;
+  const k = await ctx.makeKey("hemligt");
+  const env = await ctx.encryptText(JSON.stringify({ courses: [], hej: "å" }), k);
+  assert.equal(env.format, "lararbordet-krypterad");
+  assert.ok(!JSON.stringify(env).includes("hej"));
+  const back = await ctx.decryptEnvelope(env, "hemligt");
+  assert.equal(JSON.parse(back.text).hej, "å");
+  await assert.rejects(() => ctx.decryptEnvelope(env, "fel"));
+  assert.ok(ctx.readEnvelope("<html><script type=\"application/json\" id=\"pbdata\">" + JSON.stringify(env) + "</script></html>"));
+  assert.equal(ctx.readEnvelope("{\"courses\":[]}"), null);
 });

@@ -199,3 +199,19 @@ const procParts=p=>(p.parts||[]).map(x=>typeof x==="string"?{name:x,kind:"check"
 function procExpected(p,k){const n=(p.cols||[]).length;const min=+p.minWords||0;if(!min||!n)return null;return p.count==="lesson"?Math.ceil(min/n):Math.ceil(min*(k+1)/n)}
 function procClass2(v,exp,avg){if(v==="k")return "pk";if(v==="of")return "pof";if(v==="gf")return "pgf";if(!/^\d+$/.test(v||""))return "";
  if(exp!=null)return +v<exp?"pbehind":"pok";return avg!=null&&+v<avg?"plow":""}
+
+/* ----- lösenordsskydd: AES-GCM 256 med nyckel från lösenordet (PBKDF2-SHA256) ----- */
+const ENC_MARK="lararbordet-krypterad";
+const b64e=u=>{let s="";const a=new Uint8Array(u);for(let i=0;i<a.length;i+=0x8000)s+=String.fromCharCode.apply(null,a.subarray(i,i+0x8000));return btoa(s)};
+const b64d=t=>{const b=atob(t);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u};
+const isEncrypted=x=>!!x&&typeof x==="object"&&x.format===ENC_MARK;
+async function deriveKey(pass,salt,iter){const c=globalThis.crypto.subtle;const base=await c.importKey("raw",new TextEncoder().encode(pass),"PBKDF2",false,["deriveKey"]);
+ return c.deriveKey({name:"PBKDF2",hash:"SHA-256",salt,iterations:iter},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function makeKey(pass){const salt=globalThis.crypto.getRandomValues(new Uint8Array(16));const iter=310000;return {key:await deriveKey(pass,salt,iter),salt,iter}}
+async function encryptText(text,k){const iv=globalThis.crypto.getRandomValues(new Uint8Array(12));const ct=await globalThis.crypto.subtle.encrypt({name:"AES-GCM",iv},k.key,new TextEncoder().encode(text));
+ return {format:ENC_MARK,v:1,kdf:"PBKDF2-SHA256",iter:k.iter,salt:b64e(k.salt),iv:b64e(iv),data:b64e(ct)}}
+/* ger {text,k} där k kan återanvändas för att spara; kastar fel vid fel lösenord */
+async function decryptEnvelope(env,pass){const salt=b64d(env.salt);const k={key:await deriveKey(pass,salt,env.iter||310000),salt,iter:env.iter||310000};
+ const pt=await globalThis.crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(env.iv)},k.key,b64d(env.data));return {text:new TextDecoder().decode(pt),k}}
+/* läser texten i en Lärarbordet-fil (json eller html) och säger om den är krypterad */
+function readEnvelope(text){let t=String(text||"").trim();if(t.startsWith("<")){const m=t.match(/<script[^>]*id="pbdata"[^>]*>([\s\S]*?)<\/script>/i);if(!m)return null;t=m[1].trim()}try{const d=JSON.parse(t);return isEncrypted(d)?d:null}catch(e){return null}}

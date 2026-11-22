@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Lärarbordet",
   "mainBinaryName": "lararbordet",
-  "version": "1.12.1",
+  "version": "1.13.0",
   "identifier": "se.dorkteach.lararbordet",
   "build": {
     "frontendDist": "../dist"
@@ -49,6 +49,18 @@
           "English"
         ],
         "installMode": "currentUser"
+      }
+    },
+    "createUpdaterArtifacts": false
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg3QTVCRDgxNjdGM0YzMTAKUldRUTgvTm5nYjJsaHdjRG9WS0lyemtWMFpOa1hFdUJNejdsSmphMXNGakxJUCszQ3BrSVh4NFMK",
+      "endpoints": [
+        "https://github.com/joshuamrumack-collab/Lararbordet/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

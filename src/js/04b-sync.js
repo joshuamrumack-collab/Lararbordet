@@ -24,11 +24,11 @@ async function afterFileOpened(){if(!DESKTOP||!filePath)return;const l=await rea
  startLock()}
 /* Läs in filen igen (efter att den ändrats på en annan dator) */
 async function reloadFromFile(quiet){try{
-  if(DESKTOP){state=parsePlanbok(await T.fs.readTextFile(filePath));fileMtime=await fileStatMs(filePath)}
-  else if(fileHandle){const f=await fileHandle.getFile();state=parsePlanbok(await f.text());htmlMtime=f.lastModified}
+  if(DESKTOP){state=await loadText(await T.fs.readTextFile(filePath),baseName(filePath));fileMtime=await fileStatMs(filePath)}
+  else if(fileHandle){const f=await fileHandle.getFile();state=await loadText(await f.text(),f.name);htmlMtime=f.lastModified}
   ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;dirty=false;syncMode="file";savedAt=new Date();render();setSync();
   if(!quiet)toast("Uppdaterad med ändringarna från den andra datorn.")}catch(e){toast("Kunde inte läsa filen. Den kanske håller på att synkas, försök igen om en stund.")}}
-function toast(t){const b=document.getElementById("savebar");if(!b)return;b.innerHTML=`<span>${esc(t)}</span><button class="btn pri" data-a="close-toast">OK</button>`;b.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{b.hidden=true;updateBar()},6000)}
+function toast(t){const b=document.getElementById("savebar");if(!b)return;b.innerHTML=`<span>${esc(t)}</span><button class="btn pri" data-a="close-toast">OK</button>`;b.hidden=false;TOAST_ON=true;clearTimeout(toast.t);toast.t=setTimeout(()=>{TOAST_ON=false;b.hidden=true;updateBar()},6000)}
 function showConflict(force){if(conflictShown&&!force)return;conflictShown=true;
  modal("Filen har ändrats på en annan dator",`<p style="margin:0">Sedan du öppnade Lärarbordet har någon sparat i samma fil, troligen du själv på en annan dator. Om du sparar nu skrivs de ändringarna över.</p>
  <div style="display:grid;gap:8px">

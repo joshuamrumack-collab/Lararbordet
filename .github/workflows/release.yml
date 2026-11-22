@@ -24,6 +24,14 @@ jobs:
           node-version: 22
       - run: npm run build
       - run: npm test
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Klicktest (Playwright)
+        run: |
+          pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+          python tests/ui_test.py
 
   desktop:
     needs: test
@@ -94,6 +102,20 @@ jobs:
             Write-Host "Inget Windows-certifikat: installationen blir osignerad."
           }
 
+      - name: Automatiska uppdateringar (om nyckeln finns)
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            node -e "const fs=require('fs');const f='src-tauri/tauri.conf.json';const c=JSON.parse(fs.readFileSync(f,'utf8').replace(/^\uFEFF/,''));c.bundle.createUpdaterArtifacts=true;fs.writeFileSync(f,JSON.stringify(c,null,2))"
+            { echo "TAURI_SIGNING_PRIVATE_KEY<<NYCKEL_SLUT"; echo "$TAURI_SIGNING_PRIVATE_KEY"; echo "NYCKEL_SLUT"; } >> "$GITHUB_ENV"
+            echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD=" >> "$GITHUB_ENV"
+            echo "Uppdateringsfilerna signeras, så att datorappen kan uppdatera sig själv."
+          else
+            echo "::warning::Ingen TAURI_SIGNING_PRIVATE_KEY: automatiska uppdateringar i datorappen är avstängda."
+          fi
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -111,6 +133,7 @@ jobs:
             Din data följer med när du uppdaterar. Se README för installation och vad du gör om datorn varnar för okänd utgivare. Av DorkTeach.
           releaseDraft: false
           prerelease: false
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
   android:

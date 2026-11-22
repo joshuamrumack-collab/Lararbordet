@@ -527,12 +527,30 @@ input.tm{font-variant-numeric:tabular-nums;max-width:110px}
 .to-i svg{width:18px;height:18px;vertical-align:middle}
 .ptab td.ptot{padding:6px 8px;white-space:nowrap}
 .ptab td .d{display:block;font-size:.7rem;font-weight:500;opacity:.85}
+.sec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.sec-box{display:grid;gap:6px;align-content:start;border:1px solid var(--line);border-radius:10px;padding:12px}
+.row-b{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.sec-box select{font:inherit;padding:2px 4px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+kbd{font:inherit;font-size:.78em;padding:1px 5px;border:1px solid var(--line);border-radius:4px;background:var(--soft)}
+body.locked #tabs{visibility:hidden}
+.doc-frame{width:100%;height:56vh;border:1px solid var(--line);border-radius:8px;background:#fff}
+.sres{max-height:55vh;overflow:auto}
+.sres .sr{display:flex;gap:10px;align-items:center;text-align:left;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 4px;cursor:pointer;color:var(--ink);font:inherit}
+.sres .sr:hover,.sres .sr:focus{background:var(--soft)}
+.hdr-search{display:inline-flex;align-items:center;gap:6px}
+.hsearch{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;padding:4px 12px;font:inherit;font-size:.82rem;cursor:pointer}
+.hsearch:hover{color:var(--ink)}
+.hsearch+.sync{margin-left:8px}
+body.phone .hsearch{display:none}
+body.phone .hsearch+.sync{margin-left:auto}
+@media (max-width:600px){.hsearch span{display:none}}
 
 </style>
 </head>
 <body>
 <header class="top"><div class="topin">
   <div class="brand"><svg width="30" height="30" viewBox="152 152 720 720" aria-hidden="true"><g transform="translate(512 512)"> <g fill="none" stroke-width="96" stroke-linecap="butt"> <circle r="300" stroke="var(--accent)" stroke-dasharray="439 1446" transform="rotate(-86)"/> <circle r="300" stroke="#f2b748" stroke-dasharray="439 1446" transform="rotate(4)"/> <circle r="300" stroke="#3f8f6b" stroke-dasharray="439 1446" transform="rotate(94)"/> <circle r="300" stroke="#e07a5f" stroke-dasharray="439 1446" transform="rotate(184)"/> </g> <rect x="-150" y="-34" width="300" height="46" rx="16" fill="var(--ink)"/> <rect x="-124" y="12" width="40" height="124" rx="12" fill="var(--ink)"/> <rect x="84" y="12" width="40" height="124" rx="12" fill="var(--ink)"/> <rect x="-96" y="-118" width="110" height="84" rx="10" fill="var(--accent)"/> <circle cx="72" cy="-80" r="44" fill="#f2b748"/> </g> </svg>Lärarbordet</div>
+  <button class="hsearch" data-a="search" title="Sök (/)" aria-label="Sök"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Sök</span></button>
   <button class="sync" id="sync" data-a="save" title="Sparar all data i den här HTML-filen (Ctrl/Cmd+S)">Spara till fil</button>
   <a href="#installningar" id="hdrgear" class="hdrgear" aria-label="Inställningar"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></a>
 </div></header>
@@ -553,7 +571,7 @@ input.tm{font-variant-numeric:tabular-nums;max-width:110px}
 "use strict";
 /* ===== 01-helpers.js ===== */
 /* ---------- hjälpfunktioner ---------- */
-const APP_VERSION="1.12.0";
+const APP_VERSION="1.13.0";
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -935,6 +953,22 @@ function procExpected(p,k){const n=(p.cols||[]).length;const min=+p.minWords||0;
 function procClass2(v,exp,avg){if(v==="k")return "pk";if(v==="of")return "pof";if(v==="gf")return "pgf";if(!/^\d+$/.test(v||""))return "";
  if(exp!=null)return +v<exp?"pbehind":"pok";return avg!=null&&+v<avg?"plow":""}
 
+/* ----- lösenordsskydd: AES-GCM 256 med nyckel från lösenordet (PBKDF2-SHA256) ----- */
+const ENC_MARK="lararbordet-krypterad";
+const b64e=u=>{let s="";const a=new Uint8Array(u);for(let i=0;i<a.length;i+=0x8000)s+=String.fromCharCode.apply(null,a.subarray(i,i+0x8000));return btoa(s)};
+const b64d=t=>{const b=atob(t);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u};
+const isEncrypted=x=>!!x&&typeof x==="object"&&x.format===ENC_MARK;
+async function deriveKey(pass,salt,iter){const c=globalThis.crypto.subtle;const base=await c.importKey("raw",new TextEncoder().encode(pass),"PBKDF2",false,["deriveKey"]);
+ return c.deriveKey({name:"PBKDF2",hash:"SHA-256",salt,iterations:iter},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function makeKey(pass){const salt=globalThis.crypto.getRandomValues(new Uint8Array(16));const iter=310000;return {key:await deriveKey(pass,salt,iter),salt,iter}}
+async function encryptText(text,k){const iv=globalThis.crypto.getRandomValues(new Uint8Array(12));const ct=await globalThis.crypto.subtle.encrypt({name:"AES-GCM",iv},k.key,new TextEncoder().encode(text));
+ return {format:ENC_MARK,v:1,kdf:"PBKDF2-SHA256",iter:k.iter,salt:b64e(k.salt),iv:b64e(iv),data:b64e(ct)}}
+/* ger {text,k} där k kan återanvändas för att spara; kastar fel vid fel lösenord */
+async function decryptEnvelope(env,pass){const salt=b64d(env.salt);const k={key:await deriveKey(pass,salt,env.iter||310000),salt,iter:env.iter||310000};
+ const pt=await globalThis.crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(env.iv)},k.key,b64d(env.data));return {text:new TextDecoder().decode(pt),k}}
+/* läser texten i en Lärarbordet-fil (json eller html) och säger om den är krypterad */
+function readEnvelope(text){let t=String(text||"").trim();if(t.startsWith("<")){const m=t.match(/<script[^>]*id="pbdata"[^>]*>([\s\S]*?)<\/script>/i);if(!m)return null;t=m[1].trim()}try{const d=JSON.parse(t);return isEncrypted(d)?d:null}catch(e){return null}}
+
 /* ===== 03y-pdfsched.js ===== */
 /* ---------- Schema från PDF (t.ex. utskrift från Skola24 eller annan schemavisare) ----------
    items: [{str,x,y,w,page}] där y växer nedåt. Hittar dagkolumner via rubrikerna Måndag–Fredag,
@@ -989,9 +1023,11 @@ const DESKTOP=!!(T&&T.fs&&T.dialog&&T.path);
 const TEMPLATE=(()=>{const c=document.documentElement.cloneNode(true);const d=c.querySelector("#pbdata");if(d)d.textContent=TOK;["#main","#tabs","#modalroot"].forEach(q=>{const e=c.querySelector(q);if(e)e.innerHTML=""});return "<!DOCTYPE html>\n"+c.outerHTML})();
 const FILENAME=(()=>{try{const n=decodeURIComponent(location.pathname.split("/").pop()||"");if(/\.html?$/i.test(n))return n}catch(e){}return "lararbordet.html"})();
 let state=null;
-if(!DESKTOP){try{const raw=document.getElementById("pbdata").textContent.trim();if(raw&&raw!=="null"&&raw!==TOK)state=normalize(JSON.parse(raw))}catch(e){}}
-let FIRST=!state;
-if(!state)state=exampleState();
+let ENC=null;/* {key,salt,iter} när filen är lösenordsskyddad */
+let ENC_PENDING=null;/* krypterad data i HTML-filen som väntar på lösenord */
+if(!DESKTOP){try{const raw=document.getElementById("pbdata").textContent.trim();if(raw&&raw!=="null"&&raw!==TOK){const d=JSON.parse(raw);if(isEncrypted(d))ENC_PENDING=d;else state=normalize(d)}}catch(e){}}
+let FIRST=!state&&!ENC_PENDING;
+if(!state)state=ENC_PENDING?emptyState():exampleState();
 /* filter som bara gäller stunden sparas inte i filen, så att "Allt" alltid är förvalt nästa gång */
 const uiToSave=()=>{const o=Object.assign({},ui);delete o.gapsOnly;delete o.fullApp;return o};
 let ui=Object.assign({course:null,subject:"sv",subjFilter:"all",gapsOnly:false,group:null,acourse:"all",wheel:"all"},state.ui||{});ui.gapsOnly=false;
@@ -1000,7 +1036,9 @@ let fileHandle=null,filePath=null,dirty=false,savedAt=null,saveT=null,saving=fal
 const canPick=typeof window.showSaveFilePicker==="function";
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
 /* läs data ur en exporterad .json eller ur en sparad lararbordet.html */
-function buildHTML(){state.ui=uiToSave();const json=JSON.stringify(state).replace(/</g,"\\u003c");return TEMPLATE.replace(TOK,()=>json)}
+/* datan som text: krypterad om lösenordsskydd är på */
+async function serialize(pretty){state.ui=uiToSave();const j=JSON.stringify(state,null,pretty?1:0);return ENC?JSON.stringify(await encryptText(j,ENC)):j}
+async function buildHTML(){const json=(await serialize()).replace(/</g,"\\u003c");return TEMPLATE.replace(TOK,()=>json)}
 function setSync(m){if(m)syncMode=m;const el=$("#sync");if(!el)return;const hh=d=>String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
  let t,c="";
  if(READONLY){el.textContent="Läsläge";el.className="sync";el.title=RO_NAME;updateBar();return}
@@ -1020,7 +1058,8 @@ const IDB={open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("lar
  async get(k){const db=await this.open();return new Promise(res=>{const t=db.transaction("h").objectStore("h").get(k);t.onsuccess=()=>res(t.result||null);t.onerror=()=>res(null)})},
  async set(k,v){const db=await this.open();return new Promise(res=>{const t=db.transaction("h","readwrite").objectStore("h").put(v,k);t.onsuccess=()=>res();t.onerror=()=>res()})}};
 if(!DESKTOP&&canPick){IDB.get(HKEY).then(h=>{storedHandle=h;updateBar()}).catch(()=>{})}
-function updateBar(){const b=document.getElementById("savebar");if(!b)return;
+let TOAST_ON=false;
+function updateBar(){const b=document.getElementById("savebar");if(!b||TOAST_ON)return;
  if(DESKTOP||READONLY||!dirty||saving||fileHandle||BAR_HIDDEN){b.hidden=true;return}
  let msg,btn;
  if(canPick&&storedHandle){msg=`Du har ändringar som inte är sparade. Spara dem i <b>${esc(storedHandle.name)}</b>?`;btn="Spara i filen"}
@@ -1032,13 +1071,13 @@ async function barSave(){if(canPick&&storedHandle&&!fileHandle){try{const st=awa
 async function tryStored(){if(fileHandle||!storedHandle)return false;try{if((await storedHandle.queryPermission({mode:"readwrite"}))==="granted"){fileHandle=storedHandle;return true}}catch(e){}return false}
 /* ---------- läsläge (t.ex. i telefonen): visar en fil men sparar aldrig något ---------- */
 let READONLY=false,RO_SNAP=null,RO_NAME="";
-function openReadOnly(text,name){const d=parsePlanbok(text);READONLY=true;RO_SNAP=JSON.stringify(d);RO_NAME=name||"";state=d;ui=Object.assign(ui,d.ui||{});ui.gapsOnly=false;dirty=false;document.body.classList.add("ro");closeModal();PH={course:null,student:null,group:null,week:0,open:{},nav:[],tab:"idag"};location.hash=isPhone()?"idag":"oversikt";render();setSync()}
-async function pickReadOnlyApp(){try{const p=await T.dialog.open({multiple:false,directory:false});if(!p)return true;const path=typeof p==="string"?p:p.path;openReadOnly(await T.fs.readTextFile(path),decodeURIComponent(String(path).split(/[\/]/).pop()||"fil"));return true}catch(e){return false}}
+async function openReadOnly(text,name){const d=await loadText(text,name,true);READONLY=true;RO_SNAP=JSON.stringify(d);RO_NAME=name||"";state=d;ui=Object.assign(ui,d.ui||{});ui.gapsOnly=false;dirty=false;document.body.classList.add("ro");closeModal();PH={course:null,student:null,group:null,week:0,open:{},nav:[],tab:"idag"};location.hash=isPhone()?"idag":"oversikt";render();setSync()}
+async function pickReadOnlyApp(){try{const p=await T.dialog.open({multiple:false,directory:false});if(!p)return true;const path=typeof p==="string"?p:p.path;await openReadOnly(await T.fs.readTextFile(path),decodeURIComponent(String(path).split(/[\/]/).pop()||"fil"));return true}catch(e){if(e&&e.cancelled)return true;return false}}
 function pickReadOnly(){if(IS_MOBILE_APP){pickReadOnlyApp().then(ok=>{if(!ok)pickReadOnlyInput()});return}pickReadOnlyInput()}
 function pickReadOnlyInput(){const inp=document.createElement("input");inp.type="file";inp.accept=".json,.html,application/json,text/html";
- inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;try{openReadOnly(await f.text(),f.name)}catch(e){modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj din <b>lararbordet.json</b> eller <b>lararbordet.html</b>.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}};inp.click()}
+ inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;try{await openReadOnly(await f.text(),f.name)}catch(e){if(e&&e.cancelled)return;modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj din <b>lararbordet.json</b> eller <b>lararbordet.html</b>.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}};inp.click()}
 function commit(quiet){if(READONLY){state=normalize(JSON.parse(RO_SNAP));render();toast("Läsläge: ändringar sparas inte. Ändra på datorn.");return}
- state.updated=Date.now();dirty=true;if(!quiet)render();setSync();
+ undoRecord();state.updated=Date.now();dirty=true;if(!quiet)render();setSync();
  if(DESKTOP||fileHandle){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),DESKTOP?700:1200);return}
  tryStored().then(ok=>{if(ok){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),600)}})}
 function downloadBlob(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}
@@ -1047,30 +1086,30 @@ function downloadBlob(name,data,mime){const url=URL.createObjectURL(new Blob([da
 async function rememberPath(p){try{const d=await T.path.appConfigDir();await T.fs.mkdir(d,{recursive:true});await T.fs.writeTextFile(await T.path.join(d,"senaste-fil.txt"),p)}catch(e){}}
 async function desktopWrite(force){state.ui=uiToSave();const dir=await T.path.dirname(filePath);await T.fs.mkdir(dir,{recursive:true});
  if(!force&&fileMtime){const m=await fileStatMs(filePath);if(m&&m>fileMtime+1500){showConflict();throw {conflict:true}}}
- await T.fs.writeTextFile(filePath,JSON.stringify(state,null,1));fileMtime=(await fileStatMs(filePath))||Date.now();await rememberPath(filePath);if(!lockTimer)startLock()}
+ const txt=await serialize(true);await T.fs.writeTextFile(filePath,txt);fileMtime=(await fileStatMs(filePath))||Date.now();await rememberPath(filePath);if(!lockTimer)startLock();backupNow(txt).catch(()=>{})}
 async function desktopInit(){
  try{let p=null;try{const cfg=await T.path.join(await T.path.appConfigDir(),"senaste-fil.txt");if(await T.fs.exists(cfg))p=(await T.fs.readTextFile(cfg)).trim()}catch(e){}
   if(!p||!(await T.fs.exists(p).catch(()=>false)))p=await T.path.join(await T.path.documentDir(),"Lärarbordet","lararbordet.json");
   filePath=p;
-  if(await T.fs.exists(p)){state=parsePlanbok(await T.fs.readTextFile(p));ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;savedAt=new Date();syncMode="file";FIRST=false;fileMtime=await fileStatMs(p)}else FIRST=true;
- }catch(e){syncMode="readerr"}
- render();setSync();if(FIRST)welcomeModal();else afterFileOpened()}
+  if(await T.fs.exists(p)){state=await loadText(await T.fs.readTextFile(p),baseName(p));ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;savedAt=new Date();syncMode="file";FIRST=false;fileMtime=await fileStatMs(p)}else FIRST=true;
+ }catch(e){syncMode=e&&e.cancelled?"locked":"readerr"}
+ resetUndo();render();setSync();if(syncMode==="locked"){lockedScreen();return}if(FIRST)welcomeModal();else afterFileOpened()}
 async function desktopOpen(){try{const p=await T.dialog.open({multiple:false,directory:false,filters:[{name:"Lärarbordet",extensions:["json","html"]}]});if(!p)return;const path=typeof p==="string"?p:p.path;
-  const d=parsePlanbok(await T.fs.readTextFile(path));
+  const d=await loadText(await T.fs.readTextFile(path),baseName(path));
   if(/\.html?$/i.test(path)){state=d;state.example=false;filePath=path.replace(/\.html?$/i,".json");await desktopWrite()}else{state=d;filePath=path;await rememberPath(path)}
-  ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;dirty=false;savedAt=new Date();syncMode="file";fileMtime=await fileStatMs(filePath);render();setSync();afterFileOpened()}
- catch(e){modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en lararbordet.json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}}
+  ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;dirty=false;savedAt=new Date();syncMode="file";fileMtime=await fileStatMs(filePath);resetUndo();render();setSync();afterFileOpened()}
+ catch(e){if(e&&e.cancelled)return;modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en lararbordet.json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}}
 
 async function saveFile(forcePicker){if(saving){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(forcePicker),600);return}
  saving=true;setSync();
  try{
   if(DESKTOP){let old=null;if(forcePicker){const p=await T.dialog.save({defaultPath:filePath,filters:[{name:"Lärarbordet",extensions:["json"]}]});if(!p)return;if(p!==filePath){old=filePath;await removeLock();clearInterval(lockTimer);lockTimer=null;fileMtime=0}filePath=p}
    await desktopWrite(!!old);if(old){try{if(await T.fs.exists(old))await T.fs.rename(old,old.replace(/\.json$/i,"")+" (flyttad).json")}catch(e){}}dirty=false;savedAt=new Date();syncMode="file";return}
-  const html=buildHTML();
+  const html=await buildHTML();
   if(canPick){
    try{if(!fileHandle||forcePicker){fileHandle=await window.showSaveFilePicker({suggestedName:storedHandle?storedHandle.name:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});storedHandle=fileHandle;IDB.set(HKEY,fileHandle).catch(()=>{})}
     if(!forcePicker&&!FORCE_ONCE&&!(await htmlUnchanged())){showConflict();throw {conflict:true}}FORCE_ONCE=false;
-    const w=await fileHandle.createWritable();await w.write(html);await w.close();htmlMtime=(await fileHandle.getFile()).lastModified;dirty=false;savedAt=new Date();syncMode="file";return}
+    const w=await fileHandle.createWritable();await w.write(html);await w.close();htmlMtime=(await fileHandle.getFile()).lastModified;dirty=false;savedAt=new Date();syncMode="file";backupNow(null).catch(()=>{});return}
    catch(e){if(e&&e.name==="AbortError")return;if(e&&e.conflict)throw e;fileHandle=null}
   }
   downloadBlob(FILENAME,html,"text/html");dirty=false;savedAt=new Date();syncMode="downloaded";
@@ -1099,6 +1138,12 @@ const OS=(()=>{const u=(navigator.userAgent||"")+" "+(navigator.platform||"");re
 async function latestRelease(){const r=await fetch("https://api.github.com/repos/joshuamrumack-collab/Lararbordet/releases/latest",{headers:{Accept:"application/vnd.github+json"}});if(!r.ok)throw new Error("GitHub svarade inte");return r.json()}
 /* Skrivbordsappen: öppna rätt installationsfil i webbläsaren */
 async function downloadInstaller(){const st=$("#dlstatus");if(st)st.textContent="Hämtar…";
+ /* datorappen uppdaterar sig själv om uppdateringen är signerad; annars laddas installationsfilen ner */
+ if(DESKTOP&&T.updater&&T.updater.check){try{const u=await T.updater.check();if(u){let got=0,total=0;
+   const say=t=>{if(st)st.textContent=t;const b=document.getElementById("savebar");if(b){b.innerHTML=`<span>${esc(t)}</span>`;b.hidden=false;TOAST_ON=true}};
+   if(dirty)await saveFile(false);say(`Laddar ner version ${u.version}…`);
+   await u.downloadAndInstall(ev=>{if(ev.event==="Started")total=ev.data.contentLength||0;else if(ev.event==="Progress"){got+=ev.data.chunkLength||0;if(total)say(`Laddar ner version ${u.version}… ${Math.round(got/total*100)} %`)}else if(ev.event==="Finished")say("Installerar…")});
+   say("Klart. Lärarbordet startar om.");await removeLock().catch(()=>{});if(T.process&&T.process.relaunch)await T.process.relaunch();return}}catch(e){}}
  try{const j=await latestRelease();const pat=OS==="android"?/android\.apk$/:OS==="windows"?/x64-setup\.exe$/:OS==="mac"?/universal\.dmg$/:null;const a=pat&&(j.assets||[]).find(x=>pat.test(x.name));
   openExternal(a?a.browser_download_url:(j.html_url||RELEASES_URL));if(st)st.textContent=a?`Laddar ner ${a.name}. Installera den som vanligt, din data ligger kvar.`:"Nedladdningssidan öppnades."}
  catch(e){openExternal(RELEASES_URL);if(st)st.textContent="Nedladdningssidan öppnades."}}
@@ -1107,7 +1152,7 @@ async function updateHtmlFile(){const st=$("#dlstatus");const say=t=>{if(st)st.i
  let html;try{const r=await fetch(WEB_URL+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;html=await r.text()}catch(e){say("Kunde inte nå GitHub. Kontrollera internet och försök igen.");return}
  const m=html.match(/APP_VERSION="([^"]+)"/);const ver=m?m[1]:"?";
  if(!/id="pbdata"/.test(html)){say("Den hämtade filen ser inte ut som Lärarbordet. Ladda ner den från nedladdningssidan i stället.");return}
- state.ui=uiToSave();const json=JSON.stringify(state).replace(/</g,"\\u003c");
+ const json=(await serialize()).replace(/</g,"\\u003c");
  const out=html.replace(/(<script type="application\/json" id="pbdata">)[\s\S]*?(<\/script>)/,(x,a,b)=>a+json+b);
  if(canPick){try{if(!fileHandle&&storedHandle){try{if((await storedHandle.requestPermission({mode:"readwrite"}))==="granted")fileHandle=storedHandle}catch(e){}}
    if(!fileHandle){fileHandle=await window.showSaveFilePicker({suggestedName:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});storedHandle=fileHandle;IDB.set(HKEY,fileHandle).catch(()=>{})}
@@ -1145,11 +1190,11 @@ async function afterFileOpened(){if(!DESKTOP||!filePath)return;const l=await rea
  startLock()}
 /* Läs in filen igen (efter att den ändrats på en annan dator) */
 async function reloadFromFile(quiet){try{
-  if(DESKTOP){state=parsePlanbok(await T.fs.readTextFile(filePath));fileMtime=await fileStatMs(filePath)}
-  else if(fileHandle){const f=await fileHandle.getFile();state=parsePlanbok(await f.text());htmlMtime=f.lastModified}
+  if(DESKTOP){state=await loadText(await T.fs.readTextFile(filePath),baseName(filePath));fileMtime=await fileStatMs(filePath)}
+  else if(fileHandle){const f=await fileHandle.getFile();state=await loadText(await f.text(),f.name);htmlMtime=f.lastModified}
   ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;dirty=false;syncMode="file";savedAt=new Date();render();setSync();
   if(!quiet)toast("Uppdaterad med ändringarna från den andra datorn.")}catch(e){toast("Kunde inte läsa filen. Den kanske håller på att synkas, försök igen om en stund.")}}
-function toast(t){const b=document.getElementById("savebar");if(!b)return;b.innerHTML=`<span>${esc(t)}</span><button class="btn pri" data-a="close-toast">OK</button>`;b.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{b.hidden=true;updateBar()},6000)}
+function toast(t){const b=document.getElementById("savebar");if(!b)return;b.innerHTML=`<span>${esc(t)}</span><button class="btn pri" data-a="close-toast">OK</button>`;b.hidden=false;TOAST_ON=true;clearTimeout(toast.t);toast.t=setTimeout(()=>{TOAST_ON=false;b.hidden=true;updateBar()},6000)}
 function showConflict(force){if(conflictShown&&!force)return;conflictShown=true;
  modal("Filen har ändrats på en annan dator",`<p style="margin:0">Sedan du öppnade Lärarbordet har någon sparat i samma fil, troligen du själv på en annan dator. Om du sparar nu skrivs de ändringarna över.</p>
  <div style="display:grid;gap:8px">
@@ -1164,6 +1209,100 @@ function showConflict(force){if(conflictShown&&!force)return;conflictShown=true;
 window.addEventListener("focus",async()=>{if(!DESKTOP||!filePath||!fileMtime||saving)return;const m=await fileStatMs(filePath);if(m>fileMtime+1500){if(!dirty)await reloadFromFile();else showConflict()}});
 /* Skrivbordsappen: spara och släpp låset när fönstret stängs */
 if(DESKTOP&&T.window&&T.window.getCurrentWindow){try{T.window.getCurrentWindow().onCloseRequested(async()=>{try{if(dirty&&syncMode!=="conflict"){clearTimeout(saveT);await saveFile(false)}}catch(e){}await removeLock()})}catch(e){}}
+
+/* ===== 04c-secure.js ===== */
+/* ---------- lösenordsskydd, säkerhetskopior och ångra ---------- */
+
+/* Läser en Lärarbordet-fil (json eller html). Är den krypterad frågar vi efter lösenordet.
+   readonly: läsläge (telefonen) – lösenordet används bara för att läsa. */
+async function loadText(text,name,readonly){const env=readEnvelope(text);if(!env)return parsePlanbok(text);
+ if(ENC&&!readonly&&b64e(ENC.salt)===env.salt){try{const pt=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(env.iv)},ENC.key,b64d(env.data)));return parsePlanbok(pt)}catch(e){}}
+ const r=await askPassword(name,env);if(!readonly)ENC=r.k;return parsePlanbok(r.text)}
+function askPassword(name,env){return new Promise((res,rej)=>{
+ modal("Filen är lösenordsskyddad",`<p style="margin:0">Skriv lösenordet för att öppna ${name?`<b>${esc(name)}</b>`:"filen"}.</p>
+ <div class="f"><label for="pwi">Lösenord</label><input type="password" id="pwi" autocomplete="current-password"></div><p class="small" id="pwe" style="color:var(--bad);margin:0" hidden>Fel lösenord. Försök igen.</p>
+ <div class="actions"><button class="btn" id="pwc">Avbryt</button><span class="sp"></span><button class="btn pri" id="pwo">Öppna</button></div>`,m=>{
+  const inp=m.querySelector("#pwi");setTimeout(()=>inp.focus(),50);
+  const go=async()=>{const b=m.querySelector("#pwo");b.disabled=true;b.textContent="Öppnar…";try{const r=await decryptEnvelope(env,inp.value);closeModal();res(r)}catch(e){m.querySelector("#pwe").hidden=false;inp.select();b.disabled=false;b.textContent="Öppna"}};
+  m.querySelector("#pwo").onclick=go;inp.onkeydown=e=>{if(e.key==="Enter")go()};
+  m.querySelector("#pwc").onclick=()=>{closeModal();rej({cancelled:true})}})})}
+/* visas om man avbryter vid start */
+function lockedScreen(){document.body.classList.add("locked");$("#main").innerHTML=`<section class="panel"><div class="empty"><p><b>Filen är låst med lösenord.</b></p><p class="small muted">Inget visas förrän du skriver lösenordet.</p><button class="btn pri" data-a="unlock">Lås upp</button></div></section>`}
+async function unlockStart(){try{
+  if(DESKTOP){state=await loadText(await T.fs.readTextFile(filePath),baseName(filePath));ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false;syncMode="file";savedAt=new Date();fileMtime=await fileStatMs(filePath);FIRST=false}
+  else if(ENC_PENDING){const r=await askPassword(FILENAME,ENC_PENDING);ENC=r.k;state=parsePlanbok(r.text);ENC_PENDING=null;ui=Object.assign(ui,state.ui||{});ui.gapsOnly=false}
+  document.body.classList.remove("locked");resetUndo();render();setSync();if(DESKTOP)afterFileOpened()}
+ catch(e){lockedScreen()}}
+
+/* skydda, byta lösenord eller ta bort skyddet */
+function protectModal(){const on=!!ENC;
+ modal(on?"Byt lösenord":"Skydda filen med lösenord",`<p style="margin:0">Filen krypteras (AES-256). Utan lösenordet går den inte att läsa, inte ens om någon kommer åt din dator eller molnmapp.</p>
+ <p class="example" style="margin:0;background:var(--bad-bg);color:var(--bad)"><span><b>Glömmer du lösenordet går datan inte att få tillbaka.</b> Skriv upp det på ett säkert ställe, t.ex. i en lösenordshanterare.</span></p>
+ <div class="f"><label for="pw1">Nytt lösenord</label><input type="password" id="pw1" autocomplete="new-password"><span class="small muted">Minst 8 tecken. En mening av några ord är lätt att minnas och svår att gissa.</span></div>
+ <div class="f"><label for="pw2">Skriv lösenordet igen</label><input type="password" id="pw2" autocomplete="new-password"></div><p class="small" id="pwe" style="color:var(--bad);margin:0" hidden></p>
+ <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="pwok">${on?"Byt lösenord":"Skydda filen"}</button></div>`,m=>{
+  m.querySelector("#pwok").onclick=async()=>{const a=val("pw1"),b=val("pw2");const er=m.querySelector("#pwe");
+   if(a.length<8){er.textContent="Lösenordet behöver vara minst 8 tecken.";er.hidden=false;return}if(a!==b){er.textContent="Lösenorden är inte lika.";er.hidden=false;return}
+   ENC=await makeKey(a);closeModal();commit();toast(on?"Lösenordet är bytt.":"Filen är skyddad med lösenord. Kom ihåg lösenordet!")}})}
+function unprotect(){confirmBox("Ta bort lösenordsskyddet? Filen sparas då okrypterad igen.",()=>{ENC=null;commit();toast("Lösenordsskyddet är borttaget.")},"Ta bort skyddet")}
+
+/* ---------- ångra ---------- */
+let UNDO=[],LAST_SNAP=null;
+function resetUndo(){UNDO=[];try{LAST_SNAP=JSON.stringify(state)}catch(e){LAST_SNAP=null}}
+function undoRecord(){try{const now=JSON.stringify(state);if(LAST_SNAP&&LAST_SNAP!==now){UNDO.push(LAST_SNAP);if(UNDO.length>30)UNDO.shift()}LAST_SNAP=now}catch(e){}}
+function undo(){if(READONLY||!UNDO.length){toast("Det finns inget att ångra.");return}const prev=UNDO.pop();const keepUi=ui;state=normalize(JSON.parse(prev));LAST_SNAP=prev;ui=keepUi;closeModal();
+ state.updated=Date.now();dirty=true;render();setSync();if(DESKTOP||fileHandle){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),700)}toast("Ångrat.")}
+function undoToast(t){const b=document.getElementById("savebar");if(!b)return;b.innerHTML=`<span>${esc(t)}</span><button class="btn pri" data-a="undo">Ångra</button><button class="x" data-a="close-toast" aria-label="Stäng">×</button>`;b.hidden=false;TOAST_ON=true;clearTimeout(toast.t);toast.t=setTimeout(()=>{TOAST_ON=false;b.hidden=true;updateBar()},9000)}
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==="z"){const t=e.target;if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;e.preventDefault();undo()}});
+
+/* ---------- säkerhetskopior ----------
+   Datorappen: filer i en mapp (som standard "Säkerhetskopior" bredvid datafilen), de senaste N sparas.
+   Webbläsaren: i webbläsarens lagring (IndexedDB). Högst en kopia per kvart, och alltid vid första sparandet. */
+let BK={dir:"",keep:10},BK_AT=0;
+async function bkConfPath(){return T.path.join(await T.path.appConfigDir(),"installningar.json")}
+async function loadBkConf(){if(!DESKTOP)return;try{const p=await bkConfPath();if(await T.fs.exists(p))BK=Object.assign(BK,JSON.parse(await T.fs.readTextFile(p)))}catch(e){}}
+async function saveBkConf(){try{const d=await T.path.appConfigDir();await T.fs.mkdir(d,{recursive:true});await T.fs.writeTextFile(await bkConfPath(),JSON.stringify(BK))}catch(e){}}
+async function bkDir(){return BK.dir||T.path.join(await T.path.dirname(filePath),"Säkerhetskopior")}
+const stamp=d=>fmtD(d)+"-"+String(d.getHours()).padStart(2,"0")+String(d.getMinutes()).padStart(2,"0")+String(d.getSeconds()).padStart(2,"0");
+const BIDB={open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("lararbordet-kopior",1);r.onupgradeneeded=()=>r.result.createObjectStore("b");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
+ async tx(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction("b",mode);const st=t.objectStore("b");const out=fn(st);t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);t.onerror=()=>rej(t.error)})}};
+async function backupNow(txt,force){if(READONLY||state.example)return;const now=Date.now();if(!force&&BK_AT&&now-BK_AT<15*60*1000)return;BK_AT=now;txt=txt||await serialize(true);
+ if(DESKTOP){if(!filePath)return;const dir=await bkDir();await T.fs.mkdir(dir,{recursive:true});await T.fs.writeTextFile(await T.path.join(dir,"lararbordet-"+stamp(new Date())+".json"),txt);
+  const list=(await listBackups()).slice(BK.keep||10);for(const b of list){try{await T.fs.remove(b.path)}catch(e){}}return}
+ const key=stamp(new Date());await BIDB.tx("readwrite",st=>st.put(txt,key));const keys=(await BIDB.tx("readonly",st=>st.getAllKeys())).sort().reverse();
+ for(const k of keys.slice(BK.keep||10))await BIDB.tx("readwrite",st=>st.delete(k))}
+async function listBackups(){if(DESKTOP){try{const dir=await bkDir();if(!(await T.fs.exists(dir)))return [];const ents=await T.fs.readDir(dir);
+   return (await Promise.all(ents.filter(e=>/^lararbordet-.*\.json$/.test(e.name)).map(async e=>({name:e.name,key:e.name.slice(12,-5),path:await T.path.join(dir,e.name)})))).sort((a,b)=>a.key<b.key?1:-1)}catch(e){return []}}
+ try{return (await BIDB.tx("readonly",st=>st.getAllKeys())).sort().reverse().map(k=>({name:k,key:k}))}catch(e){return []}}
+async function readBackup(b){return DESKTOP?T.fs.readTextFile(b.path):BIDB.tx("readonly",st=>st.get(b.key))}
+const bkLabel=k=>{const m=String(k).match(/(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})/);return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]} kl. ${m[4]}.${m[5]}`:k};
+async function backupsModal(){const list=await listBackups();const dir=DESKTOP&&filePath?await bkDir():"";
+ modal("Säkerhetskopior",`<p class="small" style="margin:0">${DESKTOP?`Lärarbordet sparar en kopia av filen högst en gång i kvarten när du arbetar, och behåller de ${BK.keep||10} senaste.`:`Webbläsaren sparar en kopia högst en gång i kvarten när filen sparas, och behåller de ${BK.keep||10} senaste. Kopiorna finns bara i den här webbläsaren på den här datorn.`}${ENC?" Kopiorna är krypterade med samma lösenord som filen.":""}</p>
+ ${DESKTOP?`<p class="small muted" style="margin:0;word-break:break-all">Mapp: ${esc(dir)}</p>`:""}
+ ${list.length?`<div class="list">${list.map((b,i)=>`<div class="li"><span class="what"><b>${esc(bkLabel(b.key))}</b>${i===0?' <span class="tag">senaste</span>':""}</span><button class="btn small" data-bk="${i}">Återställ</button></div>`).join("")}</div>`:`<div class="empty">Inga säkerhetskopior än. Den första görs nästa gång filen sparas.</div>`}
+ <div class="actions"><button class="btn" id="bknow">Gör en kopia nu</button><span class="sp"></span><button class="btn pri" data-a="close">Klart</button></div>`,m=>{
+  m.querySelectorAll("[data-bk]").forEach(btn=>btn.onclick=()=>{const b=list[+btn.dataset.bk];confirmBox(`Återställa kopian från <b>${esc(bkLabel(b.key))}</b>? Det du har nu ersätts, men du kan ångra direkt efteråt.`,async()=>{try{const d=await loadText(await readBackup(b),bkLabel(b.key));state=d;state.example=false;commit();undoToast("Säkerhetskopian är återställd.")}catch(e){if(!(e&&e.cancelled))toast("Kunde inte läsa kopian.")}},"Återställ")});
+  m.querySelector("#bknow").onclick=async()=>{try{await backupNow(null,true);closeModal();backupsModal()}catch(e){toast("Kunde inte göra en kopia: "+(e&&e.message||e))}}})}
+async function pickBackupDir(){try{const p=await T.dialog.open({directory:true,multiple:false,defaultPath:await bkDir()});if(!p)return;BK.dir=typeof p==="string"?p:p.path;await saveBkConf();BK_AT=0;await backupNow(null,true);render();toast("Säkerhetskopiorna sparas nu i den valda mappen.")}catch(e){toast("Kunde inte välja mappen.")}}
+async function setBkKeep(n){BK.keep=Math.max(3,Math.min(50,+n||10));if(DESKTOP)await saveBkConf();else try{localStorage.setItem("lb-bkeep",String(BK.keep))}catch(e){}}
+if(!DESKTOP){try{const n=+localStorage.getItem("lb-bkeep");if(n)BK.keep=n}catch(e){}}
+
+/* ---------- inställningar: säkerhet, filens plats och kopior ---------- */
+function securityPanel(){
+ return `<section class="panel"><div class="panel-h"><h2>Fil och säkerhet</h2></div>
+ <div class="sec-grid">
+  <div class="sec-box"><b>Var filen sparas</b>
+   ${DESKTOP?`<span class="small muted" style="word-break:break-all">${esc(filePath||"")}</span><span class="small">Lärarbordet öppnar och sparar automatiskt i den här filen.</span>
+    <div class="row-b"><button class="btn small" data-a="save-as">Flytta filen…</button><button class="btn small" data-a="open-file">Öppna en annan fil…</button>${T.opener&&T.opener.revealItemInDir?`<button class="btn small" data-a="reveal-file">Visa i mappen</button>`:""}</div>`
+   :`<span class="small muted">${fileHandle?`Sparas i <b>${esc(fileHandle.name)}</b>.`:storedHandle?`Senast: <b>${esc(storedHandle.name)}</b>.`:"Inte vald än."}</span><span class="small">${canPick?"I Chrome och Edge sparas ändringarna direkt i filen du väljer.":"Den här webbläsaren kan inte spara direkt i en fil. Ändringarna laddas ner som en ny fil."}</span>
+    <div class="row-b"><button class="btn small" data-a="save-as">${canPick?"Välj fil att spara i…":"Ladda ner filen"}</button></div>`}</div>
+  <div class="sec-box"><b>Lösenordsskydd</b><span class="small ${ENC?"":"muted"}">${ENC?"På. Filen och säkerhetskopiorna är krypterade.":"Av. Rekommenderas om filen innehåller anpassningar eller andra uppgifter om elever."}</span>
+   <div class="row-b">${READONLY?"":ENC?`<button class="btn small" data-a="protect">Byt lösenord</button><button class="btn small danger" data-a="unprotect">Ta bort skyddet</button>`:`<button class="btn small pri" data-a="protect">Skydda med lösenord</button>`}</div></div>
+  <div class="sec-box"><b>Säkerhetskopior</b><span class="small muted">${DESKTOP?"Sparas i en egen mapp.":"Sparas i webbläsaren."} De senaste <select id="bkkeep" aria-label="Antal kopior">${[5,10,20,30].map(n=>`<option ${n===(BK.keep||10)?"selected":""}>${n}</option>`).join("")}</select> behålls.</span>
+   <div class="row-b"><button class="btn small" data-a="backups">Visa och återställ</button>${DESKTOP?`<button class="btn small" data-a="bk-dir">Byt mapp…</button>`:""}</div></div>
+  <div class="sec-box"><b>Ångra</b><span class="small muted">Ångra den senaste ändringen med <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>. Efter att något tagits bort visas också en Ångra-knapp.</span></div>
+ </div></section>`}
+document.addEventListener("change",e=>{if(e.target&&e.target.id==="bkkeep")setBkKeep(e.target.value)});
 
 /* ===== 05-views.js ===== */
 /* ---------- rendering ---------- */
@@ -1190,7 +1329,7 @@ function weekPanel(){const mon=mondayOf(TODAY);
   return `<div class="day ${ds===fmtD(TODAY)?"today":""}"><div class="dh"><b>${DAY[d.getDay()].slice(0,3)}</b> <span class="muted small">${d.getDate()}/${d.getMonth()+1}</span></div>${l.map(x=>{const u=unit(x.unitId)||{};const c=course(u.courseId)||{};return `<button class="lesson ${x.done?"done":""}" data-a="edit-lesson" data-id="${x.id}" style="border-left-color:${c.color||"var(--line)"}"><span class="small muted">${esc(c.name||"")}</span><b>${esc(x.title||"Lektion")}</b>${x.plan?`<span class="occ-p">${esc(x.plan)}</span>`:""}${x.done?'<span class="small" style="color:var(--ok)">Genomförd</span>':""}</button>`}).join("")||'<span class="small muted">–</span>'}</div>`}).join("");
  return `<section class="panel"><div class="panel-h"><h2>Den här veckan</h2><span class="muted small">v.${isoWeek(TODAY)}</span><span class="sp"></span>${ls.length?`<span class="small muted">${ls.filter(x=>x.done).length} av ${ls.length} lektioner genomförda</span>`:""}</div>
   ${ls.length?`<div class="week">${days}</div>`:`<div class="empty">Inga lektioner planerade den här veckan. Öppna ett arbetsområde under Planering och lägg till lektioner.</div>`}</section>`}
-function updateBanner(){return UPDATE?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Version ${esc(UPDATE.version)} finns.</b> Du har ${esc(APP_VERSION)}. Din data följer med när du uppdaterar.</span><button class="btn pri" data-a="download-latest">${DESKTOP?"Ladda ner":"Uppdatera nu"}</button><button class="btn" data-a="open-update">Visa hur</button><span id="dlstatus" class="small" style="flex-basis:100%"></span></div>`:""}
+function updateBanner(){return UPDATE?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Version ${esc(UPDATE.version)} finns.</b> Du har ${esc(APP_VERSION)}. Din data följer med när du uppdaterar.</span><button class="btn pri" data-a="download-latest">${DESKTOP&&T.updater?"Uppdatera nu":DESKTOP?"Ladda ner":"Uppdatera nu"}</button><button class="btn" data-a="open-update">Visa hur</button><span id="dlstatus" class="small" style="flex-basis:100%"></span></div>`:""}
 function vOverview(){
  const ys=parseD(state.year.start),ye=parseD(state.year.end);const pct=Math.max(0,Math.min(100,Math.round((TODAY-ys)/(ye-ys)*100)));
  const active=state.units.filter(u=>parseD(u.start)<=TODAY&&parseD(u.end)>=TODAY||u.status==="pagar").filter((u,i,a)=>a.indexOf(u)===i);
@@ -1245,7 +1384,7 @@ function vPlanning(){
  const all=ui.course==="all";if(!all&&!course(ui.course))ui.course=state.courses[0].id;const c=all?null:course(ui.course);const pv=ui.planView==="veckor"?"veckor":"tidslinje";
  const chips=`<button class="chip" aria-pressed="${all}" data-a="sel-course" data-id="all">Alla kurser</button>`+state.courses.map(x=>`<button class="chip" aria-pressed="${!all&&x.id===c.id}" data-a="sel-course" data-id="${x.id}"><span class="dot" style="background:${x.color}"></span>${esc(x.name)}</button>`).join("");
  const seg=`<div class="seg" role="group" aria-label="Visa planeringen som"><button aria-pressed="${pv==="tidslinje"}" data-a="planview" data-v="tidslinje">Tidslinje</button><button aria-pressed="${pv==="veckor"}" data-a="planview" data-v="veckor">Veckor</button></div>`;
- const top=`<section class="panel"><div class="toolbar">${seg}<div class="chips">${chips}</div><span class="sp"></span><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="import-course">Importera kurs</button><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>`;
+ const top=`<section class="panel"><div class="toolbar">${seg}<div class="chips">${chips}</div><span class="sp"></span><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="library">Ämnesbibliotek</button><button class="btn" data-a="weekplan">Veckoplanering</button><button class="btn" data-a="import-course">Importera kurs</button><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>`;
  if(pv==="veckor"){const cs=all?state.courses:[c];return top+`<section class="panel"><div class="panel-h"><h1>${all?"Alla kurser":esc(c.name)}</h1><span class="sp"></span>${all?`<button class="btn" data-a="new-task">+ Uppgift</button>`:`<button class="btn" data-a="new-task" data-id="${c.id}">+ Uppgift</button><button class="btn pri" data-a="new-unit">+ Arbetsområde</button>`}</div>${weekTable(cs)}</section>`}
  if(all)return top+state.courses.map(x=>{const sm=covSummary(x.subjectId,x.id);return `<section class="panel"><div class="panel-h"><span class="dot" style="background:${x.color};width:14px;height:14px"></span><h2>${esc(x.name)}</h2><span class="small muted">${sm.pct} % genomfört · ${sm.gap} luckor</span><span class="sp"></span><button class="btn" data-a="new-task" data-id="${x.id}">+ Uppgift</button><button class="btn" data-a="sel-course" data-id="${x.id}">Öppna</button></div>${stripFor(x)}</section>`}).join("")+`<p class="small muted">Veckonummer. Randiga veckor är lov. Streckade staplar är planerade. Tryck på ett arbetsområde för att öppna det.</p>`;
  const us=state.units.filter(u=>u.courseId===c.id).sort((a,b)=>a.start<b.start?-1:1);const g=group(c.groupId);
@@ -1444,6 +1583,7 @@ function syncPanel(){const where=DESKTOP?syncPlace(filePath):null;
    :`<p class="small muted" style="margin:0">I den här webbläsaren laddas en ny fil ner varje gång du sparar, och då fungerar inte synkning. Använd Chrome, Edge eller skrivbordsappen om du vill synka.</p>`}</section>`}
 function vSettings(){
  return `<section class="panel"><div class="panel-h"><h2>Utseende</h2><span class="sp"></span>${themeSeg()}</div><p class="small muted" style="margin:0">Ljust eller mörkt läge. Som datorn följer inställningen i datorn eller telefonen.</p></section>
+ ${securityPanel()}
  <section class="panel"><div class="panel-h"><h2>Flikarnas ordning</h2><span class="sp"></span><button class="btn ghost small" data-a="tab-reset">Återställ</button></div><p class="small muted" style="margin:0 0 8px">Flytta flikarna upp eller ned. Inställningar ligger alltid sist.</p>
   <div class="tab-order">${tabsOrdered().filter(t=>t[0]!=="installningar").map(([id,l],i,arr)=>`<div class="to-row"><span class="to-i">${ICON[id]}</span><span class="what">${esc(l)}</span><button class="btn ghost small" data-a="tab-move" data-id="${id}" data-d="-1" ${i===0?"disabled":""} aria-label="Flytta ${esc(l)} upp">↑</button><button class="btn ghost small" data-a="tab-move" data-id="${id}" data-d="1" ${i===arr.length-1?"disabled":""} aria-label="Flytta ${esc(l)} ned">↓</button></div>`).join("")}</div></section>
  <div class="grid2"><section class="panel"><div class="panel-h"><h2>Läsår</h2></div>
@@ -1508,7 +1648,7 @@ function vSchedule(){
    ${past?`<p class="small muted" style="margin:6px 0 0">${past} inställda tidigare i läsåret.</p>`:""}</div>`}).join("");
  const ev=[...state.events].sort((a,b)=>a.start<b.start?-1:1);
  const affects=e=>{const tid=e.from&&e.to?`${e.from}–${e.to}`:"hela dagen";return !CANCELS[e.type]?`Påverkar inte lektioner${e.from&&e.to?" · "+tid:""}`:e.type!=="aktivitet"?`Alla lektioner ställs in, ${tid}`:`${(e.groups||[]).length?e.groups.map(g=>(group(g)||{}).name).filter(Boolean).join(", "):"Alla grupper"}, ${tid}`};
- return `${has?`<section class="panel"><div class="panel-h"><button class="btn ghost" data-a="sched-week" data-v="-1" aria-label="Föregående vecka">‹</button><h2>Vecka ${wn}</h2><button class="btn ghost" data-a="sched-week" data-v="1" aria-label="Nästa vecka">›</button>${ui.schedWeek?`<button class="btn ghost" data-a="sched-week" data-v="0">Den här veckan</button>`:""}<span class="sp"></span><span class="small muted">Tryck på en lektion för att skriva planen eller ställa in den.</span></div>${weekView}</section>`:""}
+ return `${has?`<section class="panel"><div class="panel-h"><button class="btn ghost" data-a="sched-week" data-v="-1" aria-label="Föregående vecka">‹</button><h2>Vecka ${wn}</h2><button class="btn ghost" data-a="sched-week" data-v="1" aria-label="Nästa vecka">›</button>${ui.schedWeek?`<button class="btn ghost" data-a="sched-week" data-v="0">Den här veckan</button>`:""}<span class="sp"></span><span class="small muted">Tryck på en lektion för att skriva planen eller ställa in den.</span><button class="btn" data-a="weekplan">Veckoplanering till elever</button></div>${weekView}</section>`:""}
  <section class="panel"><div class="panel-h"><h2>Mitt veckoschema</h2><span class="sp"></span><button class="btn" data-a="import-ics">Importera schema</button>${has?`<button class="btn" data-a="export-ics">Exportera till kalender</button>`:""}<button class="btn pri" data-a="new-slot">+ Lektion i schemat</button></div>
   ${has?grid:`<div class="empty"><p>Lägg in dina lektioner en gång, till exempel <b>Svenska 8B, måndag 08:20–09:20</b>. Sedan räknar Lärarbordet ut vilka lektioner som blir inställda av lov, studiedagar och aktiviteter i kalendariet, och hur många lektioner varje arbetsområde faktiskt får.</p><button class="btn pri" data-a="new-slot">Lägg in första lektionen</button> <button class="btn" data-a="import-ics">Importera från PDF, Skola24, Google eller Outlook</button></div>`}</section>
  ${has?`<div class="grid2"><section class="panel"><div class="panel-h"><h2>Inställda lektioner</h2></div>${stats}</section>`:'<div class="grid2">'}
@@ -1924,12 +2064,118 @@ function pcolModal(id){const p=curProc();if(!p)return;const c=id?p.cols.find(x=>
   m.querySelector("#pcok").onclick=()=>{const o={label:val("pcl").trim()||"Lektion",date:val("pcd")};if(c)Object.assign(c,o);else p.cols.push(Object.assign({id:uid()},o));closeModal();commit()};
   const d=m.querySelector("#pcdel");if(d)d.onclick=()=>confirmBox(`Ta bort “${esc(c.label)}” och det som är ifyllt den lektionen?`,()=>{p.cols=p.cols.filter(x=>x!==c);Object.values(p.data).forEach(x=>{if(x.v)delete x.v[c.id]});commit()})})}
 
+/* ===== 05g-docs.js ===== */
+/* ---------- dokument att skriva ut eller dela: LPP och veckoplanering ---------- */
+const DOC_CSS=`body{font-family:Georgia,"Times New Roman",serif;color:#1b1f24;max-width:760px;margin:32px auto;padding:0 24px;line-height:1.5;font-size:15px}
+h1{font-family:Arial,Helvetica,sans-serif;font-size:26px;margin:0 0 4px}h2{font-family:Arial,Helvetica,sans-serif;font-size:17px;margin:26px 0 8px;padding-bottom:4px;border-bottom:2px solid #1f3550;color:#1f3550}
+h3{font-family:Arial,Helvetica,sans-serif;font-size:14px;margin:14px 0 4px}.meta{color:#555;font-family:Arial,Helvetica,sans-serif;font-size:13px}
+ul{padding-left:20px;margin:6px 0}li{margin:2px 0}table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}th,td{border:1px solid #c9ced6;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#eef1f5;font-family:Arial,Helvetica,sans-serif}.day{page-break-inside:avoid}.small{font-size:12px;color:#555}.pre{white-space:pre-line}.x{text-decoration:line-through;color:#888}
+footer{margin-top:36px;font-size:11px;color:#888;font-family:Arial,Helvetica,sans-serif}@media print{body{margin:0 auto}a{color:inherit;text-decoration:none}}`;
+const docWrap=(title,body)=>`<!DOCTYPE html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${DOC_CSS}</style></head><body>${body}<footer>Skapad med Lärarbordet</footer></body></html>`;
+const fileSafe=t=>String(t||"dokument").replace(/[^\wåäöÅÄÖ-]+/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"").toLowerCase();
+/* förhandsvisning med Skriv ut / Spara som PDF och Spara som fil */
+function docPreview(title,build,opts){let html="";
+ modal(title,`${opts||""}<iframe class="doc-frame" id="docf" title="Förhandsvisning"></iframe>
+ <p class="small muted" style="margin:0">Välj <b>Skriv ut</b> och sedan <b>Spara som PDF</b> för att få en PDF. Filen (.html) kan öppnas i alla webbläsare och delas, t.ex. i Classroom eller Teams.</p>
+ <div class="actions"><button class="btn" id="docsave">Spara som fil</button><span class="sp"></span><button class="btn" data-a="close">Stäng</button><button class="btn pri" id="docprint">Skriv ut / Spara som PDF</button></div>`,m=>{
+  m.classList.add("wide");const f=m.querySelector("#docf");const paint=()=>{html=build();f.srcdoc=html};paint();
+  m.querySelectorAll("[data-docopt]").forEach(x=>x.addEventListener(x.tagName==="TEXTAREA"||x.type==="text"?"input":"change",()=>{clearTimeout(paint.t);paint.t=setTimeout(paint,300)}));
+  m.querySelector("#docsave").onclick=()=>offerFile(fileSafe(title)+".html",html,"text/html");
+  m.querySelector("#docprint").onclick=()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){offerFile(fileSafe(title)+".html",html,"text/html");toast("Öppna filen i webbläsaren och skriv ut därifrån.")}}})}
+const itemText=(sid,id)=>{const s=subj(sid);if(!s)return null;for(const a of s.areas){const i=a.items.find(x=>x.id===id);if(i)return {area:a.name,text:i.text}}return null};
+const plainCrit=t=>String(t||"").replace(/\*([^*]+)\*/g,"$1");
+
+/* LPP: lokal pedagogisk planering för ett arbetsområde */
+function lppModal(unitId){const u=unit(unitId);if(!u)return;const c=course(u.courseId)||{};const s=subj(c.subjectId)||{};const g=group(c.groupId);
+ const ls=lessonsOf(u.id).sort((a,b)=>a.date<b.date?-1:1);const as=state.assessments.filter(a=>a.unitId===u.id).sort((a,b)=>a.date<b.date?-1:1);
+ const opts=`<div class="row"><div class="f"><label for="lppg">Syfte och mål (vad eleverna ska lära sig)</label><textarea id="lppg" data-docopt style="min-height:70px">${esc(u.lppGoal||u.desc||"")}</textarea></div>
+  <div class="f"><label for="lppw">Arbetssätt (hur vi arbetar)</label><textarea id="lppw" data-docopt style="min-height:70px" placeholder="t.ex. genomgångar, läsning i par, skrivande med respons">${esc(u.lppWork||"")}</textarea></div></div>
+  <div class="row-b"><label class="chk"><input type="checkbox" id="lppl" data-docopt checked><span>Tidsplan med lektioner</span></label><label class="chk"><input type="checkbox" id="lppk" data-docopt checked><span>Betygskriterier</span></label><label class="chk"><input type="checkbox" id="lppt" data-docopt><span>Lärare: </span></label><input id="lppn" data-docopt type="text" placeholder="Namn" value="${esc(u.lppTeacher||"")}" style="max-width:180px"></div>`;
+ const build=()=>{const goal=val("lppg"),work=val("lppw"),withL=($("#lppl")||{}).checked!==false,withK=($("#lppk")||{}).checked!==false,teacher=($("#lppt")||{}).checked?val("lppn").trim():"";
+  if(u.lppGoal!==goal||u.lppWork!==work||(u.lppTeacher||"")!==val("lppn").trim()){u.lppGoal=goal;u.lppWork=work;u.lppTeacher=val("lppn").trim();commit(true)}
+  const ci={};(u.contentIds||[]).forEach(id=>{const t=itemText(c.subjectId,id);if(t)(ci[t.area]=ci[t.area]||[]).push(t.text)});
+  const cr=withK&&c.subjectId?critFor(c.subjectId):null;const asp=[...new Set(as.flatMap(a=>a.aspects||[]))].sort((a,b)=>a-b);
+  return docWrap("LPP "+u.title,`<h1>${esc(u.title)}</h1><div class="meta">${esc(c.name||"")}${s.name?" · "+esc(s.name)+" "+esc(s.stage||""):""}${g?" · "+esc(g.name):""} · ${esc(wkRange(u.start,u.end))} (${shortD(u.start)}–${shortD(u.end)})${teacher?" · Lärare: "+esc(teacher):""}</div>
+   ${goal?`<h2>Syfte och mål</h2><p class="pre">${esc(goal)}</p>`:""}
+   ${Object.keys(ci).length?`<h2>Centralt innehåll</h2>${Object.entries(ci).map(([a,l])=>`<h3>${esc(a)}</h3><ul>${l.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`).join("")}`:""}
+   ${work?`<h2>Arbetssätt</h2><p class="pre">${esc(work)}</p>`:""}
+   ${as.length?`<h2>Bedömning</h2><ul>${as.map(a=>`<li><b>${esc(a.title)}</b> · ${shortD(a.date)}${a.type?" · "+esc(atypeL(a)):""}${a.desc?`<br><span class="pre">${esc(a.desc)}</span>`:""}</li>`).join("")}</ul>`:""}
+   ${cr&&asp.length?`<h2>Betygskriterier som bedöms</h2><table><thead><tr>${cr.levels.map(k=>`<th>${esc(cr.names[k])}</th>`).join("")}</tr></thead><tbody>${asp.filter(i=>cr.aspects[i]).map(i=>`<tr>${cr.levels.map(k=>`<td>${esc(plainCrit(cr.aspects[i][k]||""))}</td>`).join("")}</tr>`).join("")}</tbody></table><p class="small">Från Skolverkets betygskriterier${cr.year?" för slutet av åk "+esc(cr.year):""}.</p>`:""}
+   ${withL&&ls.length?`<h2>Tidsplan</h2><table><thead><tr><th style="width:110px">Datum</th><th>Lektion</th></tr></thead><tbody>${ls.map(l=>`<tr><td>${shortD(l.date)}</td><td><b>${esc(l.title||"Lektion")}</b>${l.plan?`<br><span class="pre small">${esc(l.plan)}</span>`:""}</td></tr>`).join("")}</tbody></table>`:""}`)};
+ docPreview("LPP "+u.title,build,opts)}
+
+/* Veckoplanering för elever: veckans lektioner, inlämningar och händelser */
+function weekPlanModal(courseId){let off=0;
+ const opts=`<div class="row-b" style="align-items:center"><button class="btn small" id="wpp">‹</button><b id="wpw"></b><button class="btn small" id="wpn">›</button>
+  <select id="wpc" data-docopt style="font:inherit;padding:4px 8px;border-radius:6px"><option value="">Alla kurser</option>${state.courses.map(c=>`<option value="${c.id}" ${c.id===courseId?"selected":""}>${esc(c.name)}</option>`).join("")}</select>
+  <label class="chk"><input type="checkbox" id="wpl" data-docopt checked><span>Visa planen för lektionerna</span></label></div>
+  <div class="f"><label for="wpm">Meddelande till eleverna (valfritt)</label><textarea id="wpm" data-docopt style="min-height:50px" placeholder="t.ex. Kom ihåg att ta med läsboken!"></textarea></div>`;
+ const build=()=>{const mon=addDays(mondayOf(TODAY),off*7);const cid=val("wpc");const cs=cid?[course(cid)].filter(Boolean):state.courses;const ids=new Set(cs.map(c=>c.id));const withP=($("#wpl")||{}).checked!==false;
+  const w=document.getElementById("wpw");if(w)w.textContent="Vecka "+isoWeek(mon);
+  const days=[1,2,3,4,5].map(i=>{const ds=fmtD(addDays(mon,i-1));const d=parseD(ds);
+   const occ=(state.schedule||[]).length?dayOccurrences(ds).filter(o=>ids.has(o.course.id)):[];
+   const lsx=(state.lessons||[]).filter(l=>l.date===ds).filter(l=>{const u=unit(l.unitId);return ids.has(u?u.courseId:l.courseId)});
+   const rows=occ.length?occ.map(o=>`<tr><td style="width:90px">${esc(o.slot.start)}–${esc(o.slot.end)}</td><td class="${o.cancel?"x":""}"><b>${esc(o.course.name)}</b>${o.slot.room?` · ${esc(o.slot.room)}`:""}${o.cancel?` (inställd: ${esc(o.cancel.reason)})`:o.lesson?`<br>${esc(o.lesson.title)}${withP&&o.lesson.plan?`<br><span class="pre small">${esc(o.lesson.plan)}</span>`:""}`:o.unit?`<br><span class="small">${esc(o.unit.title)}</span>`:""}</td></tr>`).join("")
+    :lsx.map(l=>{const c=course((unit(l.unitId)||{}).courseId||l.courseId)||{};return `<tr><td style="width:90px">${esc(l.time||"")}</td><td><b>${esc(c.name||"")}</b><br>${esc(l.title||"")}${withP&&l.plan?`<br><span class="pre small">${esc(l.plan)}</span>`:""}</td></tr>`}).join("");
+   const ev=eventsIn(d,d).map(e=>`<li>${esc(e.title)}${e.from&&e.to?` ${esc(e.from)}–${esc(e.to)}`:""}</li>`).join("");
+   return `<div class="day"><h3>${cap(DAY[i])} ${d.getDate()}/${d.getMonth()+1}</h3>${ev?`<ul>${ev}</ul>`:""}${rows?`<table><tbody>${rows}</tbody></table>`:ev?"":`<p class="small">Inga lektioner.</p>`}</div>`}).join("");
+  const due=state.assessments.filter(a=>ids.has(a.courseId)&&a.date>=fmtD(mon)&&a.date<=fmtD(addDays(mon,6))).sort((a,b)=>a.date<b.date?-1:1);
+  const msg=val("wpm").trim();const ttl=(cs.length===1?cs[0].name+" · ":"")+"Vecka "+isoWeek(mon);
+  return docWrap(ttl,`<h1>Veckoplanering vecka ${isoWeek(mon)}</h1><div class="meta">${cs.length===1?esc(cs[0].name)+" · ":""}${shortD(fmtD(mon))}–${shortD(fmtD(addDays(mon,4)))}</div>
+   ${msg?`<p class="pre" style="background:#fff8db;padding:10px 12px;border-radius:6px">${esc(msg)}</p>`:""}
+   ${due.length?`<h2>Inlämningar och prov</h2><ul>${due.map(a=>`<li><b>${esc(a.title)}</b> · ${cap(DAY[parseD(a.date).getDay()])} ${shortD(a.date)}${cs.length>1?" · "+esc((course(a.courseId)||{}).name||""):""}${a.type?" · "+esc(atypeL(a)):""}</li>`).join("")}</ul>`:""}
+   <h2>Veckans lektioner</h2>${days}`)};
+ docPreview("Veckoplanering",build,opts);
+ const go=d=>{off+=d;const f=$("#docf");if(f)f.srcdoc=build()};
+ const p=$("#wpp"),n=$("#wpn");if(p)p.onclick=()=>go(-1);if(n)n.onclick=()=>go(1);const f=$("#docf");if(f)f.srcdoc=build();
+ const sv=$("#docsave");if(sv)sv.onclick=()=>offerFile("veckoplanering-v"+isoWeek(addDays(mondayOf(TODAY),off*7))+".html",build(),"text/html")}
+
+/* ---------- sökning i allt ---------- */
+function searchIndex(){const out=[];const add=(kind,title,sub,act,id,extra)=>out.push({kind,title:title||"",sub:sub||"",act,id,hay:((title||"")+" "+(sub||"")+" "+(extra||"")).toLowerCase()});
+ state.courses.forEach(c=>add("Kurs",c.name,subjTitle(c.subjectId),"sel-course-go",c.id));
+ state.units.forEach(u=>add("Arbetsområde",u.title,(course(u.courseId)||{}).name+" · "+wkRange(u.start,u.end),"edit-unit",u.id,u.desc));
+ (state.lessons||[]).forEach(l=>{const c=course((unit(l.unitId)||{}).courseId||l.courseId)||{};if(l.unitId)add("Lektion",l.title||"Lektion",(c.name||"")+" · "+shortD(l.date),"edit-lesson",l.id,(l.plan||"")+" "+(l.note||""))});
+ state.assessments.forEach(a=>add("Uppgift",a.title,(course(a.courseId)||{}).name+" · "+shortD(a.date)+(a.type?" · "+atypeL(a):""),"edit-assess",a.id,a.desc));
+ state.groups.forEach(g=>g.students.forEach(s=>add("Elev",s.name,g.name+(adaptList(s).length?" · anpassningar":""),"student-go",g.id+"|"+s.id,adaptList(s).join(" ")+" "+(s.note||""))));
+ state.events.forEach(e=>add("Händelse",e.title,shortD(e.start)+(e.end!==e.start?"–"+shortD(e.end):""),"edit-event",e.id));
+ (state.process||[]).forEach(p=>add("Skrivarbete",p.title,(group(p.groupId)||{}).name,"proc-go",p.id));
+ (state.schedule||[]).forEach(sl=>{const c=course(sl.courseId);if(c)add("Schema",c.name,cap(DAY[sl.day])+" "+sl.start+"–"+sl.end+(sl.room?" · "+sl.room:""),"edit-slot",sl.id,sl.note)});
+ return out}
+function searchModal(){const idx=searchIndex();
+ modal("Sök",`<div class="f"><input id="sq" type="search" placeholder="Sök kurser, arbetsområden, lektioner, uppgifter, elever…" autocomplete="off"></div><div id="sres" class="list sres"></div>
+ <p class="small muted" style="margin:0">Tips: tryck <kbd>/</kbd> var som helst för att söka.</p>`,m=>{
+  const q=m.querySelector("#sq");setTimeout(()=>q.focus(),30);
+  const draw=()=>{const t=q.value.trim().toLowerCase();const r=m.querySelector("#sres");if(!t){r.innerHTML="";return}const words=t.split(/\s+/);
+   const hits=idx.filter(x=>words.every(w=>x.hay.includes(w))).slice(0,40);
+   r.innerHTML=hits.length?hits.map(x=>`<button class="li sr" data-a="${x.act}" data-id="${esc(x.id)}"><span class="tag">${esc(x.kind)}</span><span class="what"><b>${esc(x.title)}</b><br><span class="small muted">${esc(x.sub)}</span></span></button>`).join(""):`<p class="small muted">Inget hittades.</p>`};
+  q.oninput=draw;q.onkeydown=e=>{if(e.key==="Enter"){const f=m.querySelector(".sr");if(f)f.click()}}})}
+document.addEventListener("keydown",e=>{if(e.key==="/"&&!e.ctrlKey&&!e.metaKey){const t=e.target;if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable))return;if(document.body.classList.contains("locked")||$("#modalroot .modal"))return;e.preventDefault();searchModal()}});
+
+/* ---------- ämnesbibliotek i arbetslaget: en delad mapp med kursfiler ---------- */
+let LIB_DIR="";try{LIB_DIR=localStorage.getItem("lb-libdir")||""}catch(e){}
+async function libFiles(){if(!DESKTOP||!LIB_DIR)return [];try{const ents=await T.fs.readDir(LIB_DIR);const out=[];
+  for(const e of ents.filter(x=>/\.lararbordet\.json$/i.test(x.name))){try{const p=await T.path.join(LIB_DIR,e.name);const pkg=JSON.parse(await T.fs.readTextFile(p));if(pkg&&pkg.type==="lararbordet-kurs")out.push({name:e.name,path:p,pkg})}catch(err){}}
+  return out.sort((a,b)=>a.pkg.course.name.localeCompare(b.pkg.course.name,"sv"))}catch(e){return []}}
+async function libraryModal(){const files=await libFiles();
+ modal("Ämnesbibliotek",`<p class="small" style="margin:0">Ett bibliotek är en <b>delad mapp</b> för arbetslaget, t.ex. i skolans Google Drive, OneDrive eller Teams. Där lägger ni kurser med arbetsområden, lektioner och uppgifter som alla kan hämta. <b>Inga elever eller omdömen följer med.</b></p>
+ ${DESKTOP?`<div class="sec-box"><b>Bibliotekets mapp</b><span class="small muted" style="word-break:break-all">${LIB_DIR?esc(LIB_DIR):"Ingen mapp vald än."}</span><div class="row-b"><button class="btn small" id="libpick">${LIB_DIR?"Byt mapp…":"Välj mapp…"}</button></div></div>
+  ${LIB_DIR?`<h3 style="margin:0">Kurser i biblioteket (${files.length})</h3>${files.length?`<div class="list">${files.map((f,i)=>`<div class="li"><span class="what"><b>${esc(f.pkg.course.name)}</b><br><span class="small muted">${esc(subjTitle(f.pkg.course.subjectId)||"")} · ${f.pkg.units.length} arbetsområden · ${(f.pkg.assessments||[]).length} uppgifter · delad ${esc(f.pkg.exported||"")}</span></span><button class="btn small" data-lib="${i}">Hämta</button></div>`).join("")}</div>`:`<p class="small muted">Biblioteket är tomt. Dela en kurs dit med knappen nedan.</p>`}
+   <div class="f"><label for="libc">Lägg en av dina kurser i biblioteket</label><div class="row-b"><select id="libc" style="font:inherit;padding:6px 8px;border-radius:6px">${state.courses.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select><button class="btn small pri" id="libshare">Dela till biblioteket</button></div></div>`:""}`
+ :`<p class="small" style="margin:0">I webbläsaren: spara kursen med <b>Dela kurs</b> under Planering och lägg filen i arbetslagets delade mapp. Kollegor hämtar den med <b>Importera kurs</b>. I datorappen kan du välja mappen här och se alla kurser direkt.</p>`}
+ <div class="actions"><span class="sp"></span><button class="btn pri" data-a="close">Klart</button></div>`,m=>{
+  const pk=m.querySelector("#libpick");if(pk)pk.onclick=async()=>{try{const p=await T.dialog.open({directory:true,multiple:false});if(!p)return;LIB_DIR=typeof p==="string"?p:p.path;try{localStorage.setItem("lb-libdir",LIB_DIR)}catch(e){}closeModal();libraryModal()}catch(e){toast("Kunde inte välja mappen.")}};
+  m.querySelectorAll("[data-lib]").forEach(b=>b.onclick=()=>{const f=files[+b.dataset.lib];closeModal();importCourseModal(JSON.stringify(f.pkg))});
+  const sh=m.querySelector("#libshare");if(sh)sh.onclick=async()=>{const id=val("libc");const pkg=exportCourse(state,id);const c=course(id);if(!pkg)return;
+   const write=async p=>{try{await T.fs.writeTextFile(p,JSON.stringify(pkg,null,1));toast(`${c.name} ligger nu i biblioteket.`);libraryModal()}catch(e){toast("Kunde inte spara i mappen: "+(e&&e.message||e))}};
+   try{const p=await T.path.join(LIB_DIR,"kurs-"+fileSafe(c.name)+".lararbordet.json");if(await T.fs.exists(p))confirmBox(`Det finns redan en fil för <b>${esc(c.name)}</b> i biblioteket. Ersätta den med din version?`,()=>write(p),"Ersätt");else write(p)}catch(e){toast("Kunde inte spara i mappen: "+(e&&e.message||e))}}})}
+
 /* ===== 06-modals.js ===== */
 /* ---------- modaler ---------- */
 let onClose=null;
 function modal(title,body,mount){$("#modalroot").innerHTML=`<div class="ov" data-a="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-h"><h2>${esc(title)}</h2><button class="x" data-a="close" aria-label="Stäng">×</button></div>${body}</div></div>`;const f=$("#modalroot .modal input, #modalroot .modal select, #modalroot .modal textarea");if(f&&window.innerWidth>700)f.focus();mount&&mount($("#modalroot .modal"))}
 function closeModal(){$("#modalroot").innerHTML=""}
-function confirmBox(text,yes,label="Ta bort"){modal("Är du säker?",`<p style="margin:0">${text}</p><div class="actions"><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="cy" style="background:var(--bad);border-color:var(--bad)">${esc(label)}</button></div>`,m=>m.querySelector("#cy").onclick=()=>{closeModal();yes()})}
+function confirmBox(text,yes,label="Ta bort"){modal("Är du säker?",`<p style="margin:0">${text}</p><div class="actions"><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="cy" style="background:var(--bad);border-color:var(--bad)">${esc(label)}</button></div>`,m=>m.querySelector("#cy").onclick=async()=>{closeModal();const before=UNDO.length;await yes();if(label==="Ta bort"&&UNDO.length>before)undoToast("Borttaget.")})}
 const val=id=>($("#"+id)||{}).value||"";
 
 function contentChecklist(sid,selected){const s=subj(sid);if(!s)return `<p class="small muted">Kursen saknar ämne.</p>`;const cov=coverage(sid,"all");
@@ -1945,7 +2191,7 @@ function unitModal(id){const u=id?unit(id):null;const c=course(u?u.courseId:ui.c
  <div class="f"><label for="ust">Status</label><select id="ust">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${d.status===k?"selected":""}>${l}</option>`).join("")}</select></div>
  <div class="f"><label for="ud">Beskrivning, syfte och arbetssätt</label><textarea id="ud">${esc(d.desc||"")}</textarea></div>
  <div class="f"><label>Centralt innehåll som arbetsområdet täcker</label>${contentChecklist(c.subjectId,d.contentIds||[])}</div>
- ${u?`<div class="f"><label>Uppgifter och bedömningar i arbetsområdet</label>${asl.length?`<div class="list">${asl.map(a=>`<div class="li" style="cursor:pointer;padding:6px 0" data-a="edit-assess" data-id="${a.id}"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b> ${a.type?`<span class="tag">${esc(atypeL(a))}</span>`:""}</span></div>`).join("")}</div>`:`<span class="small muted">Inga ännu. Ett arbetsområde behöver inte ha en bedömd uppgift.</span>`}<button class="btn small" id="uas" style="justify-self:start;align-self:flex-start">+ Uppgift eller bedömning</button></div>`:`<p class="small muted" style="margin:0">När arbetsområdet är sparat kan du lägga till lektioner och uppgifter eller bedömningar i det.</p>`}
+ ${u?`<div class="f"><label>Uppgifter och bedömningar i arbetsområdet</label>${asl.length?`<div class="list">${asl.map(a=>`<div class="li" style="cursor:pointer;padding:6px 0" data-a="edit-assess" data-id="${a.id}"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b> ${a.type?`<span class="tag">${esc(atypeL(a))}</span>`:""}</span></div>`).join("")}</div>`:`<span class="small muted">Inga ännu. Ett arbetsområde behöver inte ha en bedömd uppgift.</span>`}<div class="row-b"><button class="btn small" id="uas">+ Uppgift eller bedömning</button><button class="btn small" data-a="lpp" data-id="${u.id}">LPP att skriva ut eller dela</button></div></div>`:`<p class="small muted" style="margin:0">När arbetsområdet är sparat kan du lägga till lektioner och uppgifter eller bedömningar i det.</p>`}
  <div class="actions">${u?'<button class="btn danger" id="udel">Ta bort</button><button class="btn" id="ules">Lektioner ('+lessonsOf(u.id).length+')</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="usave">Spara</button></div>`,m=>{
   m.querySelector("#usave").onclick=()=>{const t=val("ut").trim();if(!t){$("#ut").focus();return}let s=val("us"),e=val("ue");if(e<s)[s,e]=[e,s];
    const ids=[...m.querySelectorAll(".cl input:checked")].map(x=>x.value);const o={title:t,start:s,end:e,status:val("ust"),desc:val("ud"),contentIds:ids};
@@ -2309,7 +2555,7 @@ const A={
  "sched-week":el=>{const v=+el.dataset.v;ui.schedWeek=v===0?0:(ui.schedWeek||0)+v;render()},
  "download-latest":()=>downloadLatest(),
  reload:()=>location.reload(),
- "close-toast":()=>{const b=document.getElementById("savebar");b.hidden=true;updateBar()},
+ "close-toast":()=>{const b=document.getElementById("savebar");TOAST_ON=false;clearTimeout(toast.t);b.hidden=true;updateBar()},
  "switch-year":el=>{const a=state.archive.find(x=>x.id===el.dataset.id);if(!a)return;confirmBox(`Öppna läsår ${esc(a.label)}? Läsår ${esc(yearLabel(state.year))} sparas under Tidigare läsår så att du kan byta tillbaka.`,()=>{switchYear(state,a.id);ui=Object.assign(ui,{course:null,group:null,acourse:"all",wheel:"all"});commit()},"Öppna")},
  "del-year":el=>{const a=state.archive.find(x=>x.id===el.dataset.id);if(!a)return;confirmBox(`Ta bort läsår ${esc(a.label)} med alla kurser, elever och omdömen? Det går inte att ångra. Exportera gärna en säkerhetskopia först.`,()=>{state.archive=state.archive.filter(x=>x!==a);commit()})},
  "share-course":el=>shareCourse(el.dataset.id),
@@ -2319,7 +2565,11 @@ const A={
  "bar-save":()=>barSave(),
  unmine:el=>{state.mine=state.mine.filter(x=>x!==el.dataset.id);commit()},
  "sel-course":el=>{ui.course=el.dataset.id;saveUI();render()},
- "bar-hide":()=>{BAR_HIDDEN=true;updateBar();toast("Rutan visas inte mer i dag. Kom ihåg att spara med Spara eller Ctrl/Cmd+S.")}, "import-cal":()=>importCalModal(), how:()=>howModal(), "tab-move":el=>{const o=tabsOrdered().map(t=>t[0]).filter(x=>x!=="installningar");const i=o.indexOf(el.dataset.id),j=i+ +el.dataset.d;if(i<0||j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];ui.tabOrder=o;commit(true);render()}, "tab-reset":()=>{delete ui.tabOrder;commit(true);render()}, "import-ics":()=>icsModal(), "export-ics":()=>offerFile("lararbordet-schema.ics",buildICS(state),"text/calendar"), "del-course":el=>{const c=course(el.dataset.id);if(!c)return;confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden, lektioner, uppgifter och omdömen? Det går inte att ångra.`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);const uids=state.units.filter(u=>u.courseId===c.id).map(u=>u.id);state.lessons=state.lessons.filter(l=>!uids.includes(l.unitId)&&l.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.schedule=(state.schedule||[]).filter(x=>x.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);if(ui.course===c.id)ui.course=null;commit()})},
+ "bar-hide":()=>{BAR_HIDDEN=true;updateBar();toast("Rutan visas inte mer i dag. Kom ihåg att spara med Spara eller Ctrl/Cmd+S.")}, "import-cal":()=>importCalModal(), how:()=>howModal(), search:()=>searchModal(), library:()=>libraryModal(), lpp:el=>lppModal(el.dataset.id), weekplan:el=>weekPlanModal(el.dataset.id||(ui.course!=="all"?ui.course:"")),
+ "sel-course-go":el=>{closeModal();ui.course=el.dataset.id;ui.planView="tidslinje";if(location.hash!=="#planering")location.hash="planering";else render()},
+ "student-go":el=>{const [g,st]=el.dataset.id.split("|");studentModal(g,st)},
+ "proc-go":el=>{closeModal();const p=(state.process||[]).find(x=>x.id===el.dataset.id);if(!p)return;ui.pgroup=p.groupId;ui.proc=p.id;if(location.hash!=="#process")location.hash="process";else render()}, undo:()=>{TOAST_ON=false;undo()}, unlock:()=>unlockStart(), protect:()=>protectModal(), unprotect:()=>unprotect(), backups:()=>backupsModal(), "bk-dir":()=>pickBackupDir(),
+ "reveal-file":()=>{try{T.opener.revealItemInDir(filePath)}catch(e){}}, "tab-move":el=>{const o=tabsOrdered().map(t=>t[0]).filter(x=>x!=="installningar");const i=o.indexOf(el.dataset.id),j=i+ +el.dataset.d;if(i<0||j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];ui.tabOrder=o;commit(true);render()}, "tab-reset":()=>{delete ui.tabOrder;commit(true);render()}, "import-ics":()=>icsModal(), "export-ics":()=>offerFile("lararbordet-schema.ics",buildICS(state),"text/calendar"), "del-course":el=>{const c=course(el.dataset.id);if(!c)return;confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden, lektioner, uppgifter och omdömen? Det går inte att ångra.`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);const uids=state.units.filter(u=>u.courseId===c.id).map(u=>u.id);state.lessons=state.lessons.filter(l=>!uids.includes(l.unitId)&&l.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.schedule=(state.schedule||[]).filter(x=>x.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);if(ui.course===c.id)ui.course=null;commit()})},
  "sel-sgroup":el=>{ui.sgroup=el.dataset.id;ui.student=null;saveUI();render()}, "sel-student":el=>{ui.student=el.dataset.id;saveUI();render();window.scrollTo(0,0)},
  "sel-pgroup":el=>{ui.pgroup=el.dataset.id;ui.proc=null;saveUI();render()}, "sel-proc":el=>{ui.proc=el.dataset.id;saveUI();render()},
  "new-proc":()=>procModal(), "edit-proc":el=>procModal(el.dataset.id), "add-pcol":()=>pcolModal(), "edit-pcol":el=>pcolModal(el.dataset.id),
@@ -2344,7 +2594,7 @@ const A={
  grade:el=>gradeModal(el.dataset.as,el.dataset.st),
  student:el=>studentModal(el.dataset.g,el.dataset.id),
  "export-csv":()=>offerFile("omdomen-"+(group(ui.group)||{name:"grupp"}).name+".csv","﻿"+csv(),"text/csv"),
- "export-json":()=>offerFile("lararbordet-"+fmtD(TODAY)+".json",JSON.stringify(state,null,1),"application/json"),
+ "export-json":async()=>offerFile("lararbordet-"+fmtD(TODAY)+".json",await serialize(true),"application/json"),
  "import-json":()=>$("#importfile").click(),
  save:()=>{if(READONLY){roInfo();return}if(syncMode==="conflict")showConflict(true);else saveFile(false)}, "save-as":()=>saveFile(true), "open-file":()=>desktopOpen(),
  "new-subject":()=>subjectModal(),
@@ -2356,15 +2606,16 @@ const A={
 document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const f=A[el.dataset.a];if(!f)return;if(el.dataset.a==="scale")return;if(el.dataset.a==="ov"){if(e.target===el)closeModal();return}if(el.tagName!=="A")e.preventDefault();f(el,e)});
 document.addEventListener("change",e=>{if(e.target.id==="subjfilter"){ui.subjFilter=e.target.value;saveUI();render()}if(e.target.id==="acourse"){ui.acourse=e.target.value;saveUI();render()}if(e.target.dataset.a==="scale")A.scale(e.target);if(e.target.id==="chkupd"){state.checkUpdates=e.target.checked;commit()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();if((e.key==="Enter"||e.key===" ")&&e.target.matches(".arc,[data-a='edit-event']")){e.preventDefault();e.target.dispatchEvent(new MouseEvent("click",{bubbles:true}))}});
-$("#importfile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{state=parsePlanbok(await f.text());state.example=false;commit();modal("Importerat",`<p style="margin:0">Datan är inläst: ${state.courses.length} kurser, ${state.units.length} arbetsområden, ${state.assessments.length} bedömningar.</p><div class="actions"><button class="btn pri" data-a="close">Klart</button></div>`)}catch(err){modal("Kunde inte importera",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en exporterad .json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}e.target.value=""});
+$("#importfile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{state=await loadText(await f.text(),f.name);state.example=false;commit();modal("Importerat",`<p style="margin:0">Datan är inläst: ${state.courses.length} kurser, ${state.units.length} arbetsområden, ${state.assessments.length} bedömningar.</p><div class="actions"><button class="btn pri" data-a="close">Klart</button></div>`)}catch(err){modal("Kunde inte importera",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en exporterad .json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}e.target.value=""});
 window.addEventListener("hashchange",()=>{closeModal();render();window.scrollTo(0,0)});
 
 /* ===== 08-main.js ===== */
 /* ---------- start ---------- */
 if(location.protocol==="https:"&&"serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
-render();setSync();setTimeout(checkUpdate,1500);const narrow=window.matchMedia("(max-width: 700px)").matches;
+resetUndo();render();setSync();setTimeout(checkUpdate,1500);const narrow=window.matchMedia("(max-width: 700px)").matches;
 if(IS_MOBILE_APP){location.hash="fil";render()}
-else if(DESKTOP)desktopInit();
+else if(DESKTOP)loadBkConf().then(desktopInit);
+else if(ENC_PENDING){lockedScreen();unlockStart()}
 else if(FIRST&&narrow){FIRST_PHONE=true;location.hash="fil";render()}
 else if(FIRST)welcomeModal();
 /* sparar också med jämna mellanrum, som en extra säkerhet om något sparande har missats */

@@ -18,6 +18,7 @@
     "fs:allow-remove",
     "fs:allow-stat",
     "fs:allow-exists",
+    "fs:allow-read-dir",
     {
       "identifier": "fs:scope",
       "allow": [
@@ -38,6 +39,9 @@
         },
         {
           "path": "$APPCONFIG/**"
+        },
+        {
+          "path": "**"
         }
       ]
     }

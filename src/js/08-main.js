@@ -1,8 +1,9 @@
 /* ---------- start ---------- */
 if(location.protocol==="https:"&&"serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
-render();setSync();setTimeout(checkUpdate,1500);const narrow=window.matchMedia("(max-width: 700px)").matches;
+resetUndo();render();setSync();setTimeout(checkUpdate,1500);const narrow=window.matchMedia("(max-width: 700px)").matches;
 if(IS_MOBILE_APP){location.hash="fil";render()}
-else if(DESKTOP)desktopInit();
+else if(DESKTOP)loadBkConf().then(desktopInit);
+else if(ENC_PENDING){lockedScreen();unlockStart()}
 else if(FIRST&&narrow){FIRST_PHONE=true;location.hash="fil";render()}
 else if(FIRST)welcomeModal();
 /* sparar också med jämna mellanrum, som en extra säkerhet om något sparande har missats */

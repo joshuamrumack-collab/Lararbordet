@@ -34,6 +34,7 @@ Varningarna visas för att programmet inte är signerat med ett utvecklarcertifi
 Bygget signerar automatiskt så fort certifikaten finns som hemligheter i repot (*Settings → Secrets and variables → Actions*):
 
 - **Mac:** kräver Apples utvecklarprogram (Apple Developer Program, årsavgift). Lägg in `APPLE_CERTIFICATE` (Developer ID Application-certifikat som .p12 i base64), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` (appspecifikt lösenord) och `APPLE_TEAM_ID`. Appen signeras och notariseras då, och varningen försvinner.
+- **Automatiska uppdateringar i datorappen:** lägg in `TAURI_SIGNING_PRIVATE_KEY` (uppdateringsnyckeln). Då signeras uppdateringsfilerna och en `latest.json` läggs i varje release, så att datorappen kan uppdatera sig själv. Den publika nyckeln står i `src-tauri/tauri.conf.json`. Tappas nyckeln bort kan befintliga installationer inte längre uppdatera sig själva.
 - **Windows:** lägg in `WINDOWS_CERTIFICATE` (kodsigneringscertifikat som .pfx i base64) och `WINDOWS_CERTIFICATE_PASSWORD`. Gratisalternativ för öppen källkod: [SignPath Foundation](https://signpath.org) – kräver att repot har en godkänd öppen licens, till exempel MIT.
 
 **HTML:** dubbelklicka på `lararbordet.html`. När du ändrar något dyker en fråga upp om att spara. I Chrome och Edge väljer du `lararbordet.html` en gång, sedan sparas varje ändring direkt i filen. Nästa gång du öppnar filen räcker ett klick på *Spara i filen*. I Safari och Firefox laddas en uppdaterad kopia ner som du ersätter den gamla med. Filen fungerar inte inbäddad på en webbsida, bara nedladdad.
@@ -41,6 +42,10 @@ Bygget signerar automatiskt så fort certifikaten finns som hemligheter i repot 
 ## Personuppgifter
 
 Elevnamn och omdömen är personuppgifter. Inget skickas till någon server, men filen ska ligga där skolan tillåter. Använd gärna initialer eller elevnummer.
+
+- **Lösenordsskydd:** under *Inställningar → Fil och säkerhet* kan filen krypteras (AES-256-GCM, nyckel från lösenordet med PBKDF2-SHA256, 310 000 varv). Lösenordet sparas aldrig; glöms det bort går datan inte att få tillbaka.
+- **Säkerhetskopior:** datorappen sparar högst en kopia i kvarten i mappen *Säkerhetskopior* bredvid datafilen (mappen kan bytas), webbläsaren i sin egen lagring. De senaste 10 behålls (kan ändras). Kopiorna krypteras om filen är skyddad.
+- **Ångra:** Ctrl/Cmd+Z ångrar senaste ändringen.
 
 ## Ämnen och centralt innehåll
 
@@ -74,7 +79,7 @@ Välj vilka ämnen och årskurser eller nivåer du undervisar i under *Inställn
 
 ## Uppdateringar
 
-Appen kollar vid start om det finns en ny version och visar i så fall en ruta (går att stänga av under *Inställningar → Om Lärarbordet*). Inga uppgifter om dig eller eleverna skickas. Under *Inställningar → Om Lärarbordet* finns en knapp för att hämta senaste versionen. I skrivbordsappen laddar den ner rätt installationsfil för datorn (Windows eller Mac), och datan i Dokument/Lärarbordet ligger kvar. I HTML-versionen hämtar knappen den nya versionen, lägger in all din data i den och sparar den i samma fil (Chrome och Edge) eller som en nedladdning (Safari och Firefox).
+Datorappen kan uppdatera sig själv: när en ny version finns trycker man på *Uppdatera nu*, så laddas den ner, installeras och appen startar om (kräver uppdateringsnyckeln, se Signering). Appen kollar vid start om det finns en ny version och visar i så fall en ruta (går att stänga av under *Inställningar → Om Lärarbordet*). Inga uppgifter om dig eller eleverna skickas. Under *Inställningar → Om Lärarbordet* finns en knapp för att hämta senaste versionen. I skrivbordsappen laddar den ner rätt installationsfil för datorn (Windows eller Mac), och datan i Dokument/Lärarbordet ligger kvar. I HTML-versionen hämtar knappen den nya versionen, lägger in all din data i den och sparar den i samma fil (Chrome och Edge) eller som en nedladdning (Safari och Firefox).
 
 ## Börja från början
 
