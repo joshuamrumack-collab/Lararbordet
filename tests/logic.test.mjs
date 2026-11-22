@@ -269,3 +269,35 @@ test("iCal: import av veckoschema och händelser, och export", () => {
   const out = run("buildICS(state)");
   assert.ok(out.startsWith("BEGIN:VCALENDAR") && out.includes("BEGIN:VEVENT") && out.includes("SUMMARY:Svenska 8B"));
 });
+
+test("schema från PDF: dagkolumner och lektioner", () => {
+  const run = load();
+  const items = [
+    { str: "Måndag 16/11", x: 100, y: 50, w: 60 }, { str: "Tisdag 17/11", x: 250, y: 50, w: 60 }, { str: "Onsdag", x: 400, y: 50, w: 40 },
+    { str: "Torsdag", x: 550, y: 50, w: 40 }, { str: "Fredag", x: 700, y: 50, w: 40 },
+    { str: "08:00", x: 20, y: 100, w: 20 },
+    { str: "08:20", x: 90, y: 100, w: 20 }, { str: "Engelska 5", x: 100, y: 112, w: 50 }, { str: "TE22a", x: 100, y: 124, w: 30 }, { str: "B12", x: 100, y: 136, w: 20 }, { str: "09:20", x: 150, y: 148, w: 20 },
+    { str: "10:00-11:00", x: 240, y: 200, w: 50 }, { str: "Svenska 1 TE22a", x: 245, y: 212, w: 60 },
+    { str: "13:00", x: 690, y: 300, w: 20 }, { str: "Mentorstid", x: 700, y: 312, w: 50 }, { str: "13:30", x: 740, y: 324, w: 20 },
+  ];
+  const r = run(`parsePdfSchedule(${JSON.stringify(items)})`);
+  assert.equal(r.length, 3);
+  assert.deepEqual(r[0], { day: 1, start: "08:20", end: "09:20", text: "Engelska 5 TE22a", room: "B12" });
+  assert.deepEqual([r[1].day, r[1].start, r[1].end, r[1].text], [2, "10:00", "11:00", "Svenska 1 TE22a"]);
+  assert.deepEqual([r[2].day, r[2].start, r[2].end], [5, "13:00", "13:30"]);
+  assert.equal(run('guessCourse(state,"Matematik 8B sal C3")'), "c-ma");
+});
+
+test("process: förväntat antal ord per lektion", () => {
+  const run = load();
+  run('var pr={parts:["Disposition",{name:"Källor",kind:"text"}],cols:[{id:"a"},{id:"b"},{id:"c"},{id:"d"}],minWords:800,maxWords:1200}');
+  assert.deepEqual(run("procParts(pr).map(x=>x.kind)"), ["check", "text"]);
+  assert.equal(run("procExpected(pr,0)"), 200);
+  assert.equal(run("procExpected(pr,3)"), 800);
+  assert.equal(run("procClass2('150',procExpected(pr,0),null)"), "pbehind");
+  assert.equal(run("procClass2('450',procExpected(pr,1),null)"), "pok");
+  run('pr.count="lesson"');
+  assert.equal(run("procExpected(pr,3)"), 200);
+  assert.equal(run("procClass2('120',null,300)"), "plow");
+  assert.equal(run("procClass2('gf',200,300)"), "pgf");
+});

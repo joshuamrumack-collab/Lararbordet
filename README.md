@@ -108,4 +108,5 @@ Kort sagt: du får använda, ändra och sprida Lärarbordet, även kommersiellt.
 Övrigt innehåll:
 - Centralt innehåll och betygskriterier kommer från Skolverkets kurs- och ämnesplaner via Skolverkets öppna API.
 - fflate (MIT-licens, © Arjun Barrett) används för att packa upp den inbyggda datan.
+- PDF.js 4.10.38 (Apache-2.0-licens, © Mozilla Foundation) används för att läsa schema från PDF-filer.
 - Skrivbordsapparna byggs med Tauri (MIT- eller Apache-2.0-licens).

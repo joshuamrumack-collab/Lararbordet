@@ -194,3 +194,8 @@ function buildICS(s){const esc2=t=>String(t||"").replace(/\\/g,"\\\\").replace(/
    ev(sl.id+"-"+d8(d),["DTSTART;TZID=Europe/Stockholm:"+d8(d)+"T"+t6(sl.start),"DTEND;TZID=Europe/Stockholm:"+d8(d)+"T"+t6(sl.end),"SUMMARY:"+esc2(c.name+(l&&l.title?" · "+l.title:"")),...(sl.room?["LOCATION:"+esc2(sl.room)]:[]),...((l&&l.plan)||sl.note?["DESCRIPTION:"+esc2([l&&l.plan,sl.note].filter(Boolean).join("\n\n"))]:[])])})});
  (s.events||[]).forEach(e=>{const timed=e.from&&e.to;ev("ev-"+e.id,timed?["DTSTART;TZID=Europe/Stockholm:"+d8(e.start)+"T"+t6(e.from),"DTEND;TZID=Europe/Stockholm:"+d8(e.start)+"T"+t6(e.to),"SUMMARY:"+esc2(e.title)]:["DTSTART;VALUE=DATE:"+d8(e.start),"DTEND;VALUE=DATE:"+d8(fmtD(addDays(parseD(e.end),1))),"SUMMARY:"+esc2(e.title)])});
  L.push("END:VCALENDAR");return L.join("\r\n")}
+/* process: delarnas typ ("check", "text" eller "both") och förväntat antal ord efter lektion k av n */
+const procParts=p=>(p.parts||[]).map(x=>typeof x==="string"?{name:x,kind:"check"}:x);
+function procExpected(p,k){const n=(p.cols||[]).length;const min=+p.minWords||0;if(!min||!n)return null;return p.count==="lesson"?Math.ceil(min/n):Math.ceil(min*(k+1)/n)}
+function procClass2(v,exp,avg){if(v==="k")return "pk";if(v==="of")return "pof";if(v==="gf")return "pgf";if(!/^\d+$/.test(v||""))return "";
+ if(exp!=null)return +v<exp?"pbehind":"pok";return avg!=null&&+v<avg?"plow":""}

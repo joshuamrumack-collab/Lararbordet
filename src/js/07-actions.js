@@ -42,7 +42,7 @@ const A={
  "sel-sgroup":el=>{ui.sgroup=el.dataset.id;ui.student=null;saveUI();render()}, "sel-student":el=>{ui.student=el.dataset.id;saveUI();render();window.scrollTo(0,0)},
  "sel-pgroup":el=>{ui.pgroup=el.dataset.id;ui.proc=null;saveUI();render()}, "sel-proc":el=>{ui.proc=el.dataset.id;saveUI();render()},
  "new-proc":()=>procModal(), "edit-proc":el=>procModal(el.dataset.id), "add-pcol":()=>pcolModal(), "edit-pcol":el=>pcolModal(el.dataset.id),
- "add-ppart":()=>{const p=(state.process||[]).find(x=>x.id===ui.proc)||(state.process||[]).filter(x=>x.groupId===ui.pgroup).pop();if(p)procModal(p.id)}, theme:el=>{setTheme(el.dataset.v);render()}, planview:el=>{ui.planView=el.dataset.v;saveUI();render()},
+ "add-ppart":()=>{const p=curProc();if(p)procModal(p.id)}, theme:el=>{setTheme(el.dataset.v);render()}, planview:el=>{ui.planView=el.dataset.v;saveUI();render()},
  "new-task":el=>{const cs=state.courses;if(!cs.length)return;const c=course(el.dataset.id)||(ui.course!=="all"&&course(ui.course))||cs[0];const gid=c.groupId||(state.groups[0]||{}).id;
   if(!gid){modal("Elevgrupp saknas",`<p style="margin:0">En uppgift bedöms för en elevgrupp. Lägg till en grupp och koppla den till kursen.</p><div class="actions"><button class="btn pri" data-a="edit-course" data-id="${c.id}">Redigera kursen</button></div>`);return}
   assessModal(null,{courseId:c.id,groupId:gid})}, results:()=>resultsModal(), cview:el=>{ui.cview=el.dataset.v;saveUI();render()}, "new-course":()=>courseModal(), "edit-course":el=>courseModal(el.dataset.id),
