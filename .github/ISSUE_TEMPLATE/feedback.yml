@@ -1,0 +1,26 @@
+name: Feedback eller önskemål
+description: Berätta vad som borde bli bättre i Lärarbordet, eller vad som inte fungerar.
+labels: [feedback]
+body:
+  - type: dropdown
+    id: typ
+    attributes:
+      label: Vad gäller det?
+      options: [Något fungerar inte, Önskemål om förbättring, Ny funktion, Annat]
+    validations: {required: true}
+  - type: dropdown
+    id: del
+    attributes:
+      label: Var i appen?
+      options: [Översikt, Schema, Planering, Elever, Årshjul, Bedömning, Process, Centralt innehåll, Inställningar, Telefonappen, Import/export, Annat]
+  - type: textarea
+    id: beskrivning
+    attributes:
+      label: Beskriv
+      description: Vad hände, eller vad vill du ska hända? Skärmbilder går att klistra in här. Skriv inga elevnamn eller andra personuppgifter.
+    validations: {required: true}
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Står under Inställningar → Om Lärarbordet, t.ex. 1.12.1.
