@@ -10,11 +10,13 @@ fel = []
 
 def ny_sida(b, tema, mobil=False):
     ctx = b.new_context(viewport={"width": 390, "height": 800} if mobil else {"width": 1280, "height": 900}, is_mobile=mobil, has_touch=mobil)
+    ctx.route("https://api.github.com/**", lambda r: r.fulfill(status=200, content_type="application/json", body="{}"))
     ctx.add_init_script(f"try{{localStorage.setItem('lb-theme','{tema}')}}catch(e){{}}")
     p = ctx.new_page(); p.set_default_timeout(5000)
     namn = f"{'telefon' if mobil else 'dator'}/{tema}"
     p.on("pageerror", lambda e: fel.append(f"{namn}: {e}"))
-    p.on("console", lambda m: m.type == "error" and fel.append(f"{namn} console: {m.text}"))
+    # nätverksfel (t.ex. GitHubs gräns för uppdateringskollen i bygget) räknas inte som fel i appen
+    p.on("console", lambda m: m.type == "error" and not m.text.startswith("Failed to load resource") and fel.append(f"{namn} console: {m.text}"))
     p.goto(URL); p.wait_for_timeout(600)
     p.evaluate("closeModal()")
     return p
