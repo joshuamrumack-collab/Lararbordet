@@ -225,3 +225,25 @@ jobs:
           cd site && git init -q -b gh-pages && git add -A
           git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -qm "Webbversion $(jq -r .version ../src-tauri/tauri.conf.json)"
           git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" gh-pages
+
+  fasta-namn:
+    # Kopior med namn som aldrig ändras, så att länkar som
+    # github.com/joshuamrumack-collab/Lararbordet/releases/latest/download/Lararbordet-Windows.exe alltid ger senaste versionen.
+    needs: [desktop, android, html]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Lägg till filer med fasta namn i releasen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v$(jq -r .version src-tauri/tauri.conf.json)"
+          mkdir fasta && cd fasta
+          gh release download "$TAG" -R "${{ github.repository }}" -p "*_x64-setup.exe" -p "*_universal.dmg" -p "*_android.apk" || true
+          up=()
+          f=$(ls *_x64-setup.exe 2>/dev/null | head -1); [ -n "$f" ] && cp "$f" Lararbordet-Windows.exe && up+=(Lararbordet-Windows.exe)
+          f=$(ls *_universal.dmg 2>/dev/null | head -1); [ -n "$f" ] && cp "$f" Lararbordet-Mac.dmg && up+=(Lararbordet-Mac.dmg)
+          f=$(ls *_android.apk 2>/dev/null | head -1); [ -n "$f" ] && cp "$f" Lararbordet-Android.apk && up+=(Lararbordet-Android.apk)
+          [ ${#up[@]} -gt 0 ] && gh release upload "$TAG" "${up[@]}" -R "${{ github.repository }}" --clobber
+          echo "Fasta namn: ${up[*]}"

@@ -15,9 +15,12 @@ Gå till **Releases** (till höger på sidan) och välj den version som passar d
 
 | Dator | Fil | Var sparas datan |
 |---|---|---|
-| Windows | `…x64-setup.exe` | `Dokument\Lärarbordet\lararbordet.json` |
-| Mac | `…universal.dmg` | `Dokument/Lärarbordet/lararbordet.json` |
-| Chromebook, eller om du inte får installera program | `lararbordet.html` | Inuti själva HTML-filen |
+| Windows | [Lararbordet-Windows.exe](https://github.com/joshuamrumack-collab/Lararbordet/releases/latest/download/Lararbordet-Windows.exe) | `Dokument\Lärarbordet\lararbordet.json` |
+| Mac | [Lararbordet-Mac.dmg](https://github.com/joshuamrumack-collab/Lararbordet/releases/latest/download/Lararbordet-Mac.dmg) | `Dokument/Lärarbordet/lararbordet.json` |
+| Android (läsläge) | [Lararbordet-Android.apk](https://github.com/joshuamrumack-collab/Lararbordet/releases/latest/download/Lararbordet-Android.apk) | Läser en kopia av filen |
+| Chromebook, eller om du inte får installera program | [lararbordet.html](https://github.com/joshuamrumack-collab/Lararbordet/releases/latest/download/lararbordet.html) | Inuti själva HTML-filen |
+
+Länkarna ger alltid senaste versionen.
 
 Alla versioner använder samma data. Du kan flytta mellan dem med *Inställningar → Öppna annan fil* eller *Importera data*.
 
