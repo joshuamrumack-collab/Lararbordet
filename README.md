@@ -59,6 +59,7 @@ Allt centralt innehåll finns inbyggt, ordagrant från Skolverkets kurs- och äm
 - Anpassade grundskolan, ämnesområden
 - Gymnasieskolan, ämnen med nivåer (från ht 2025)
 - Gymnasieskolan, kurser enligt äldre ämnesplaner
+- Anpassade gymnasieskolan, ämnen med nivåer, kurser enligt äldre ämnesplaner och ämnesområden
 
 Välj vilka ämnen och årskurser eller nivåer du undervisar i under *Inställningar → Mina ämnen* eller *Centralt innehåll → Välj ämnen*. Egna ämnen och eget innehåll kan läggas till. Se `tools/skolverket` för hur katalogen uppdateras.
 

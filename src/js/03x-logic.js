@@ -66,8 +66,8 @@ function lessonsInWeek(s,monday){const a=fmtD(monday),b=fmtD(addDays(monday,6));
 /* Nyckel till kriterierna för en plan: grundskolan per årskurs (6 eller 9), gymnasiets ämnen med nivåer per ämne, äldre gymnasiekurser per kurs */
 function critFor(planId){const r=PLAN[planId];if(!r)return null;let all;try{all=CRIT()}catch(e){return null}
  const code=r.s.id;let set=null;
- if(r.f.id==="GYOLD")set=(all[planId]||{})["*"];
- else if(r.f.id==="GY")set=(all[code]||{})["*"];
+ if(r.f.id==="GYOLD"||r.f.id==="GYANOLD")set=(all[planId]||{})["*"];
+ else if(r.f.id==="GY"||r.f.id==="GYAN"||r.f.id==="GYANO")set=(all[code]||{})["*"];
  else{const y=(planId.split("/")[1]||"").split("-").pop();set=(all[code]||{})[y]||null}
  if(!set)return null;
  const order=["E","C","A","G","F"].filter(k=>set[k]&&set[k].length);if(!order.length)return null;

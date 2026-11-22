@@ -6,7 +6,7 @@ def paras(h):
     out=[]
     for p in ps:
         p=re.sub(r'</?(strong|b)>','*',p);p=re.sub(r'<[^>]+>','',p);p=html.unescape(p);p=re.sub(r'\s+',' ',p).strip()
-        p=re.sub(r'\*\s*\*','',p).strip()
+        p=re.sub(r'\*\s+\*',' ',p);p=re.sub(r'\*\*','',p).strip()  # två fetstilsord i rad: behåll mellanslaget
         if p and not re.match(r'^(Betyget [A-F]|Kriterier för|Betygskriterier för)',p): out.append(p)
     return out
 def heading(h):
@@ -25,6 +25,7 @@ def build(krs):
     for yr,d in by.items():
         if d: out[yr]=d
     return out
+if __name__!='__main__': raise SystemExit
 res={};stats=collections.Counter();aligned=collections.Counter()
 for f in glob.glob('raw/*.json'):
     d=json.load(open(f))['subject'];code=d['code']

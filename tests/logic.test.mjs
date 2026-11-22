@@ -33,7 +33,7 @@ test("veckonummer och veckoförskjutning", () => {
 
 test("katalogen innehåller alla skolformer och ordagrant centralt innehåll", () => {
   const run = load();
-  assert.deepEqual(run("FORMS.map(f=>f.id)"), ["GR", "GRAN", "GRANO", "GY", "GYOLD"]);
+  assert.deepEqual(run("FORMS.map(f=>f.id)"), ["GR", "GRAN", "GRANO", "GY", "GYOLD", "GYAN", "GYANOLD", "GYANO"]);
   assert.equal(run('subj("GRGRSVE01/7-9").areas.length'), 5);
   assert.equal(run('subj("GRGRSVE01/7-9").areas[0].name'), "Läsa och skriva");
   assert.match(run('subj("GRGRMAT01/7-9").areas[1].items[4].text'), /^Programmering/);
@@ -341,4 +341,17 @@ test("lösenordsskydd: kryptera och dekryptera", async () => {
   await assert.rejects(() => ctx.decryptEnvelope(env, "fel"));
   assert.ok(ctx.readEnvelope("<html><script type=\"application/json\" id=\"pbdata\">" + JSON.stringify(env) + "</script></html>"));
   assert.equal(ctx.readEnvelope("{\"courses\":[]}"), null);
+});
+
+test("anpassad gymnasieskola finns med ämnen, kurser, ämnesområden och kriterier", () => {
+  const run = load();
+  const forms = run("FORMS.map(f=>f.id)");
+  for (const f of ["GYAN", "GYANOLD", "GYANO"]) assert.ok(forms.includes(f), f);
+  assert.equal(run('FORM_LABEL.GYAN'), "Anpassad gymnasieskola");
+  const pid = run('FORMS.find(f=>f.id==="GYAN").subjects.find(s=>s.id==="ADMN").plans[0].id');
+  assert.ok(run(`subj("${pid}").areas.length>0`));
+  assert.deepEqual(run(`critFor("${pid}").levels`), ["E", "C", "A"]);
+  const o = run('FORMS.find(f=>f.id==="GYANO").subjects[0].plans[0].id');
+  assert.deepEqual(run(`critFor("${o}").levels`), ["G", "F"]);
+  assert.equal(run('formOf("GRGRSVE01/7-9")'), "GR");
 });

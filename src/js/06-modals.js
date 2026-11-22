@@ -66,7 +66,7 @@ function seriesModal(unitId){const u=unit(unitId);if(!u)return;
   m.querySelector("#sok").onclick=()=>{const n0=lessonsOf(unitId).length;dates().forEach((dt,i)=>state.lessons.push({id:uid(),unitId,date:dt,title:"Lektion "+(n0+i+1),plan:"",note:"",done:false}));commit();lessonsModal(unitId)}})}
 
 /* kursnamn föreslås ur ämne och grupp, t.ex. "Engelska 1 PO" eller "Svenska 8B" */
-function autoCourseName(sid,gname){const x=subj(sid);if(!x)return gname||"";let st="";if(x.form==="GY"||x.form==="GYOLD"){const m=String(x.stage||"").match(/(\d+[a-z]?)/i);st=m?m[1]:""}
+function autoCourseName(sid,gname){const x=subj(sid);if(!x)return gname||"";let st="";if(/^GY/.test(x.form||"")){const m=String(x.stage||"").match(/(\d+[a-z]?)/i);st=m?m[1]:""}
  return [x.name,st,gname].filter(Boolean).join(" ")}
 /* nyanser av en färg, för t.ex. olika nivåer i samma ämne */
 function shadesOf(hex){const h=hex.replace("#","");const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);

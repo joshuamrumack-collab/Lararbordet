@@ -1,6 +1,6 @@
 import json,os,time,urllib.request,urllib.parse,concurrent.futures as cf
 s=json.load(open('/tmp/all.json'))['subjects']
-want=[x for x in s if set(x['schoolTypes'])&{'GR','GRAN','GY'}]
+want=[x for x in s if set(x['schoolTypes'])&{'GR','GRAN','GY','GYAN'}]
 print(len(want))
 def get(code):
     p=f'raw/{code}.json'

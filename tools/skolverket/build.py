@@ -29,24 +29,33 @@ def parse(h):
     p=P();p.feed(h or '');return [a for a in p.areas if a[1]]
 def yname(y):
     y=(y or '').replace('-','–');return 'Åk '+y if y else 'Alla årskurser'
-forms={k:{'id':k,'name':n,'subjects':[]} for k,n in [('GR','Grundskolan'),('GRAN','Anpassade grundskolan – ämnen'),('GRANO','Anpassade grundskolan – ämnesområden'),('GY','Gymnasieskolan – ämnen med nivåer'),('GYOLD','Gymnasieskolan – kurser (äldre ämnesplaner)')]}
-nitems=0
-for f in sorted(glob.glob('raw/*.json')):
-    d=json.load(open(f))['subject'];st=set(d['schoolTypes']);typ=d['typeOfSyllabus'];code=d['code']
-    if 'GR' in st: fid='GR'
-    elif 'GRAN' in st: fid='GRANO' if typ=='SUBJECT_AREA_SYLLABUS' else 'GRAN'
-    elif 'GY' in st: fid='GYOLD' if typ=='SUBJECT_SYLLABUS' else 'GY'
-    else: continue
-    plans=[]
+FORMS=[('GR','Grundskolan'),('GRAN','Anpassade grundskolan – ämnen'),('GRANO','Anpassade grundskolan – ämnesområden'),('GY','Gymnasieskolan – ämnen med nivåer'),('GYOLD','Gymnasieskolan – kurser (äldre ämnesplaner)'),('GYAN','Anpassade gymnasieskolan – ämnen med nivåer'),('GYANOLD','Anpassade gymnasieskolan – kurser (äldre ämnesplaner)'),('GYANO','Anpassade gymnasieskolan – ämnesområden')]
+def form_of(st,typ):
+    if 'GR' in st: return 'GR'
+    if 'GRAN' in st: return 'GRANO' if typ=='SUBJECT_AREA_SYLLABUS' else 'GRAN'
+    if 'GY' in st: return 'GYOLD' if typ=='SUBJECT_SYLLABUS' else 'GY'
+    if 'GYAN' in st: return 'GYANO' if typ=='SUBJECT_AREA_SYLLABUS' else 'GYANOLD' if typ=='SUBJECT_SYLLABUS' else 'GYAN'
+    return None
+def plans_of(d):
+    code=d['code'];plans=[]
     if d.get('centralContents'):
         for c in d['centralContents']:
-            a=parse(c['text']);
+            a=parse(c['text'])
             if a: plans.append({'id':code+'/'+(c.get('year') or 'x'),'name':yname(c.get('year')),'areas':a})
     for c in sorted(d.get('courses') or [],key=lambda c:int(c.get('sortOrder') or 0)):
         a=parse((c.get('centralContent') or {}).get('text'))
         if a:
             nm=c.get('name','');pts=c.get('points')
             plans.append({'id':code+'/'+c['code'],'name':nm+(f' ({pts} p)' if pts else ''),'areas':a})
+    return plans
+if __name__!='__main__': raise SystemExit  # bara funktionerna behövs vid import
+forms={k:{'id':k,'name':n,'subjects':[]} for k,n in FORMS}
+nitems=0
+for f in sorted(glob.glob('raw/*.json')):
+    d=json.load(open(f))['subject'];st=set(d['schoolTypes']);typ=d['typeOfSyllabus'];code=d['code']
+    fid=form_of(st,typ)
+    if not fid: continue
+    plans=plans_of(d)
     if not plans: continue
     for p in plans: nitems+=sum(len(a[1]) for a in p['areas'])
     forms[fid]['subjects'].append({'id':code,'name':d['name'],'plans':plans})

@@ -5,9 +5,9 @@ const CAT=unpack("catalog");
 let _CRIT=null;const CRIT=()=>_CRIT||(_CRIT=unpack("crit"));
 const FORMS=CAT.forms;
 const PLAN={};FORMS.forEach(f=>f.subjects.forEach(su=>su.plans.forEach(pl=>PLAN[pl.id]={f,s:su,p:pl})));
-const FORM_LABEL={GR:"Grundskolan",GRAN:"Anpassad grundskola",GRANO:"Anpassad grundskola · ämnesområde",GY:"Gymnasieskolan",GYOLD:"Gymnasieskolan · äldre kurs",X:"Eget ämne"};
+const FORM_LABEL={GR:"Grundskolan",GRAN:"Anpassad grundskola",GRANO:"Anpassad grundskola · ämnesområde",GY:"Gymnasieskolan",GYOLD:"Gymnasieskolan · äldre kurs",GYAN:"Anpassad gymnasieskola",GYANOLD:"Anpassad gymnasieskola · äldre kurs",GYANO:"Anpassad gymnasieskola · ämnesområde",X:"Eget ämne"};
 const stripPts=t=>String(t).replace(/\s*\(\d+ p\)$/,"");
-function planNames(r){if(r.f.id==="GYOLD")return {name:stripPts(r.p.name),stage:(r.p.name.match(/\((\d+ p)\)$/)||["",""])[1]};
+function planNames(r){if(r.f.id==="GYOLD"||r.f.id==="GYANOLD")return {name:stripPts(r.p.name),stage:(r.p.name.match(/\((\d+ p)\)$/)||["",""])[1]};
  const st=r.p.name.replace(/^Åk /,"åk ").replace(/^Nivå /,"nivå ").replace(/^Alla årskurser$/,"");return {name:r.s.name,stage:st}}
 const _sc={};
 function subj(id){

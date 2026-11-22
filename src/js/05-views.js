@@ -180,7 +180,7 @@ function critView(s,cs){const cr=s.official?critFor(s.id):null;
 
 function vContent(){
  const subs=usedSubjects().map(subj);
- if(!subs.length)return `<section class="panel"><div class="empty"><h2 style="margin-bottom:8px">Välj vilka ämnen du undervisar i</h2><p>Allt centralt innehåll för grundskolan, anpassade grundskolan, ämnesområden och gymnasieskolan finns inbyggt, hämtat från Skolverket. Välj de ämnen och årskurser eller nivåer du har.</p><button class="btn pri" data-a="picker">Välj ämnen</button> <button class="btn" data-a="new-subject">+ Eget ämne</button></div></section>`;
+ if(!subs.length)return `<section class="panel"><div class="empty"><h2 style="margin-bottom:8px">Välj vilka ämnen du undervisar i</h2><p>Allt centralt innehåll för grundskolan, anpassade grundskolan, gymnasieskolan och anpassade gymnasieskolan, även ämnesområden, finns inbyggt, hämtat från Skolverket. Välj de ämnen och årskurser eller nivåer du har.</p><button class="btn pri" data-a="picker">Välj ämnen</button> <button class="btn" data-a="new-subject">+ Eget ämne</button></div></section>`;
  if(!subs.some(x=>x.id===ui.subject))ui.subject=subs[0].id;const s=subj(ui.subject);
  const cs=state.courses.filter(c=>c.subjectId===s.id);if(ui.subjFilter!=="all"&&!cs.some(c=>c.id===ui.subjFilter))ui.subjFilter="all";
  const cov=coverage(s.id,ui.subjFilter);const sum=covSummary(s.id,ui.subjFilter);

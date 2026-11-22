@@ -1,6 +1,6 @@
 [package]
 name = "lararbordet"
-version = "1.13.0"
+version = "1.14.0"
 description = "Lärarbordet – planering, årshjul, Lgr22-täckning och bedömning"
 authors = ["DorkTeach"]
 license = "AGPL-3.0-or-later"
