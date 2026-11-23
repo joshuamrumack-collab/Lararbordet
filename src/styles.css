@@ -164,7 +164,7 @@ table.mx{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 .sum{font-weight:700;padding:6px 8px}
 .lowtag{color:var(--bad);font-weight:700}
 
-#savebar{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:min(720px,calc(100% - 24px));background:var(--ink);color:var(--paper);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.25);font-size:.92rem}
+#savebar{position:fixed;z-index:110;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:min(720px,calc(100% - 24px));background:var(--ink);color:var(--paper);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.25);font-size:.92rem}
 #savebar[hidden]{display:none}
 #savebar span{flex:1}
 #savebar .btn.pri{background:var(--paper);color:var(--ink);border-color:var(--paper);white-space:nowrap}
@@ -529,3 +529,4 @@ body.locked #tabs{visibility:hidden}
 body.phone .hsearch{display:none}
 body.phone .hsearch+.sync{margin-left:auto}
 @media (max-width:600px){.hsearch span{display:none}}
+body:has(#modalroot .ov) #savebar{top:calc(12px + env(safe-area-inset-top));bottom:auto}

@@ -1,7 +1,7 @@
 {
   "name": "lararbordet",
   "private": true,
-  "version": "1.17.0",
+  "version": "1.17.1",
   "scripts": {
     "build": "node tools/build/build.mjs",
     "test": "node --test tests/logic.test.mjs",

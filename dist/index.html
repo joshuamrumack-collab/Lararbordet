@@ -179,7 +179,7 @@ table.mx{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 .sum{font-weight:700;padding:6px 8px}
 .lowtag{color:var(--bad);font-weight:700}
 
-#savebar{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:min(720px,calc(100% - 24px));background:var(--ink);color:var(--paper);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.25);font-size:.92rem}
+#savebar{position:fixed;z-index:110;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:min(720px,calc(100% - 24px));background:var(--ink);color:var(--paper);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.25);font-size:.92rem}
 #savebar[hidden]{display:none}
 #savebar span{flex:1}
 #savebar .btn.pri{background:var(--paper);color:var(--ink);border-color:var(--paper);white-space:nowrap}
@@ -544,6 +544,7 @@ body.locked #tabs{visibility:hidden}
 body.phone .hsearch{display:none}
 body.phone .hsearch+.sync{margin-left:auto}
 @media (max-width:600px){.hsearch span{display:none}}
+body:has(#modalroot .ov) #savebar{top:calc(12px + env(safe-area-inset-top));bottom:auto}
 
 </style>
 </head>
@@ -571,7 +572,7 @@ body.phone .hsearch+.sync{margin-left:auto}
 "use strict";
 /* ===== 01-helpers.js ===== */
 /* ---------- hjälpfunktioner ---------- */
-const APP_VERSION="1.17.0";
+const APP_VERSION="1.17.1";
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1861,8 +1862,11 @@ function occModal(slotId,date){const o=dayOccurrences(date).find(x=>x.slot.id===
 /* ---------- importera schema: PDF från schemavisaren eller .ics från en kalender ---------- */
 function unpackText(id){const t=document.getElementById(id+"-gz").textContent.trim();const bin=atob(t);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder().decode(fflate.gunzipSync(u))}
 let PDFJS=null;
-async function loadPdfjs(){if(PDFJS)return PDFJS;const js=URL.createObjectURL(new Blob([unpackText("pdfjs")],{type:"text/javascript"}));const mod=await import(js);
- mod.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([unpackText("pdfjsw")],{type:"text/javascript"}));return PDFJS=mod}
+/* pdf.js behöver Promise.withResolvers (Chrome/Edge 119+, Safari 17.4+). Äldre webbläsare får en ersättning, både här och i pdf.js egen arbetstråd. */
+const PDF_POLY=`if(typeof Promise.withResolvers!=="function")Promise.withResolvers=function(){let a,b;const p=new Promise((r,j)=>{a=r;b=j});return {promise:p,resolve:a,reject:b}};\n`;
+async function loadPdfjs(){if(PDFJS)return PDFJS;const js=URL.createObjectURL(new Blob([PDF_POLY+unpackText("pdfjs")],{type:"text/javascript"}));const mod=await import(js);
+ mod.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([PDF_POLY+unpackText("pdfjsw")],{type:"text/javascript"}));return PDFJS=mod}
+const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg)),ms))]);
 async function pdfItems(buf){const pdfjs=await loadPdfjs();const doc=await pdfjs.getDocument({data:new Uint8Array(buf),isEvalSupported:false}).promise;const out=[];
  for(let p=1;p<=Math.min(doc.numPages,10);p++){const page=await doc.getPage(p);const vp=page.getViewport({scale:1});const tc=await page.getTextContent();
   tc.items.forEach(it=>{if(it.str&&it.str.trim())out.push({str:it.str,x:it.transform[4],y:vp.height-it.transform[5],w:it.width||0,page:p})})}
@@ -1904,12 +1908,13 @@ function icsModal(o){o=o||{};let rows=[];let evs=[];let src="";
    m.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.del,1);paint()});
    const ad=m.querySelector("#imadd");if(ad)ad.onclick=()=>{rows.push({day:1,start:"08:00",end:"09:00",text:"",room:"",c:""});paint()}};
   m.querySelector("#icsf").onchange=async e=>{const f=e.target.files[0];if(!f)return;const st=m.querySelector("#imst");
-   try{if(/\.pdf$/i.test(f.name)||f.type==="application/pdf"){st.textContent="Läser PDF:en…";src="pdf";evs=[];rows=parsePdfSchedule(await pdfItems(await f.arrayBuffer())).map(r=>Object.assign(r,{c:guessCourse(state,r.text)}))}
+   e.target.value="";st.style.color="";
+   try{if(/\.pdf$/i.test(f.name)||f.type==="application/pdf"){st.textContent="Läser PDF:en…";src="pdf";evs=[];rows=parsePdfSchedule(await withTimeout(pdfItems(await f.arrayBuffer()),30000,"Det tog för lång tid att läsa PDF:en.")).map(r=>Object.assign(r,{c:guessCourse(state,r.text)}))}
     else{src="ics";const all=parseICS(await f.text());const map={};evs=[];
      all.forEach(e=>{const day=parseD(e.date).getDay();if(e.start&&e.end&&e.date===e.endDate&&day>=1&&day<=5){const k=[day,e.start,e.end,e.summary].join("|");(map[k]=map[k]||{day,start:e.start,end:e.end,text:e.summary,room:e.location||"",n:0,weekly:false,list:[]});map[k].n++;map[k].list.push(e);if(/FREQ=WEEKLY/i.test(e.rrule))map[k].weekly=true}
       else evs.push({title:e.summary,start:e.date,end:e.endDate||e.date,type:guessType(e.summary,""),from:e.start||"",to:e.end||""})});
      rows=Object.values(map).sort((a,b)=>a.day-b.day||(a.start<b.start?-1:1)).map(r=>Object.assign(r,{c:guessCourse(state,r.text)||(r.n<2&&!r.weekly?"__event":"")}))}
-    st.textContent=f.name}catch(err){st.textContent="";src="pdf";rows=[];toast("Kunde inte läsa filen: "+(err&&err.message||err))}
+    st.textContent=f.name}catch(err){src="pdf";rows=[];st.style.color="var(--bad)";st.textContent=`Kunde inte läsa ${f.name}: ${err&&err.message||err}. Prova att uppdatera webbläsaren, eller lägg till lektionerna för hand nedan.`}
    paint()};
   m.querySelector("#icsok").onclick=()=>{let ns=0,nc=0,ne=0;const made={};let weeks=wmode;
    if(wmode==="rot"){const v=getRot();if(state.rotation&&state.rotation.n!==v.n)(state.schedule||[]).forEach(sl=>{const p=parseRot(sl.weeks);if(p&&p.n!==v.n){const ks=p.ks.filter(k=>k<=v.n);sl.weeks=ks.length?rotStr(v.n,ks):"alla"}});state.rotation=v;weeks=rotStr(v.n,[rk])}
