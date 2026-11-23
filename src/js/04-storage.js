@@ -131,8 +131,23 @@ async function downloadInstaller(){const st=$("#dlstatus");if(st)st.textContent=
    await u.downloadAndInstall(ev=>{if(ev.event==="Started")total=ev.data.contentLength||0;else if(ev.event==="Progress"){got+=ev.data.chunkLength||0;if(total)say(`Laddar ner version ${u.version}… ${Math.round(got/total*100)} %`)}else if(ev.event==="Finished")say("Installerar…")});
    say("Klart. Lärarbordet startar om.");await removeLock().catch(()=>{});if(T.process&&T.process.relaunch)await T.process.relaunch();return}}catch(e){}}
  try{const j=await latestRelease();const pat=OS==="android"?/android\.apk$/:OS==="windows"?/x64-setup\.exe$/:OS==="mac"?/universal\.dmg$/:null;const a=pat&&(j.assets||[]).find(x=>pat.test(x.name));
-  openExternal(a?a.browser_download_url:(j.html_url||RELEASES_URL));if(st)st.textContent=a?`Laddar ner ${a.name}. Installera den som vanligt, din data ligger kvar.`:"Nedladdningssidan öppnades."}
+  if(!a){openExternal(j.html_url||RELEASES_URL);if(st)st.textContent="Nedladdningssidan öppnades.";return}
+  if(DESKTOP&&OS!=="android"&&T.opener&&T.opener.openPath&&await installInApp(a,j,st))return;
+  openExternal(a.browser_download_url);if(st)st.textContent=OS==="android"?`Telefonen laddar ner ${a.name}. Tryck på den i aviseringen när den är klar och välj Installera. Din data ligger kvar.`:`Laddar ner ${a.name}. Öppna den när den är klar och installera som vanligt. Din data ligger kvar.`}
  catch(e){openExternal(RELEASES_URL);if(st)st.textContent="Nedladdningssidan öppnades."}}
+/* Datorappen: ladda ner installationsfilen till Hämtade filer och starta den, utan att gå via webbläsaren */
+async function tauriDownload(url,path,onProg){if(T.upload&&T.upload.download)return T.upload.download(url,path,onProg);
+ const ch=new T.core.Channel();ch.onmessage=p=>{try{onProg&&onProg(p)}catch(e){}};const ids=new Uint32Array(1);crypto.getRandomValues(ids);
+ return T.core.invoke("plugin:upload|download",{id:ids[0],url,filePath:path,headers:{},onProgress:ch})}
+async function installInApp(a,j,st){const say=t=>{if(st)st.textContent=t;const b=document.getElementById("savebar");if(b){b.innerHTML=`<span>${esc(t)}</span>`;b.hidden=false;TOAST_ON=true}};
+ try{const dir=await T.path.downloadDir();const path=await T.path.join(dir,a.name);const ver=String(j.tag_name||"").replace(/^v/,"");
+  if(dirty)await saveFile(false);let got=0;const total=a.size||0;say(`Laddar ner Lärarbordet ${ver}…`);
+  await tauriDownload(a.browser_download_url,path,p=>{got=p.progressTotal||got+(p.progress||0);const tot=p.total||total;if(tot)say(`Laddar ner Lärarbordet ${ver}… ${Math.min(100,Math.round(got/tot*100))} %`)});
+  await removeLock().catch(()=>{});
+  if(OS==="windows"){say("Startar installationen. Lärarbordet stängs nu och din data ligger kvar.");await T.opener.openPath(path);setTimeout(()=>{if(T.process&&T.process.exit)T.process.exit(0)},1500);return true}
+  await T.opener.openPath(path);TOAST_ON=false;const b=document.getElementById("savebar");if(b)b.hidden=true;
+  modal("Installera den nya versionen",`<p style="margin:0">Ett fönster med Lärarbordet ${esc(ver)} har öppnats.</p><ol style="margin:0;padding-left:20px;display:grid;gap:6px"><li>Dra <b>Lärarbordet</b> till mappen <b>Program</b> i fönstret.</li><li>Välj <b>Ersätt</b> när datorn frågar.</li><li>Öppna Lärarbordet igen. Din data ligger kvar.</li></ol><div class="actions"><span class="sp"></span><button class="btn pri" id="upq">Stäng Lärarbordet och installera</button></div>`,m=>m.querySelector("#upq").onclick=()=>{if(T.process&&T.process.exit)T.process.exit(0)});return true}
+ catch(e){TOAST_ON=false;updateBar();return false}}
 /* HTML-versionen: hämta den nya filen, lägg in all data och spara */
 async function updateHtmlFile(){const st=$("#dlstatus");const say=t=>{if(st)st.innerHTML=t};say("Hämtar senaste versionen…");
  let html;try{const r=await fetch(WEB_URL+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;html=await r.text()}catch(e){say("Kunde inte nå GitHub. Kontrollera internet och försök igen.");return}

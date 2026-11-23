@@ -9,7 +9,9 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_process::init());
+        .plugin(tauri_plugin_process::init())
+        // laddar ner installationsfilen för en ny version direkt i appen
+        .plugin(tauri_plugin_upload::init());
     builder
         .run(tauri::generate_context!())
         .expect("Lärarbordet kunde inte starta");

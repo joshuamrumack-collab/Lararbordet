@@ -112,19 +112,27 @@ async function pdfItems(buf){const pdfjs=await loadPdfjs();const doc=await pdfjs
 function icsModal(o){o=o||{};let rows=[];let evs=[];let src="";
  const r0=state.rotation||{n:o.n||2,start:o.start||fmtD(mondayOf(TODAY))};let wmode=o.rotK?"rot":"alla",rk=o.rotK||1,getRot=null;
  const subjOpts=()=>usedSubjects().map(id=>`<option value="${esc(id)}">${esc(subjTitle(id))}</option>`).join("");
- const cOpts=(r)=>`<option value="">Hoppa över</option>${src==="ics"?`<option value="__event" ${r.c==="__event"?"selected":""}>Händelse i kalendariet</option>`:""}<optgroup label="Lektion i kursen">${state.courses.map(x=>`<option value="${x.id}" ${r.c===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</optgroup><option value="__new" ${r.c==="__new"?"selected":""}>+ Ny kurs…</option>`;
+ const cOpts=(r)=>`<option value="" ${!r.c?"selected":""}>Välj kurs…</option><option value="__skip" ${r.c==="__skip"?"selected":""}>Hoppa över</option>${src==="ics"?`<option value="__event" ${r.c==="__event"?"selected":""}>Händelse i kalendariet</option>`:""}<optgroup label="Lektion i kursen">${state.courses.map(x=>`<option value="${x.id}" ${r.c===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</optgroup><option value="__new" ${r.c==="__new"?"selected":""}>+ Ny kurs…</option>`;
  const newC=(r,i)=>r.c!=="__new"?"":`<div class="imp-new"><div class="f"><label>Kursnamn</label><input data-nn="${i}" value="${esc(r.nn!=null?r.nn:r.text)}"></div>
   <div class="f"><label>Ämne</label><select data-ns="${i}">${subjOpts()||'<option value="">Välj ämnen under Inställningar först</option>'}</select></div>
   <div class="f"><label>Elevgrupp</label><select data-ng="${i}"><option value="">Ingen</option>${state.groups.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join("")}<option value="__new">+ Ny grupp…</option></select><input data-ngn="${i}" placeholder="Namn på gruppen" hidden></div></div>`;
+ /* Varför en rad inte kan importeras, i klartext */
+ const rowProblem=r=>{if(r.c==="__skip"||r.c==="__event")return "";
+  if(!r.c)return "Välj vilken kurs lektionen hör till, eller Hoppa över.";
+  if(r.c==="__new"){if(!usedSubjects().length)return "En ny kurs behöver ett ämne. Välj först dina ämnen under Inställningar.";if(!((r.nn!=null?r.nn:r.text)||"").trim())return "Skriv ett namn på den nya kursen.";if(r.ng==="__new"&&!(r.ngn||"").trim())return "Skriv ett namn på den nya klassen, eller välj Ingen.";}
+  if(src==="pdf"){if(!r.start||!r.end)return "Skriv när lektionen börjar och slutar (tt:mm).";if(r.end<=r.start)return "Sluttiden måste vara efter starttiden.";}
+  return ""};
+ let showProblems=false;
  const dayOpts=d=>[1,2,3,4,5].map(k=>`<option value="${k}" ${+d===k?"selected":""}>${cap(DAY[k])}</option>`).join("");
  const draw=()=>{if(!src)return "";
   if(!rows.length&&!evs.length)return `<p class="small" style="color:var(--bad)">${src==="pdf"?"Hittade inga lektioner i PDF:en. Den behöver ha text (inte en inskannad bild) och rubrikerna Måndag–Fredag. Du kan lägga till lektionerna för hand nedan.":"Hittade inga händelser i filen."}</p>${src==="pdf"?`<button class="btn small" id="imadd">+ Lägg till rad</button>`:""}`;
   return `${rows.length||src==="pdf"?`<h3 style="margin:0">${src==="pdf"?"Lektioner i PDF:en":"Händelser med klockslag"} (${rows.length})</h3><p class="small muted" style="margin:0">${src==="pdf"?"Kontrollera dag och tider och välj kurs för varje lektion. Du kan rätta det som blev fel.":"Välj om varje händelse är en lektion i en kurs (blir ditt veckoschema) eller en händelse i kalendariet."}</p>
-   <div class="imp-rows">${rows.map((r,i)=>`<div class="imp-row ${src}" data-i="${i}">
+   ${showProblems&&rows.some(rowProblem)?`<div class="imp-err" role="alert"><b>${rows.filter(rowProblem).length} ${rows.filter(rowProblem).length===1?"rad behöver":"rader behöver"} åtgärdas innan du kan importera.</b> De är markerade med rött nedan.</div>`:""}
+   <div class="imp-rows">${rows.map((r,i)=>`<div class="imp-row ${src} ${showProblems&&rowProblem(r)?"bad":""} ${r.c==="__skip"?"skip":""}" data-i="${i}">
     ${src==="pdf"?`<select data-f="day">${dayOpts(r.day)}</select><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="tt:mm" autocomplete="off" data-f="start" value="${esc(r.start)}"><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="tt:mm" autocomplete="off" data-f="end" value="${esc(r.end)}">`:`<span class="num small"><b>${cap(DAY[r.day]).slice(0,3)} ${esc(r.start)}–${esc(r.end)}</b>${r.n>1?`<br>${r.n} gånger`:""}</span>`}
     <span class="imp-t">${src==="pdf"?`<input data-f="text" value="${esc(r.text)}" placeholder="Text i schemat">`:`<b>${esc(r.text)}</b>`}${r.room?`<span class="small muted"> ${esc(r.room)}</span>`:""}</span>
     <select data-f="c">${cOpts(r)}</select>${src==="pdf"?`<button class="btn ghost small" data-del="${i}" aria-label="Ta bort raden">×</button>`:""}
-    ${newC(r,i)}</div>`).join("")}</div>${src==="pdf"?`<button class="btn small" id="imadd" style="justify-self:start">+ Lägg till rad</button>`:""}`:""}
+    ${newC(r,i)}${showProblems&&rowProblem(r)?`<span class="imp-why">${esc(rowProblem(r))}</span>`:""}</div>`).join("")}</div>${src==="pdf"?`<button class="btn small" id="imadd" style="justify-self:start">+ Lägg till rad</button>`:""}`:""}
   ${evs.length?`<label class="chk" style="margin-top:6px"><input type="checkbox" id="icsev" checked><span>Lägg ${evs.length} heldagshändelser (t.ex. lov) i kalendariet</span></label>`:""}`};
  modal("Importera schema",`<p class="small" style="margin:0">Välj en <b>PDF</b> av ditt schema, t.ex. sparad eller utskriven från Skola24 eller en annan schemavisare, eller en <b>kalenderfil (.ics)</b> från Google Kalender eller Outlook.</p>
  <ul class="small" style="margin:0;padding-left:18px;display:grid;gap:4px"><li><b>Skola24 och andra schemavisare:</b> visa en vecka och välj Skriv ut → Spara som PDF.</li><li><b>Google Kalender:</b> Inställningar → Importera och exportera → Exportera.</li><li><b>Outlook:</b> Arkiv → Spara kalender.</li></ul>
@@ -139,7 +147,7 @@ function icsModal(o){o=o||{};let rows=[];let evs=[];let src="";
   const fillK=n=>{imk.innerHTML=Array.from({length:n},(_,i)=>`<option value="${i+1}" ${i+1===rk?"selected":""}>${ROT_L[i]}-veckan</option>`).join("")};
   getRot=bindRotFields(m,n=>{if(rk>n)rk=n;fillK(n)});imk.onchange=()=>{rk=+imk.value};
   const wupd=()=>{wmode=imw.value;imrot.hidden=wmode!=="rot";imrot.style.display=wmode==="rot"?"grid":"none"};imw.onchange=wupd;wupd();
-  const paint=()=>{m.querySelector("#icsb").innerHTML=draw();m.querySelector("#icsok").disabled=!rows.some(r=>r.c)&&!evs.length;bind()};
+  const paint=()=>{m.querySelector("#icsb").innerHTML=draw();m.querySelector("#icsok").disabled=!src;bind()};
   const bind=()=>{m.querySelectorAll(".imp-row").forEach(el=>{const r=rows[+el.dataset.i];el.querySelectorAll("[data-f]").forEach(f=>f.onchange=()=>{const k=f.dataset.f;r[k]=k==="day"?+f.value:(k==="start"||k==="end")?normTime(f.value):f.value;if(k==="c"){if(f.value==="__new"&&!usedSubjects().length){toast("Välj först dina ämnen under Inställningar.")}paint()}else if(k==="text"&&!r.c){r.c=guessCourse(state,r.text);paint()}});
     const nn=el.querySelector("[data-nn]");if(nn)nn.oninput=()=>{r.nn=nn.value};const ns=el.querySelector("[data-ns]");if(ns){if(!r.ns){const tl=(r.text||"").toLowerCase();r.ns=usedSubjects().find(id=>tl.includes(((subj(id)||{}).name||"").toLowerCase()))||ns.value}ns.value=r.ns;ns.onchange=()=>{r.ns=ns.value}}
     const ng=el.querySelector("[data-ng]"),ngn=el.querySelector("[data-ngn]");if(ng){if(r.ng)ng.value=r.ng;ngn.hidden=ng.value!=="__new";ngn.value=r.ngn||"";ng.onchange=()=>{r.ng=ng.value;ngn.hidden=ng.value!=="__new";if(!ngn.hidden)ngn.focus()};ngn.oninput=()=>{r.ngn=ngn.value}}});
@@ -154,18 +162,23 @@ function icsModal(o){o=o||{};let rows=[];let evs=[];let src="";
      rows=Object.values(map).sort((a,b)=>a.day-b.day||(a.start<b.start?-1:1)).map(r=>Object.assign(r,{c:guessCourse(state,r.text)||(r.n<2&&!r.weekly?"__event":"")}))}
     st.textContent=f.name}catch(err){src="pdf";rows=[];st.style.color="var(--bad)";st.textContent=`Kunde inte läsa ${f.name}: ${err&&err.message||err}. Prova att uppdatera webbläsaren, eller lägg till lektionerna för hand nedan.`}
    paint()};
-  m.querySelector("#icsok").onclick=()=>{let ns=0,nc=0,ne=0;const made={};let weeks=wmode;
+  m.querySelector("#icsok").onclick=()=>{
+   const evOn=(m.querySelector("#icsev")||{}).checked;
+   if(rows.some(rowProblem)){showProblems=true;paint();const f=m.querySelector(".imp-row.bad");if(f)f.scrollIntoView({block:"center",behavior:"smooth"});return}
+   if(!rows.some(r=>r.c&&r.c!=="__skip")&&!(evs.length&&evOn)){showProblems=true;paint();const st=m.querySelector("#imst");if(st){st.style.color="var(--bad)";st.textContent=rows.length?"Alla rader är satta till Hoppa över. Välj kurs för de lektioner du vill importera.":"Det finns inget att importera. Lägg till lektioner med + Lägg till rad."}return}
+   let ns=0,nc=0,ne=0,dup=0;const made={};let weeks=wmode;
    if(wmode==="rot"){const v=getRot();if(state.rotation&&state.rotation.n!==v.n)(state.schedule||[]).forEach(sl=>{const p=parseRot(sl.weeks);if(p&&p.n!==v.n){const ks=p.ks.filter(k=>k<=v.n);sl.weeks=ks.length?rotStr(v.n,ks):"alla"}});state.rotation=v;weeks=rotStr(v.n,[rk])}
-   rows.forEach(r=>{let cid=r.c;if(!cid)return;
+   rows.forEach(r=>{let cid=r.c;if(!cid||cid==="__skip")return;
     if(cid==="__event"){(r.list||[]).forEach(e=>{if(!state.events.some(x=>x.title===e.summary&&x.start===e.date)){state.events.push({id:uid(),title:e.summary,start:e.date,end:e.date,type:guessType(e.summary,""),groups:[],from:e.start,to:e.end});ne++}});return}
     if(cid==="__new"){const name=(r.nn!=null?r.nn:r.text).trim()||"Ny kurs";const key=name+"|"+(r.ns||"")+"|"+(r.ng||"")+"|"+(r.ngn||"");
      if(!made[key]){let gid=r.ng||"";if(gid==="__new"){const gn=(r.ngn||"").trim()||"Ny grupp";const ex=state.groups.find(g=>g.name===gn);if(ex)gid=ex.id;else{gid=uid();state.groups.push({id:gid,name:gn,students:[]})}}
       const ncs={id:uid(),name,subjectId:r.ns||usedSubjects()[0]||"",groupId:gid,color:COLORS[state.courses.length%COLORS.length]};state.courses.push(ncs);made[key]=ncs.id;nc++}cid=made[key]}
     if(!r.start||!r.end||r.end<=r.start)return;
     const ex=state.schedule.find(x=>x.courseId===cid&&+x.day===+r.day&&x.start===r.start&&x.end===r.end);
-    if(ex){const mw=mergeWeeks(ex.weeks||"alla",weeks);if(mw){if(mw!==ex.weeks){ex.weeks=mw;ns++}return}}
+    if(ex){const mw=mergeWeeks(ex.weeks||"alla",weeks);if(mw){if(mw!==ex.weeks){ex.weeks=mw;ns++}else dup++;return}}
     state.schedule.push({id:uid(),courseId:cid,day:+r.day,start:r.start,end:r.end,room:r.room||"",weeks});ns++});
    let res={added:0,updated:0};const evb=m.querySelector("#icsev");if(evb&&evb.checked)res=mergeEvents(state,evs.map(e=>({title:e.title,start:e.start,end:e.end,type:e.type})));
    closeModal();commit();
    if(wmode==="rot"&&rk<state.rotation.n){icsModal({rotK:rk+1,note:`${ROT_L[rk-1]}-veckan är importerad (${ns} lektioner). Välj filen för ${ROT_L[rk]}-veckan, eller tryck Avbryt om du är klar.`});return}
-   toast(`${ns} lektioner i veckoschemat${nc?`, ${nc} nya kurser`:""}${ne+res.added?`, ${ne+res.added} nya händelser`:""}${res.updated?`, ${res.updated} uppdaterade`:""}.`)}})}
+   if(!ns&&dup&&!nc&&!ne&&!res.added){toast(dup===1?"Inget nytt importerades: lektionen fanns redan i schemat.":`Inget nytt importerades: alla ${dup} lektioner fanns redan i schemat.`);return}
+   toast(`${ns} lektioner i veckoschemat${dup?` (${dup} fanns redan)`:""}${nc?`, ${nc} nya kurser`:""}${ne+res.added?`, ${ne+res.added} nya händelser`:""}${res.updated?`, ${res.updated} uppdaterade`:""}.`)}})}

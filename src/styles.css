@@ -547,3 +547,7 @@ details.more-open summary{cursor:pointer;color:var(--muted);text-align:center;pa
 .mx .cell.sel{outline:3px solid var(--accent,#2f6db3);outline-offset:-3px;border-radius:4px}
 .mx .cell.nope{animation:nope .3s}@keyframes nope{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .to-row .chk{align-self:center;margin:0 6px 0 0;display:flex;align-items:center;gap:4px}
+.imp-err{background:var(--bad-bg);color:var(--bad);border-radius:10px;padding:10px 12px}
+.imp-row.bad{outline:2px solid var(--bad);outline-offset:2px;border-radius:8px}
+.imp-row.skip{opacity:.55}
+.imp-why{grid-column:1/-1;color:var(--bad);font-size:.85rem;font-weight:600}
