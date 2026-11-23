@@ -54,7 +54,7 @@ const A={
  wheel:el=>{ui.wheel=el.dataset.id;saveUI();render()},
  wheelmode:el=>{ui.wheelMode=el.dataset.v;render()},
  "new-event":()=>eventModal(), "edit-event":el=>eventModal(el.dataset.id),
- "goto-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter=group(ui.covGroup)?"g:"+ui.covGroup:"all";ui.gapsOnly=true;saveUI();location.hash="innehall"},
+ "goto-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter=covGroupNow()==="all"?"all":"g:"+covGroupNow();ui.gapsOnly=true;saveUI();location.hash="innehall"},
  "sel-subject":el=>{ui.subject=el.dataset.id;if(!String(ui.subjFilter).startsWith("g:"))ui.subjFilter="all";saveUI();render()},
  gaps:el=>{ui.gapsOnly=el.dataset.v==="1";saveUI();render()},
  "toggle-manual":el=>{const id=el.dataset.id,g=el.dataset.g,k=g?g+"|"+id:id;if(state.manual[id])delete state.manual[id];else if(state.manual[k])delete state.manual[k];else state.manual[k]=true;commit()},
@@ -77,7 +77,7 @@ const A={
   Object.values(state.grades).forEach(m=>Object.values(m).forEach(v=>{const i=from.levels.findIndex(l=>l.k===v.k);if(i>=0)v.k=to.levels[Math.round(i/(from.levels.length-1)*(to.levels.length-1))].k}));state.scale=el.value;commit()}
 };
 document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const f=A[el.dataset.a];if(!f)return;if(el.dataset.a==="scale")return;if(el.dataset.a==="ov"){if(e.target===el)closeModal();return}if(el.tagName!=="A")e.preventDefault();f(el,e)});
-document.addEventListener("change",e=>{if(e.target.id==="subjfilter"){ui.subjFilter=e.target.value;if(e.target.value.startsWith("g:"))ui.covGroup=e.target.value.slice(2);else if(e.target.value==="all")ui.covGroup="all";saveUI();render()}if(e.target.id==="covgroup"){ui.covGroup=e.target.value;saveUI();render()}if(e.target.id==="acourse"){ui.acourse=e.target.value;saveUI();render()}if(e.target.dataset.a==="scale")A.scale(e.target);if(e.target.id==="chkupd"){state.checkUpdates=e.target.checked;commit()}});
+document.addEventListener("change",e=>{if(e.target.id==="subjfilter"){ui.subjFilter=e.target.value;if(e.target.value.startsWith("g:"))ui.covGroup=e.target.value.slice(2);saveUI();render()}if(e.target.id==="covgroup"){ui.covGroup=e.target.value;saveUI();render()}if(e.target.id==="acourse"){ui.acourse=e.target.value;saveUI();render()}if(e.target.dataset.a==="scale")A.scale(e.target);if(e.target.id==="chkupd"){state.checkUpdates=e.target.checked;commit()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();if((e.key==="Enter"||e.key===" ")&&e.target.matches(".arc,[data-a='edit-event']")){e.preventDefault();e.target.dispatchEvent(new MouseEvent("click",{bubbles:true}))}});
 $("#importfile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{state=await loadText(await f.text(),f.name);state.example=false;commit();modal("Importerat",`<p style="margin:0">Datan är inläst: ${state.courses.length} kurser, ${state.units.length} arbetsområden, ${state.assessments.length} bedömningar.</p><div class="actions"><button class="btn pri" data-a="close">Klart</button></div>`)}catch(err){modal("Kunde inte importera",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en exporterad .json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}e.target.value=""});
 window.addEventListener("hashchange",()=>{closeModal();render();window.scrollTo(0,0)});
