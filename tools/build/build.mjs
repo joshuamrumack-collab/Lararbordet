@@ -12,7 +12,7 @@ const data = [
   `<script type="application/gzip-base64" id="crit-gz">${b64("data/crit.json.gz")}</script>`,
   `<script type="application/gzip-base64" id="pdfjs-gz">${b64("data/pdfjs.min.mjs.gz")}</script>`,
   `<script type="application/gzip-base64" id="pdfjsw-gz">${b64("data/pdfjs.worker.min.mjs.gz")}</script>`,
-  `<script>/* fflate 0.8.2 – MIT License, Copyright (c) 2023 Arjun Barrett */\n${r("src/vendor-fflate-0.8.2.min.js").replace(/<\/script/gi, "<\\/script")}</script>`,
+  `<script>/* fflate 0.8.3 – MIT License, Copyright (c) 2026 Arjun Barrett */\n${r("src/vendor-fflate-0.8.3.min.js").replace(/<\/script/gi, "<\\/script")}</script>`,
 ].join("\n");
 const version = JSON.parse(r("package.json")).version;
 let out = r("src/template.html");
