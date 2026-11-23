@@ -42,7 +42,6 @@ const HKEY="fil:"+location.pathname;
 const IDB={open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("lararbordet",1);r.onupgradeneeded=()=>r.result.createObjectStore("h");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
  async get(k){const db=await this.open();return new Promise(res=>{const t=db.transaction("h").objectStore("h").get(k);t.onsuccess=()=>res(t.result||null);t.onerror=()=>res(null)})},
  async set(k,v){const db=await this.open();return new Promise(res=>{const t=db.transaction("h","readwrite").objectStore("h").put(v,k);t.onsuccess=()=>res();t.onerror=()=>res()})}};
-if(!DESKTOP&&canPick){IDB.get(HKEY).then(h=>{storedHandle=h;updateBar()}).catch(()=>{})}
 let TOAST_ON=false;
 function updateBar(){const b=document.getElementById("savebar");if(!b||TOAST_ON)return;
  if(DESKTOP||READONLY||!dirty||saving||fileHandle||BAR_HIDDEN){b.hidden=true;return}
@@ -63,8 +62,8 @@ function pickReadOnlyInput(){const inp=document.createElement("input");inp.type=
  inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;try{await openReadOnly(await f.text(),f.name)}catch(e){if(e&&e.cancelled)return;modal("Kunde inte öppna",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj din <b>lararbordet.json</b> eller <b>lararbordet.html</b>.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}};inp.click()}
 function commit(quiet){if(READONLY){state=normalize(JSON.parse(RO_SNAP));render();toast("Läsläge: ändringar sparas inte. Ändra på datorn.");return}
  undoRecord();state.updated=Date.now();dirty=true;if(!quiet)render();setSync();
- if(DESKTOP||fileHandle){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),DESKTOP?700:1200);return}
- tryStored().then(ok=>{if(ok){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),600)}})}
+ if(DESKTOP||fileHandle){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),400);return}
+ tryStored().then(ok=>{if(ok){clearTimeout(saveT);saveT=setTimeout(()=>saveFile(false),400)}})}
 function downloadBlob(name,data,mime){const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000)}
 
 /* skrivbordsläge */
@@ -94,7 +93,7 @@ async function saveFile(forcePicker){if(saving){clearTimeout(saveT);saveT=setTim
   if(canPick){
    try{if(!fileHandle||forcePicker){fileHandle=await window.showSaveFilePicker({suggestedName:storedHandle?storedHandle.name:FILENAME,types:[{description:"Lärarbordet (HTML)",accept:{"text/html":[".html"]}}]});storedHandle=fileHandle;IDB.set(HKEY,fileHandle).catch(()=>{})}
     if(!forcePicker&&!FORCE_ONCE&&!(await htmlUnchanged())){showConflict();throw {conflict:true}}FORCE_ONCE=false;
-    const w=await fileHandle.createWritable();await w.write(html);await w.close();htmlMtime=(await fileHandle.getFile()).lastModified;dirty=false;savedAt=new Date();syncMode="file";backupNow(null).catch(()=>{});return}
+    const w=await fileHandle.createWritable();await w.write(isJsonName(fileHandle.name)?await serialize():html);await w.close();htmlMtime=(await fileHandle.getFile()).lastModified;dirty=false;savedAt=new Date();syncMode="file";backupNow(null).catch(()=>{});return}
    catch(e){if(e&&e.name==="AbortError")return;if(e&&e.conflict)throw e;fileHandle=null}
   }
   downloadBlob(FILENAME,html,"text/html");dirty=false;savedAt=new Date();syncMode="downloaded";

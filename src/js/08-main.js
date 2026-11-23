@@ -5,6 +5,9 @@ if(IS_MOBILE_APP){location.hash="fil";render()}
 else if(DESKTOP)loadBkConf().then(desktopInit);
 else if(ENC_PENDING){lockedScreen();unlockStart()}
 else if(FIRST&&narrow){FIRST_PHONE=true;location.hash="fil";render()}
+else if(!DESKTOP&&canPick)HANDLE_READY.then(autoOpen).then(on=>{if(!on&&FIRST)welcomeModal()});
 else if(FIRST)welcomeModal();
 /* sparar också med jämna mellanrum, som en extra säkerhet om något sparande har missats */
+/* sparar direkt om fliken stängs eller byts medan en ändring väntar */
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&dirty&&!READONLY&&(DESKTOP?filePath:fileHandle)){clearTimeout(saveT);saveFile(false)}});
 setInterval(()=>{if(dirty&&!saving&&!READONLY&&(DESKTOP?filePath:fileHandle))saveFile(false)},45000);

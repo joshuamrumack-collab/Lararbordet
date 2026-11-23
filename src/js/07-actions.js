@@ -69,7 +69,7 @@ const A={
  "export-csv":()=>offerFile("omdomen-"+(group(ui.group)||{name:"grupp"}).name+".csv","﻿"+csv(),"text/csv"),
  "export-json":async()=>offerFile("lararbordet-"+fmtD(TODAY)+".json",await serialize(true),"application/json"),
  "import-json":()=>$("#importfile").click(),
- save:()=>{if(READONLY){roInfo();return}if(syncMode==="conflict")showConflict(true);else saveFile(false)}, "save-as":()=>saveFile(true), "open-file":()=>desktopOpen(),
+ save:()=>{if(READONLY){roInfo();return}if(syncMode==="conflict")showConflict(true);else saveFile(false)}, "save-as":()=>saveFile(true), "open-file":()=>DESKTOP?desktopOpen():autoFileModal(), "auto-file":()=>autoFileModal(), "auto-pick":()=>{autoLater();autoFileModal()}, "auto-resume":()=>autoResume(), "auto-later":()=>autoLater(), "auto-stop":()=>autoStop(),
  "new-subject":()=>subjectModal(),
  "del-subject":el=>confirmBox("Ämnet och dess innehåll tas bort. Kurser i ämnet blir utan ämne.",()=>{delete state.custom[el.dataset.id];commit()}),
  "save-year":()=>{const s=val("ys"),e=val("ye");if(s&&e&&e>s){state.year={start:s,end:e};commit()}},
