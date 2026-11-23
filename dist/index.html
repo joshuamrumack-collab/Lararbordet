@@ -571,7 +571,7 @@ body.phone .hsearch+.sync{margin-left:auto}
 "use strict";
 /* ===== 01-helpers.js ===== */
 /* ---------- hjälpfunktioner ---------- */
-const APP_VERSION="1.15.0";
+const APP_VERSION="1.15.1";
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -737,9 +737,12 @@ const unit=id=>state.units.find(u=>u.id===id);
 const group=id=>state.groups.find(g=>g.id===id);
 const allItems=sid=>{const s=subj(sid);return s?s.areas.flatMap(a=>a.items):[]};
 function coverage(sid,courseFilter){
- const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,tests:[],manual:!!state.manual[i.id]});
+ /* courseFilter: "all", ett kurs-id eller "g:<grupp-id>" för en klass */
+ const gf=typeof courseFilter==="string"&&courseFilter.startsWith("g:")?courseFilter.slice(2):null;const one=!gf&&courseFilter&&courseFilter!=="all"?state.courses.find(c=>c.id===courseFilter):null;const mg=gf||(one&&one.groupId)||null;
+ const man=id=>!!state.manual[id]||(mg?!!state.manual[mg+"|"+id]:(!gf&&!one&&state.groups.some(g=>state.manual[g.id+"|"+id])));
+ const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,tests:[],manual:man(i.id)});
  const rank={gap:0,planned:1,ongoing:2,covered:3};const map={planerad:"planned",pagar:"ongoing",klar:"covered",bedomd:"covered"};
- const cs=state.courses.filter(c=>c.subjectId===sid&&(courseFilter==="all"||!courseFilter||c.id===courseFilter)).map(c=>c.id);
+ const cs=state.courses.filter(c=>c.subjectId===sid&&(gf?c.groupId===gf:(courseFilter==="all"||!courseFilter||c.id===courseFilter))).map(c=>c.id);
  state.units.filter(u=>cs.includes(u.courseId)).forEach(u=>(u.contentIds||[]).forEach(id=>{const r=res[id];if(!r)return;r.units.push(u);if(u.status==="bedomd")r.assessed=true;const st=map[u.status]||"planned";if(rank[st]>rank[r.state])r.state=st}));
  state.assessments.filter(a=>cs.includes(a.courseId)).forEach(a=>{const u=unit(a.unitId);(u?u.contentIds||[]:[]).concat(a.contentIds||[]).forEach(id=>{if(res[id]){res[id].assessed=true;if(!res[id].tests.includes(a))res[id].tests.push(a)}})});
  Object.values(res).forEach(r=>{if(r.manual)r.state="covered"});
@@ -1395,7 +1398,8 @@ function vOverview(){
  const active=state.units.filter(u=>parseD(u.start)<=TODAY&&parseD(u.end)>=TODAY||u.status==="pagar").filter((u,i,a)=>a.indexOf(u)===i);
  const nowHtml=active.length?active.map(u=>{const c=course(u.courseId)||{};const s=parseD(u.start),e=parseD(u.end);const p=Math.max(0,Math.min(100,Math.round((TODAY-s)/(e-s||1)*100)));
    return `<button class="now" data-a="edit-unit" data-id="${u.id}"><span class="bar" style="background:${c.color}"></span><span class="t"><span class="small muted">${esc(c.name||"")} · ${wkRange(u.start,u.end)}</span><b>${esc(u.title)}</b><span class="prog" style="color:${c.color}"><i style="width:${p}%"></i></span></span><span class="pill p-${u.status}">${STATUS[u.status]}</span></button>`}).join(""):`<div class="empty">Inget arbetsområde pågår just nu. <a href="#planering">Planera ett</a>.</div>`;
- const cov=(usedSubjects().length?"":`<div class="empty">Du har inte valt några ämnen än. <button class="btn pri" data-a="picker">Välj dina ämnen</button></div>`)+usedSubjects().map(sid=>{const s=covSummary(sid,"all");const n=s.n||1;return `<button class="cov-row" data-a="goto-subject" data-id="${sid}"><b>${esc(subj(sid).name)} <span class="muted small">${esc(subj(sid).stage||"")}</span><br><span class="muted small" style="font-weight:400">${esc(FORM_LABEL[formOf(sid)])}</span></b><span class="stack" role="img" aria-label="${s.covered} av ${s.n} täckta"><i class="s-c" style="width:${s.covered/n*100}%"></i><i class="s-o" style="width:${s.ongoing/n*100}%"></i><i class="s-p" style="width:${s.planned/n*100}%"></i></span><span class="num small">${s.pct} % ${s.gap?`<span class="pill p-gap">${s.gap} luckor</span>`:""}</span></button>`}).join("");
+ let cov=(usedSubjects().length?"":`<div class="empty">Du har inte valt några ämnen än. <button class="btn pri" data-a="picker">Välj dina ämnen</button></div>`)+(()=>{const cg=group(ui.covGroup)?ui.covGroup:"all";const f=cg==="all"?"all":"g:"+cg;const sids=cg==="all"?usedSubjects():[...new Set(state.courses.filter(c=>c.groupId===cg).map(c=>c.subjectId))].filter(id=>subj(id));
+  return sids.length?sids:[]})().map(sid=>{const s=covSummary(sid,group(ui.covGroup)?"g:"+ui.covGroup:"all");const n=s.n||1;return `<button class="cov-row" data-a="goto-subject" data-id="${sid}"><b>${esc(subj(sid).name)} <span class="muted small">${esc(subj(sid).stage||"")}</span><br><span class="muted small" style="font-weight:400">${esc(FORM_LABEL[formOf(sid)])}</span></b><span class="stack" role="img" aria-label="${s.covered} av ${s.n} täckta"><i class="s-c" style="width:${s.covered/n*100}%"></i><i class="s-o" style="width:${s.ongoing/n*100}%"></i><i class="s-p" style="width:${s.planned/n*100}%"></i></span><span class="num small">${s.pct} % ${s.gap?`<span class="pill p-gap">${s.gap} luckor</span>`:""}</span></button>`}).join("");if(!cov&&group(ui.covGroup))cov=`<p class="small muted">${esc(group(ui.covGroup).name)} har inga kurser än. Koppla en kurs till klassen under Planering.</p>`;
  const horizon=addDays(TODAY,35);
  const up=[...state.events.filter(e=>parseD(e.end)>=TODAY&&parseD(e.start)<=horizon).map(e=>({d:e.start,t:e.title,k:e.type==="lov"?"Lov":e.type==="deadline"?"Deadline":"Händelse",c:"var(--muted)"})),
   ...state.units.filter(u=>parseD(u.start)>TODAY&&parseD(u.start)<=horizon).map(u=>({d:u.start,t:u.title,k:"Startar · "+((course(u.courseId)||{}).name||""),c:(course(u.courseId)||{}).color})),
@@ -1412,7 +1416,7 @@ function vOverview(){
   <div><a href="#arshjul" aria-label="Öppna årshjulet" style="display:block">${wheelSVG("all",true)}</a><div class="wheel-leg">${state.courses.map(c=>`<span><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join("")}</div></div>
  </section>
  <div class="grid2">
-  <section class="panel"><div class="panel-h"><h2>Täckning av centralt innehåll</h2><span class="sp"></span><a class="btn ghost" href="#innehall">Visa luckor</a></div>${cov}
+  <section class="panel"><div class="panel-h"><h2>Täckning av centralt innehåll</h2><span class="sp"></span>${state.groups.length?`<select class="inline" id="covgroup" aria-label="Visa för klass"><option value="all">Alla klasser</option>${state.groups.map(g=>`<option value="${g.id}" ${ui.covGroup===g.id?"selected":""}>${esc(g.name)}</option>`).join("")}</select>`:""}<a class="btn ghost" href="#innehall">Visa luckor</a></div>${cov}
    <div class="legend"><span><i class="s-c"></i>Genomfört</span><span><i class="s-o"></i>Pågår</span><span><i class="s-p"></i>Planerat</span><span><i style="background:var(--bad-bg)"></i>Lucka</span></div></section>
   <section class="panel"><div class="panel-h"><h2>Kommande fem veckor</h2></div>${upHtml}</section>
  </div>
@@ -1549,19 +1553,21 @@ function vContent(){
  const subs=usedSubjects().map(subj);
  if(!subs.length)return `<section class="panel"><div class="empty"><h2 style="margin-bottom:8px">Välj vilka ämnen du undervisar i</h2><p>Allt centralt innehåll för grundskolan, anpassade grundskolan, gymnasieskolan och anpassade gymnasieskolan, även ämnesområden, finns inbyggt, hämtat från Skolverket. Välj de ämnen och årskurser eller nivåer du har.</p><button class="btn pri" data-a="picker">Välj ämnen</button> <button class="btn" data-a="new-subject">+ Eget ämne</button></div></section>`;
  if(!subs.some(x=>x.id===ui.subject))ui.subject=subs[0].id;const s=subj(ui.subject);
- const cs=state.courses.filter(c=>c.subjectId===s.id);if(ui.subjFilter!=="all"&&!cs.some(c=>c.id===ui.subjFilter))ui.subjFilter="all";
+ const cs=state.courses.filter(c=>c.subjectId===s.id);const gs=state.groups.filter(g=>cs.some(c=>c.groupId===g.id));
+ if(ui.subjFilter!=="all"&&!cs.some(c=>c.id===ui.subjFilter)&&!gs.some(g=>"g:"+g.id===ui.subjFilter))ui.subjFilter="all";
+ const fg=ui.subjFilter.startsWith("g:")?ui.subjFilter.slice(2):((cs.find(c=>c.id===ui.subjFilter)||{}).groupId||"");
  const cov=coverage(s.id,ui.subjFilter);const sum=covSummary(s.id,ui.subjFilter);
- const chips=subs.map(x=>{const g=covSummary(x.id,"all").gap;return `<button class="chip" aria-pressed="${x.id===s.id}" data-a="sel-subject" data-id="${x.id}">${esc(x.name)} ${esc(x.stage||"")}${g?` <span class="pill p-gap" style="padding:0 6px">${g}</span>`:""}</button>`}).join("");
+ const chips=subs.map(x=>{const fgx=ui.subjFilter.startsWith("g:")&&state.courses.some(c=>c.subjectId===x.id&&"g:"+c.groupId===ui.subjFilter)?ui.subjFilter:"all";const g=covSummary(x.id,fgx).gap;return `<button class="chip" aria-pressed="${x.id===s.id}" data-a="sel-subject" data-id="${x.id}">${esc(x.name)} ${esc(x.stage||"")}${g?` <span class="pill p-gap" style="padding:0 6px">${g}</span>`:""}</button>`}).join("");
  const notAssessed=Object.values(cov).filter(r=>r.state==="covered"&&!r.assessed&&!r.manual).length;
  const areas=s.areas.map(a=>{const items=a.items.filter(i=>!ui.gapsOnly||cov[i.id].state==="gap");const ac=a.items.filter(i=>cov[i.id].state==="covered").length;
   if(ui.gapsOnly&&!items.length)return "";
   return `<div class="area"><div class="area-h"><h3>${esc(a.name)}</h3><span class="small muted num">${ac}/${a.items.length} genomförda${(()=>{const n=new Set(a.items.flatMap(i=>cov[i.id].tests)).size;return n?` · bedömt i ${n} uppgift${n>1?"er":""}`:""})()}</span><span class="sp" style="flex:1"></span><button class="btn ghost small" data-a="add-item" data-area="${a.id}">+ Eget innehåll</button></div>
   ${items.map(i=>{const r=cov[i.id];const lab={covered:"Genomfört",ongoing:"Pågår",planned:"Planerat",gap:"Lucka"}[r.state];
-   return `<div class="item ${r.state==="gap"?"gap":""}"><button class="check" role="checkbox" aria-checked="${r.manual}" aria-label="Markera som täckt utanför planeringen" title="Markera som täckt utanför planeringen" data-a="toggle-manual" data-id="${i.id}">${r.manual?CHECK:""}</button>
+   return `<div class="item ${r.state==="gap"?"gap":""}"><button class="check" role="checkbox" aria-checked="${r.manual}" aria-label="Markera som täckt utanför planeringen" title="Markera som täckt utanför planeringen" data-a="toggle-manual" data-id="${i.id}" data-g="${fg}">${r.manual?CHECK:""}</button>
    <div class="txt">${esc(i.text)}${i.custom?' <span class="small muted">(eget)</span>':""}<div class="links"><span class="pill p-${r.state}">${lab}</span>${r.manual?'<span class="pill p-covered">Manuellt avbockat</span>':""}${r.assessed?`<span class="pill p-warn" title="${esc(r.tests.map(a=>a.title).join(", "))}">Bedömt${r.tests.length>1?" "+r.tests.length+" gånger":r.tests.length?" 1 gång":""}</span>`:""}${r.units.map(u=>`<button class="ulink" data-a="edit-unit" data-id="${u.id}"><span class="dot" style="background:${(course(u.courseId)||{}).color};width:7px;height:7px"></span> ${esc(u.title)}</button>`).join("")}${i.custom?`<button class="ulink" data-a="del-item" data-id="${i.id}">Ta bort</button>`:""}</div></div></div>`}).join("")}</div>`}).join("");
  return `<section class="panel"><div class="toolbar"><div class="chips">${chips}</div><span class="sp"></span><button class="btn" data-a="picker">Välj ämnen</button></div></section>
  <section class="panel"><div class="panel-h"><div><h1>${esc(s.name)} <span class="muted" style="font-weight:500">${esc(s.stage||"")}</span></h1><span class="small muted">${esc(FORM_LABEL[s.form||"X"])}</span></div><span class="sp"></span>
-  ${cs.length>1?`<select class="inline" id="subjfilter" aria-label="Filtrera på kurs"><option value="all">Alla kurser i ämnet</option>${cs.map(c=>`<option value="${c.id}" ${ui.subjFilter===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>`:""}
+  ${cs.length>1||gs.length?`<select class="inline" id="subjfilter" aria-label="Visa för klass eller kurs"><option value="all">Alla klasser och kurser</option>${gs.length?`<optgroup label="Klass">${gs.map(g=>`<option value="g:${g.id}" ${ui.subjFilter==="g:"+g.id?"selected":""}>${esc(g.name)}</option>`).join("")}</optgroup>`:""}${cs.length>1?`<optgroup label="Kurs">${cs.map(c=>`<option value="${c.id}" ${ui.subjFilter===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</optgroup>`:""}</select>`:""}
   <div class="seg"><button aria-pressed="${ui.cview!=="krit"}" data-a="cview" data-v="ci">Centralt innehåll</button><button aria-pressed="${ui.cview==="krit"}" data-a="cview" data-v="krit">Betygskriterier</button></div>
   ${ui.cview==="krit"?"":`<div class="seg"><button aria-pressed="${!ui.gapsOnly}" data-a="gaps" data-v="0">Allt</button><button aria-pressed="${ui.gapsOnly}" data-a="gaps" data-v="1">Bara luckor</button></div>`}</div>
   <div class="kpis" style="margin-bottom:10px"><div class="kpi"><b class="num">${sum.pct} %</b><span>genomfört</span></div><div class="kpi"><b class="num">${sum.ongoing+sum.planned}</b><span>pågår eller planerat</span></div><div class="kpi"><b class="num" style="color:${sum.gap?"var(--bad)":"inherit"}">${sum.gap}</b><span>luckor</span></div><div class="kpi"><b class="num">${notAssessed}</b><span>genomfört men ej bedömt</span></div></div>
@@ -2748,10 +2754,10 @@ const A={
  wheel:el=>{ui.wheel=el.dataset.id;saveUI();render()},
  wheelmode:el=>{ui.wheelMode=el.dataset.v;render()},
  "new-event":()=>eventModal(), "edit-event":el=>eventModal(el.dataset.id),
- "goto-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter="all";ui.gapsOnly=true;saveUI();location.hash="innehall"},
- "sel-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter="all";saveUI();render()},
+ "goto-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter=group(ui.covGroup)?"g:"+ui.covGroup:"all";ui.gapsOnly=true;saveUI();location.hash="innehall"},
+ "sel-subject":el=>{ui.subject=el.dataset.id;if(!String(ui.subjFilter).startsWith("g:"))ui.subjFilter="all";saveUI();render()},
  gaps:el=>{ui.gapsOnly=el.dataset.v==="1";saveUI();render()},
- "toggle-manual":el=>{const id=el.dataset.id;if(state.manual[id])delete state.manual[id];else state.manual[id]=true;commit()},
+ "toggle-manual":el=>{const id=el.dataset.id,g=el.dataset.g,k=g?g+"|"+id:id;if(state.manual[id])delete state.manual[id];else if(state.manual[k])delete state.manual[k];else state.manual[k]=true;commit()},
  "add-item":el=>addItemModal(el.dataset.area),
  "del-item":el=>{const id=el.dataset.id;const s=subj(ui.subject);if(s.official){state.extra[s.id]=(state.extra[s.id]||[]).filter(e=>e.id!==id)}else{state.custom[s.id].areas.forEach(a=>a.items=a.items.filter(i=>i.id!==id))}commit()},
  "sel-group":el=>{ui.group=el.dataset.id;saveUI();render()},
@@ -2771,7 +2777,7 @@ const A={
   Object.values(state.grades).forEach(m=>Object.values(m).forEach(v=>{const i=from.levels.findIndex(l=>l.k===v.k);if(i>=0)v.k=to.levels[Math.round(i/(from.levels.length-1)*(to.levels.length-1))].k}));state.scale=el.value;commit()}
 };
 document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const f=A[el.dataset.a];if(!f)return;if(el.dataset.a==="scale")return;if(el.dataset.a==="ov"){if(e.target===el)closeModal();return}if(el.tagName!=="A")e.preventDefault();f(el,e)});
-document.addEventListener("change",e=>{if(e.target.id==="subjfilter"){ui.subjFilter=e.target.value;saveUI();render()}if(e.target.id==="acourse"){ui.acourse=e.target.value;saveUI();render()}if(e.target.dataset.a==="scale")A.scale(e.target);if(e.target.id==="chkupd"){state.checkUpdates=e.target.checked;commit()}});
+document.addEventListener("change",e=>{if(e.target.id==="subjfilter"){ui.subjFilter=e.target.value;if(e.target.value.startsWith("g:"))ui.covGroup=e.target.value.slice(2);else if(e.target.value==="all")ui.covGroup="all";saveUI();render()}if(e.target.id==="covgroup"){ui.covGroup=e.target.value;saveUI();render()}if(e.target.id==="acourse"){ui.acourse=e.target.value;saveUI();render()}if(e.target.dataset.a==="scale")A.scale(e.target);if(e.target.id==="chkupd"){state.checkUpdates=e.target.checked;commit()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();if((e.key==="Enter"||e.key===" ")&&e.target.matches(".arc,[data-a='edit-event']")){e.preventDefault();e.target.dispatchEvent(new MouseEvent("click",{bubbles:true}))}});
 $("#importfile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{state=await loadText(await f.text(),f.name);state.example=false;commit();modal("Importerat",`<p style="margin:0">Datan är inläst: ${state.courses.length} kurser, ${state.units.length} arbetsområden, ${state.assessments.length} bedömningar.</p><div class="actions"><button class="btn pri" data-a="close">Klart</button></div>`)}catch(err){modal("Kunde inte importera",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en exporterad .json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}e.target.value=""});
 window.addEventListener("hashchange",()=>{closeModal();render();window.scrollTo(0,0)});

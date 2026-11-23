@@ -87,9 +87,12 @@ const unit=id=>state.units.find(u=>u.id===id);
 const group=id=>state.groups.find(g=>g.id===id);
 const allItems=sid=>{const s=subj(sid);return s?s.areas.flatMap(a=>a.items):[]};
 function coverage(sid,courseFilter){
- const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,tests:[],manual:!!state.manual[i.id]});
+ /* courseFilter: "all", ett kurs-id eller "g:<grupp-id>" för en klass */
+ const gf=typeof courseFilter==="string"&&courseFilter.startsWith("g:")?courseFilter.slice(2):null;const one=!gf&&courseFilter&&courseFilter!=="all"?state.courses.find(c=>c.id===courseFilter):null;const mg=gf||(one&&one.groupId)||null;
+ const man=id=>!!state.manual[id]||(mg?!!state.manual[mg+"|"+id]:(!gf&&!one&&state.groups.some(g=>state.manual[g.id+"|"+id])));
+ const res={};const items=allItems(sid);items.forEach(i=>res[i.id]={state:"gap",units:[],assessed:false,tests:[],manual:man(i.id)});
  const rank={gap:0,planned:1,ongoing:2,covered:3};const map={planerad:"planned",pagar:"ongoing",klar:"covered",bedomd:"covered"};
- const cs=state.courses.filter(c=>c.subjectId===sid&&(courseFilter==="all"||!courseFilter||c.id===courseFilter)).map(c=>c.id);
+ const cs=state.courses.filter(c=>c.subjectId===sid&&(gf?c.groupId===gf:(courseFilter==="all"||!courseFilter||c.id===courseFilter))).map(c=>c.id);
  state.units.filter(u=>cs.includes(u.courseId)).forEach(u=>(u.contentIds||[]).forEach(id=>{const r=res[id];if(!r)return;r.units.push(u);if(u.status==="bedomd")r.assessed=true;const st=map[u.status]||"planned";if(rank[st]>rank[r.state])r.state=st}));
  state.assessments.filter(a=>cs.includes(a.courseId)).forEach(a=>{const u=unit(a.unitId);(u?u.contentIds||[]:[]).concat(a.contentIds||[]).forEach(id=>{if(res[id]){res[id].assessed=true;if(!res[id].tests.includes(a))res[id].tests.push(a)}})});
  Object.values(res).forEach(r=>{if(r.manual)r.state="covered"});

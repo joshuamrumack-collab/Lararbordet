@@ -395,3 +395,19 @@ test("ämnesanalys hittar elever under E och obedömt innehåll", () => {
   assert.equal(m.courses.length, an.courses.length * 2);
   assert.ok(m.risk[0].courses.length >= 2, "samma elev i flera ämnen räknas ihop");
 });
+
+test("täckning per klass", () => {
+  const run = load();
+  run('state.groups.push({id:"g9a",name:"9A",students:[]});state.courses.push({id:"c-sv9",name:"Svenska 9A",subjectId:"GRGRSVE01/7-9",groupId:"g9a",color:"#000"});state.units.push({id:"ux",courseId:"c-sv9",title:"X",start:"2026-09-01",end:"2026-09-20",status:"klar",contentIds:["GRGRSVE01/7-9~4.5"]})');
+  const a = run('covSummary("GRGRSVE01/7-9","g:g9a")');
+  const b = run('covSummary("GRGRSVE01/7-9","g:g8b")');
+  const all = run('covSummary("GRGRSVE01/7-9","all")');
+  assert.equal(a.covered, 1);
+  assert.ok(b.covered > 1);
+  assert.equal(all.covered, b.covered + 1);
+  /* manuell avbockning för en klass gäller bara den klassen */
+  run('state.manual["g9a|GRGRSVE01/7-9~4.6"]=true');
+  assert.equal(run('covSummary("GRGRSVE01/7-9","g:g9a")').covered, 2);
+  assert.equal(run('covSummary("GRGRSVE01/7-9","g:g8b")').covered, b.covered);
+  assert.equal(run('covSummary("GRGRSVE01/7-9","all")').covered, all.covered + 1);
+});
