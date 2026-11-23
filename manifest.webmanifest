@@ -1,0 +1,24 @@
+{
+ "name": "Lärarbordet",
+ "short_name": "Lärarbordet",
+ "description": "Planering, schema, årshjul, centralt innehåll och bedömning för lärare",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#eef2f5",
+ "theme_color": "#24548a",
+ "lang": "sv",
+ "icons": [
+  {
+   "src": "ikon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "ikon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}
