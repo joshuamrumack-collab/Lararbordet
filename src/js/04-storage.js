@@ -31,11 +31,13 @@ function setSync(m){if(m)syncMode=m;const el=$("#sync");if(!el)return;const hh=d
  else if(syncMode==="error"){t="Kunde inte spara · försök igen";c="err"}
  else if(syncMode==="readerr"){t="Kunde inte läsa filen";c="err"}
  else if(syncMode==="conflict"){t="Filen ändrades på en annan dator · välj";c="err"}
- else if(dirty){t=DESKTOP?"Sparar strax…":"Osparade ändringar · Spara";c=DESKTOP?"":"err"}
- else if(syncMode==="downloaded"){t="Ny fil nedladdad "+hh(savedAt);c="ok"}
- else if(savedAt){t="Sparat "+hh(savedAt);c="ok"}
- else t=DESKTOP?"Inte sparat än":"Spara till fil";
- el.textContent=t;el.className="sync "+c;updateBar();el.title=DESKTOP?(filePath||""):"Sparar all data i den här HTML-filen (Ctrl/Cmd+S)"}
+
+ else if(dirty){t=DESKTOP||fileHandle?"Sparar…":"● Inte sparat · Spara";c=DESKTOP||fileHandle?"":"err"}
+ else if(syncMode==="downloaded"){t="✓ Nedladdad "+hh(savedAt);c="ok"}
+ else if(savedAt){const n=DESKTOP?baseName(filePath):fileHandle?fileHandle.name:"";t="✓ Sparat"+(n?" i "+n:" "+hh(savedAt));c="ok"}
+ else if(state.example){t="Exempeldata";c=""}
+ else{t=DESKTOP?"Inte sparat än":"● Inte sparat · Spara";c=DESKTOP?"":"err"}
+ el.textContent=t;el.className="sync "+c;updateBar();el.title=(savedAt?"Senast sparat "+hh(savedAt)+". ":"")+(DESKTOP?(filePath||""):fileHandle?"Varje ändring sparas direkt i "+fileHandle.name+".":"Spara all data i en fil (Ctrl/Cmd+S).")}
 /* Spara-uppmaning i HTML-versionen: kommer ihåg vilken fil du sparade i (bara själva filhänvisningen, ingen data) */
 let storedHandle=null;
 const HKEY="fil:"+location.pathname;

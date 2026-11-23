@@ -51,8 +51,8 @@ header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--p
 .topin{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .brand{font-family:var(--display);font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:8px}
 .brand svg{flex:none}
-.sync{margin-left:auto;border:0;cursor:pointer;font-size:.8rem;padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--muted);white-space:nowrap}
-.sync.err{background:var(--bad-bg);color:var(--bad)}
+.sync{margin-left:auto;border:0;cursor:pointer;font-size:.85rem;font-weight:600;padding:5px 12px;max-width:340px;overflow:hidden;text-overflow:ellipsis;border-radius:99px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.sync.err{background:var(--bad);color:#fff}
 .sync.ok{background:var(--ok-bg);color:var(--ok)}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
 nav.tabs a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:.72rem;padding:4px 2px;border-radius:8px;min-width:0}
@@ -518,7 +518,7 @@ body.phone .hdrgear{margin-left:auto}
 .pp-row input,.pp-row select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)}
 input.tm{font-variant-numeric:tabular-nums;max-width:110px}
 .occ,.wt-i,.p-occrow{position:relative}
-.adapt-a{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:5px;background:#facc15;color:#422006;font-size:.7rem;font-weight:900;line-height:18px;text-align:center;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.adapt-a{position:absolute;top:4px;right:4px;min-width:18px;height:18px;padding:0 5px;border-radius:5px;background:#facc15;color:#422006;font-size:.66rem;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
 .p-adapt{background:#fde68a;color:#5b4300;box-shadow:inset 0 0 0 1px #eab308}
 .adapt-tag{display:none}
 .tab-order{display:grid;gap:4px;max-width:420px}
@@ -545,6 +545,23 @@ body.phone .hsearch{display:none}
 body.phone .hsearch+.sync{margin-left:auto}
 @media (max-width:600px){.hsearch span{display:none}}
 body:has(#modalroot .ov) #savebar{top:calc(12px + env(safe-area-inset-top));bottom:auto}
+.to-row.to-off .what,.to-row.to-off .to-i{opacity:.5}
+/* kom igång och att göra */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.steps li{display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.steps li.done{opacity:.6}.steps li.done b{text-decoration:line-through}
+.steps .sn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--soft);font-weight:700}
+.steps li.done .sn{background:var(--ok-bg,#e6f5ea);color:var(--ok)}.steps .sn svg{width:16px;height:16px}
+.steps .what{flex:1;min-width:0}
+.todos{display:grid;gap:8px}
+.todo{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;border-left:4px solid var(--line);background:var(--soft)}
+.todo .what{flex:1;min-width:0}.todo.warn{border-left-color:var(--warn)}.todo.bad{border-left-color:var(--bad)}.todo.ok{border-left-color:var(--ok)}.todo.info{border-left-color:var(--info,#2f6db3)}
+.linkish{background:none;border:0;padding:0;font:inherit;color:var(--accent,#2f6db3);text-decoration:underline;cursor:pointer}
+details.more-open summary{cursor:pointer;color:var(--muted);text-align:center;padding:4px}
+@media (max-width:700px){.steps li,.todo{flex-wrap:wrap}}
+.mx .cell.sel{outline:3px solid var(--accent,#2f6db3);outline-offset:-3px;border-radius:4px}
+.mx .cell.nope{animation:nope .3s}@keyframes nope{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.to-row .chk{align-self:center;margin:0 6px 0 0;display:flex;align-items:center;gap:4px}
 
 </style>
 </head>
@@ -572,7 +589,7 @@ body:has(#modalroot .ov) #savebar{top:calc(12px + env(safe-area-inset-top));bott
 "use strict";
 /* ===== 01-helpers.js ===== */
 /* ---------- hjälpfunktioner ---------- */
-const APP_VERSION="1.17.1";
+const APP_VERSION="1.18.0";
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -623,6 +640,9 @@ function normTime(v){v=String(v||"").trim();if(!v)return "";let m=v.match(/^(\d{
 if(typeof document!=="undefined")document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("tm")){const n=normTime(t.value);if(n!==t.value){t.value=n;t.dispatchEvent(new Event("change",{bubbles:true}))}}});
 const atypeL=a=>a.type==="annat"&&a.typeOther?a.typeOther:(ATYPES[a.type]||"");
 /* flikarnas ordning kan ändras under Inställningar */
+/* dolda flikar: Innehåll ligger som standard under Planering */
+const hiddenTabs=()=>(typeof ui!=="undefined"&&Array.isArray(ui.hiddenTabs))?ui.hiddenTabs:["innehall"];
+const tabHidden=id=>id!=="installningar"&&hiddenTabs().includes(id);
 function tabsOrdered(){const o=(typeof ui!=="undefined"&&Array.isArray(ui.tabOrder))?ui.tabOrder:[];const ix=id=>{const k=o.indexOf(id);return k<0?100+TABS.findIndex(t=>t[0]===id):k};
  return [...TABS].sort((a,b)=>a[0]==="installningar"?1:b[0]==="installningar"?-1:ix(a[0])-ix(b[0]))}
 
@@ -1123,11 +1143,13 @@ function setSync(m){if(m)syncMode=m;const el=$("#sync");if(!el)return;const hh=d
  else if(syncMode==="error"){t="Kunde inte spara · försök igen";c="err"}
  else if(syncMode==="readerr"){t="Kunde inte läsa filen";c="err"}
  else if(syncMode==="conflict"){t="Filen ändrades på en annan dator · välj";c="err"}
- else if(dirty){t=DESKTOP?"Sparar strax…":"Osparade ändringar · Spara";c=DESKTOP?"":"err"}
- else if(syncMode==="downloaded"){t="Ny fil nedladdad "+hh(savedAt);c="ok"}
- else if(savedAt){t="Sparat "+hh(savedAt);c="ok"}
- else t=DESKTOP?"Inte sparat än":"Spara till fil";
- el.textContent=t;el.className="sync "+c;updateBar();el.title=DESKTOP?(filePath||""):"Sparar all data i den här HTML-filen (Ctrl/Cmd+S)"}
+
+ else if(dirty){t=DESKTOP||fileHandle?"Sparar…":"● Inte sparat · Spara";c=DESKTOP||fileHandle?"":"err"}
+ else if(syncMode==="downloaded"){t="✓ Nedladdad "+hh(savedAt);c="ok"}
+ else if(savedAt){const n=DESKTOP?baseName(filePath):fileHandle?fileHandle.name:"";t="✓ Sparat"+(n?" i "+n:" "+hh(savedAt));c="ok"}
+ else if(state.example){t="Exempeldata";c=""}
+ else{t=DESKTOP?"Inte sparat än":"● Inte sparat · Spara";c=DESKTOP?"":"err"}
+ el.textContent=t;el.className="sync "+c;updateBar();el.title=(savedAt?"Senast sparat "+hh(savedAt)+". ":"")+(DESKTOP?(filePath||""):fileHandle?"Varje ändring sparas direkt i "+fileHandle.name+".":"Spara all data i en fil (Ctrl/Cmd+S).")}
 /* Spara-uppmaning i HTML-versionen: kommer ihåg vilken fil du sparade i (bara själva filhänvisningen, ingen data) */
 let storedHandle=null;
 const HKEY="fil:"+location.pathname;
@@ -1437,8 +1459,8 @@ function autoStop(){setAuto(false);fileHandle=null;render();setSync();toast("Lä
 
 /* ===== 05-views.js ===== */
 /* ---------- rendering ---------- */
-function route(){const h=(location.hash||"").slice(1);return TABS.some(t=>t[0]===h)?h:"oversikt"}
-function renderTabs(){const r=route();$("#tabs").innerHTML=tabsOrdered().map(([id,l])=>`<a href="#${id}" class="tab-${id}" ${r===id?'aria-current="page"':""}>${ICON[id]}<span>${l==="Centralt innehåll"?"Innehåll":l}</span></a>`).join("");const g=document.getElementById("hdrgear");if(g){g.setAttribute("href","#installningar");g.setAttribute("aria-label","Inställningar");g.setAttribute("aria-current",r==="installningar"?"page":"false")}}
+function route(){const h=(location.hash||"").slice(1);if(h==="innehall"&&tabHidden("innehall")){ui.planView="innehall";return "planering"}return TABS.some(t=>t[0]===h)?h:"oversikt"}
+function renderTabs(){const r=route();$("#tabs").innerHTML=tabsOrdered().filter(t=>!tabHidden(t[0])||t[0]===r).map(([id,l])=>`<a href="#${id}" class="tab-${id}" ${r===id?'aria-current="page"':""}>${ICON[id]}<span>${l==="Centralt innehåll"?"Innehåll":l}</span></a>`).join("");const g=document.getElementById("hdrgear");if(g){g.setAttribute("href","#installningar");g.setAttribute("aria-label","Inställningar");g.setAttribute("aria-current",r==="installningar"?"page":"false")}}
 function roBanner(){return READONLY?`<div class="example" style="background:var(--info-bg);color:var(--info)"><span class="sp"><b>Läsläge</b>${RO_NAME?" · "+esc(RO_NAME):""}. Du kan titta men inte ändra. Ändringar gör du på datorn.</span><button class="btn" data-a="open-ro">Öppna en nyare fil</button>${window.matchMedia("(max-width: 700px)").matches?'<button class="btn" data-a="p-phone">Telefonvy</button>':""}<button class="btn" data-a="close-ro">Stäng</button></div>`:""}
 function exampleBanner(){return state.example&&!READONLY?`<div class="example"><span class="sp"><b>Exempeldata.</b> Kurserna, eleverna och omdömena här är påhittade så att du ser hur allt hänger ihop.</span><button class="btn" data-a="clear-example">Börja med tomt bord</button></div>`:""}
 function render(){if(isPhone()){renderPhone();return}document.body.classList.remove("phone");renderTabs();const r=route();const m=$("#main");
@@ -1449,7 +1471,7 @@ function render(){if(isPhone()){renderPhone();return}document.body.classList.rem
 function todayAdaptPanel(){if(!(state.schedule||[]).length)return "";let d=TODAY;let occ=[];for(let i=0;i<7&&!occ.length;i++){const ds=fmtD(addDays(TODAY,i));occ=dayOccurrences(ds).filter(o=>!o.cancel);if(occ.length)d=parseD(ds)}
  const seen=new Set();const blocks=occ.filter(o=>{const g=o.course.groupId;if(!g||seen.has(g))return false;seen.add(g);return adaptSummary(group(g)).length}).map(o=>adaptReminder(o.course)).join("");
  if(!blocks)return "";const isToday=fmtD(d)===fmtD(TODAY);
- return `<section class="panel"><div class="panel-h"><h2>${isToday?"Inför dagens lektioner":"Inför "+DAY[d.getDay()]+" "+shortD(fmtD(d))}</h2><span class="sp"></span><a class="btn ghost" href="#elever">Elever</a></div><div style="display:grid;gap:8px">${blocks}</div></section>`}
+ return `<section class="panel" id="adaptpanel"><div class="panel-h"><h2>${isToday?"Inför dagens lektioner":"Inför "+DAY[d.getDay()]+" "+shortD(fmtD(d))}</h2><span class="sp"></span><a class="btn ghost" href="#elever">Elever</a></div><div style="display:grid;gap:8px">${blocks}</div></section>`}
 function weekPanel(){const mon=mondayOf(TODAY);
  if((state.schedule||[]).length){const all=[];const days=DAYS5.map(i=>{const ds=fmtD(addDays(mon,i-1));const occ=dayOccurrences(ds);all.push(...occ);const d=parseD(ds);
    return `<div class="day ${ds===fmtD(TODAY)?"today":""}"><div class="dh"><b>${DAY[i].slice(0,3)}</b> <span class="muted small">${d.getDate()}/${d.getMonth()+1}</span></div>${occ.map(o=>occCard(o,true)).join("")||'<span class="small muted">–</span>'}</div>`}).join("");
@@ -1478,13 +1500,14 @@ function vOverview(){
  const flags=[];state.groups.forEach(g=>g.students.forEach(s=>{const sm=studentSummary(g.id,s.id,"all");if(sm.low>=2)flags.push({g,s,sm})}));
  let ungraded=0,cells=0;state.assessments.filter(a=>parseD(a.date)<=TODAY).forEach(a=>{const g=group(a.groupId);if(!g)return;g.students.forEach(s=>{cells++;if(!((state.grades[a.id]||{})[s.id]))ungraded++})});
  const flagHtml=flags.length?flags.map(f=>`<button class="flag" data-a="student" data-g="${f.g.id}" data-id="${f.s.id}"><span class="pill p-gap">${f.sm.low} låga</span><b style="flex:1">${esc(f.s.name)}</b><span class="small muted">${esc(f.g.name)}</span></button>`).join(""):`<p class="muted small">Ingen elev har två eller fler omdömen under godtagbar nivå.</p>`;
- return `<section class="panel hero">
+ return startPanel()+`<section class="panel hero">
   <div><div class="weekno num"><small>v.</small>${isoWeek(TODAY)}</div>
    <p style="margin:10px 0 0"><b>${DAY[TODAY.getDay()][0].toUpperCase()+DAY[TODAY.getDay()].slice(1)} ${TODAY.getDate()} ${MON[TODAY.getMonth()]}</b> <span class="muted">· läsår ${state.year.start.slice(2,4)}/${state.year.end.slice(2,4)}</span></p>
    <div class="yearbar" aria-label="${pct} procent av läsåret"><i style="width:${pct}%"></i></div><span class="small muted num">${pct} % av läsåret har gått</span>
    <h2 style="margin-top:18px">Just nu</h2><div class="now-list">${nowHtml}</div></div>
   <div><a href="#arshjul" aria-label="Öppna årshjulet" style="display:block">${wheelSVG("all",true)}</a><div class="wheel-leg">${state.courses.map(c=>`<span><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join("")}</div></div>
  </section>
+ ${todoPanel()}
  <div class="grid2">
   <section class="panel"><div class="panel-h"><h2>Täckning av centralt innehåll</h2><span class="sp"></span>${state.groups.length?`<select class="inline" id="covgroup" aria-label="Visa för klass">${state.groups.map(g=>`<option value="${g.id}" ${covGroupNow()===g.id?"selected":""}>${esc(g.name)}</option>`).join("")}</select>`:""}<a class="btn ghost" href="#innehall">Visa luckor</a></div>${cov}
    <div class="legend"><span><i class="s-c"></i>Genomfört</span><span><i class="s-o"></i>Pågår</span><span><i class="s-p"></i>Planerat</span><span><i style="background:var(--bad-bg)"></i>Lucka</span></div></section>
@@ -1515,10 +1538,11 @@ function weekTable(cs){const ids=new Set(cs.map(c=>c.id));const weeks=yearWeeks(
  return `${sched?"":`<p class="small muted" style="margin:0 0 8px">Lägg in ditt veckoschema under Schema så fylls dagarna med dina lektioner. Tryck på en lektion för att skriva planen.</p>`}<div class="wt-wrap" id="wtbox"><table class="wt"><thead><tr><th>Vecka</th><th>Måndag</th><th>Tisdag</th><th>Onsdag</th><th>Torsdag</th><th>Fredag</th><th>Inlämningar</th><th>Övrigt</th></tr></thead><tbody>${rows}</tbody></table></div>`}
 function vPlanning(){
  if(!state.courses.length)return `<section class="panel"><div class="empty"><p>Du har inga kurser ännu.</p><button class="btn pri" data-a="new-course">Skapa första kursen</button></div></section>`;
- const all=ui.course==="all";if(!all&&!course(ui.course))ui.course=state.courses[0].id;const c=all?null:course(ui.course);const pv=ui.planView==="veckor"?"veckor":"tidslinje";
+ const all=ui.course==="all";if(!all&&!course(ui.course))ui.course=state.courses[0].id;const c=all?null:course(ui.course);const pv=ui.planView==="veckor"||ui.planView==="innehall"?ui.planView:"tidslinje";
  const chips=`<button class="chip" aria-pressed="${all}" data-a="sel-course" data-id="all">Alla kurser</button>`+state.courses.map(x=>`<button class="chip" aria-pressed="${!all&&x.id===c.id}" data-a="sel-course" data-id="${x.id}"><span class="dot" style="background:${x.color}"></span>${esc(x.name)}</button>`).join("");
- const seg=`<div class="seg" role="group" aria-label="Visa planeringen som"><button aria-pressed="${pv==="tidslinje"}" data-a="planview" data-v="tidslinje">Tidslinje</button><button aria-pressed="${pv==="veckor"}" data-a="planview" data-v="veckor">Veckor</button></div>`;
+ const seg=`<div class="seg" role="group" aria-label="Visa planeringen som"><button aria-pressed="${pv==="tidslinje"}" data-a="planview" data-v="tidslinje">Tidslinje</button><button aria-pressed="${pv==="veckor"}" data-a="planview" data-v="veckor">Veckor</button><button aria-pressed="${pv==="innehall"}" data-a="planview" data-v="innehall">Centralt innehåll</button></div>`;
  const top=`<section class="panel"><div class="toolbar">${seg}<div class="chips">${chips}</div><span class="sp"></span><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="library">Ämnesbibliotek</button><button class="btn" data-a="weekplan">Veckoplanering</button><button class="btn" data-a="import-course" title="Importera en kurs eller ett arbetsområde som en kollega delat">Importera</button><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>`;
+ if(pv==="innehall")return `<section class="panel"><div class="toolbar">${seg}<span class="sp"></span><button class="btn ghost" data-a="how">Så hänger det ihop</button></div></section>`+vContent();
  if(pv==="veckor"){const cs=all?state.courses:[c];return top+`<section class="panel"><div class="panel-h"><h1>${all?"Alla kurser":esc(c.name)}</h1><span class="sp"></span>${all?`<button class="btn" data-a="new-task">+ Uppgift</button>`:`<button class="btn" data-a="new-task" data-id="${c.id}">+ Uppgift</button><button class="btn pri" data-a="new-unit">+ Arbetsområde</button>`}</div>${weekTable(cs)}</section>`}
  if(all)return top+state.courses.map(x=>{const sm=covSummary(x.subjectId,x.id);return `<section class="panel"><div class="panel-h"><span class="dot" style="background:${x.color};width:14px;height:14px"></span><h2>${esc(x.name)}</h2><span class="small muted">${sm.pct} % genomfört · ${sm.gap} luckor</span><span class="sp"></span><button class="btn" data-a="new-task" data-id="${x.id}">+ Uppgift</button><button class="btn" data-a="sel-course" data-id="${x.id}">Öppna</button></div>${stripFor(x)}</section>`}).join("")+`<p class="small muted">Veckonummer. Randiga veckor är lov. Streckade staplar är planerade. Tryck på ett arbetsområde för att öppna det.</p>`;
  const us=state.units.filter(u=>u.courseId===c.id).sort((a,b)=>a.start<b.start?-1:1);const g=group(c.groupId);
@@ -1676,6 +1700,8 @@ function vAssess(){
  if(!group(ui.group))ui.group=state.groups[0].id;const g=group(ui.group);
  const gcourses=state.courses.filter(c=>c.groupId===g.id||state.assessments.some(a=>a.groupId===g.id&&a.courseId===c.id));
  if(ui.acourse!=="all"&&!gcourses.some(c=>c.id===ui.acourse))ui.acourse="all";
+ /* första gången: börja i kursen du senast arbetade med, inte alla kurser blandade */
+ if(!vAssess.init){vAssess.init=true;if(ui.acourse==="all"&&gcourses.length>1){const pref=[ui.lastCourse,ui.course].find(id=>gcourses.some(c=>c.id===id))||gcourses[0].id;ui.acourse=pref}}
  const as=state.assessments.filter(a=>a.groupId===g.id&&(ui.acourse==="all"||a.courseId===ui.acourse)).sort((a,b)=>(a.courseId+a.date)<(b.courseId+b.date)?-1:1);
  const sc=scale();
  const head=as.map(a=>{const c=course(a.courseId)||{};return `<th data-a="edit-assess" data-id="${a.id}" style="box-shadow:inset 0 3px 0 ${c.color||"transparent"}" title="${esc(c.name||"")}">${esc(a.title)}<span class="d">${shortD(a.date)}${a.type?" · "+esc(atypeL(a)):""}${ui.acourse==="all"?" · "+esc((c.name||"").split(" ")[0]):""}</span></th>`}).join("");
@@ -1692,7 +1718,7 @@ function vAssess(){
   <button class="btn" data-a="edit-group" data-id="${g.id}">Elever</button><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="results">Resultat</button><button class="btn" data-a="export-csv">Exportera CSV</button></div>
   ${!g.students.length?`<div class="empty">Gruppen har inga elever. Tryck på Elever och klistra in namnen.</div>`:!as.length?`<div class="empty">Inga uppgifter ännu för det här urvalet. Lägg till en uppgift under <a href="#planering">Planering</a>, med knappen + Uppgift.</div>`:
   `<div class="mx-wrap"><table class="mx"><thead><tr><th class="name">Elev</th>${head}<th title="Medianen av elevens omdömen">Typnivå</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td class="name small muted" style="padding:8px 10px">Fördelning</td>${foot}<td></td></tr></tfoot></table></div>
-  <p class="small muted" style="margin:8px 0 0">Tryck på en ruta för att sätta omdöme och anteckning. Typnivå är medianen av elevens omdömen och ersätter inte en samlad bedömning mot betygskriterierna. En prick betyder att det finns en anteckning. Nya uppgifter lägger du till under Planering. Tryck på en elev för elevens kunskapsmatris.</p>`}</section>`;
+  <p class="small muted" style="margin:8px 0 0">${finePointer()?`<b>Snabbt:</b> klicka på en ruta och skriv omdömet, t.ex. <kbd>C</kbd>. Markeringen flyttar då ned till nästa elev. Flytta med piltangenterna, ta bort med <kbd>Delete</kbd>. Klicka igen eller tryck <kbd>Enter</kbd> för anteckning och betygskriterier.`:"Tryck på en ruta för att sätta omdöme och anteckning."} Typnivå är medianen av elevens omdömen och ersätter inte en samlad bedömning mot betygskriterierna. En prick betyder att det finns en anteckning. Nya uppgifter lägger du till under Planering. Tryck på en elev för elevens kunskapsmatris.</p>`}</section>`;
 }
 
 /* Var ligger filen? Gissning utifrån sökvägen (OneDrive för jobb heter "OneDrive - Organisation") */
@@ -1722,8 +1748,8 @@ function syncPanel(){const where=DESKTOP?syncPlace(filePath):null;
 function vSettings(){
  return `<section class="panel"><div class="panel-h"><h2>Utseende</h2><span class="sp"></span>${themeSeg()}</div><p class="small muted" style="margin:0">Ljust eller mörkt läge. Som datorn följer inställningen i datorn eller telefonen.</p></section>
  ${securityPanel()}
- <section class="panel"><div class="panel-h"><h2>Flikarnas ordning</h2><span class="sp"></span><button class="btn ghost small" data-a="tab-reset">Återställ</button></div><p class="small muted" style="margin:0 0 8px">Flytta flikarna upp eller ned. Inställningar ligger alltid sist.</p>
-  <div class="tab-order">${tabsOrdered().filter(t=>t[0]!=="installningar").map(([id,l],i,arr)=>`<div class="to-row"><span class="to-i">${ICON[id]}</span><span class="what">${esc(l)}</span><button class="btn ghost small" data-a="tab-move" data-id="${id}" data-d="-1" ${i===0?"disabled":""} aria-label="Flytta ${esc(l)} upp">↑</button><button class="btn ghost small" data-a="tab-move" data-id="${id}" data-d="1" ${i===arr.length-1?"disabled":""} aria-label="Flytta ${esc(l)} ned">↓</button></div>`).join("")}</div></section>
+ <section class="panel"><div class="panel-h"><h2>Flikar</h2><span class="sp"></span>${ui.startHidden?`<button class="btn ghost small" data-a="gs-show">Visa Kom igång</button>`:""}<button class="btn ghost small" data-a="tab-reset">Återställ</button></div><p class="small muted" style="margin:0 0 8px">Välj vilka flikar som visas och i vilken ordning. Dolda flikar finns kvar med allt innehåll och kan visas igen. Centralt innehåll finns också under Planering. Inställningar visas alltid.</p>
+  <div class="tab-order">${tabsOrdered().filter(t=>t[0]!=="installningar").map(([id,l],i,arr)=>`<div class="to-row ${tabHidden(id)?"to-off":""}"><span class="to-i">${ICON[id]}</span><span class="what">${esc(l)}</span><label class="chk small"><input type="checkbox" data-tabshow="${id}" ${tabHidden(id)?"":"checked"} ${id==="oversikt"?"disabled":""}><span>Visa</span></label><button class="btn ghost small" data-a="tab-move" data-id="${id}" data-d="-1" ${i===0?"disabled":""} aria-label="Flytta ${esc(l)} upp">↑</button><button class="btn ghost small" data-a="tab-move" data-id="${id}" data-d="1" ${i===arr.length-1?"disabled":""} aria-label="Flytta ${esc(l)} ned">↓</button></div>`).join("")}</div></section>
  <div class="grid2"><section class="panel"><div class="panel-h"><h2>Läsår</h2></div>
   <div class="row"><div class="f"><label for="ys">Första skoldag</label><input type="date" id="ys" value="${state.year.start}"></div><div class="f"><label for="ye">Sista skoldag</label><input type="date" id="ye" value="${state.year.end}"></div></div>
   <div class="actions" style="margin-top:12px"><button class="btn" data-a="save-year">Ändra datum</button><button class="btn pri" data-a="new-year">Starta nytt läsår…</button></div>
@@ -2159,7 +2185,7 @@ function bindStudents(){const b=document.getElementById("stsave");const g=group(
  if(b)b.onclick=()=>{s.adapt=[...m.querySelectorAll("#stad input:checked")].map(x=>x.value);if(!s.adapt.length)delete s.adapt;
   const o=val("stao").trim();if(o)s.adaptOther=o;else delete s.adaptOther;const n=val("stn").trim();if(n)s.note=n;else delete s.note;const d=val("stdg").trim();if(d)s.diag=d;else delete s.diag;commit();toast("Sparat.")}}
 /* liten gul markering på lektioner där gruppen har anpassningar */
-const adaptTag=c=>{const g=c&&group(c.groupId);const sum=g?adaptSummary(g):[];return sum.length?`<span class="adapt-a" title="Anpassningar krävs: ${esc(sum.map(x=>x.label).join(", "))}. Tryck på lektionen för att läsa mer." aria-label="Anpassningar krävs">A</span>`:""};
+const adaptTag=c=>{const g=c&&group(c.groupId);const sum=g?adaptSummary(g):[];return sum.length?`<span class="adapt-a" title="Anpassningar krävs: ${esc(sum.map(x=>x.label).join(", "))}. Tryck på lektionen för att läsa mer." aria-label="Anpassningar krävs">Anp</span>`:""};
 const adaptPill=c=>{const g=c&&group(c.groupId);const sum=g?adaptSummary(g):[];return sum.length?`<span class="pill p-adapt" title="${esc(sum.map(x=>x.label+": "+x.names.join(", ")).join(" · "))}">Anpassningar</span>`:""};
 
 /* ===== 05f-process.js ===== */
@@ -2457,6 +2483,70 @@ function analysisModal(gid,keep){if(!keep)AN_OTHERS=[];if(!state.groups.length){
   <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="anok">Spara filen</button></div>`,mm=>mm.querySelector("#anok").onclick=()=>{const pkg=exportAnalysis(an,mm.querySelector("#annm").checked);offerFile("analys-"+fileSafe(an.group)+"-"+fmtD(TODAY)+".lararbordet.json",JSON.stringify(pkg,null,1),"application/json");closeModal()})};
 }
 
+/* ===== 05i-start.js ===== */
+/* ---------- Kom igång: fyra steg på Översikt ---------- */
+function startSteps(){return [
+ {k:"amnen",done:state.mine.length>0,t:"Välj dina ämnen",d:"Kursplaner, centralt innehåll och betygskriterier hämtas in för dem.",a:"picker",b:"Välj ämnen"},
+ {k:"schema",done:(state.schedule||[]).length>0,t:"Importera ditt schema",d:"Från en PDF (t.ex. Skola24) eller en kalenderfil. Du kan också lägga in lektionerna för hand.",a:"import-ics",b:"Importera schema",b2:["new-slot","Lägg in för hand"]},
+ {k:"klass",done:state.groups.length>0,t:"Lägg in din klass",d:"Namnen på eleverna, gärna med anpassningar. Klistra in en lista från t.ex. Excel.",a:"edit-group",b:"Lägg in klassen"},
+ {k:"omrade",done:state.units.length>0,t:"Skapa ditt första arbetsområde",d:state.courses.length?"Välj vilket centralt innehåll det täcker och planera lektionerna.":"Först skapar du en kurs, till exempel Svenska 8B, sedan arbetsområdet.",a:"gs-unit",b:state.courses.length?"Nytt arbetsområde":"Skapa kurs"}]}
+function startPanel(){if(state.example||READONLY||ui.startHidden)return "";const st=startSteps();const n=st.filter(x=>x.done).length;if(n===st.length)return "";
+ return `<section class="panel start"><div class="panel-h"><h2>Kom igång</h2><span class="small muted num">${n} av ${st.length} klara</span><span class="sp"></span><button class="btn ghost small" data-a="gs-hide">Dölj</button></div>
+ <div class="yearbar" style="margin:0 0 12px"><i style="width:${n/st.length*100}%"></i></div>
+ <ol class="steps">${st.map((x,i)=>`<li class="${x.done?"done":""}"><span class="sn">${x.done?CHECK:i+1}</span><span class="what"><b>${esc(x.t)}</b><br><span class="small muted">${esc(x.d)}</span></span>${x.done?"":`<span class="row-b">${x.b2?`<button class="btn small ghost" data-a="${x.b2[0]}">${esc(x.b2[1])}</button>`:""}<button class="btn small ${st.findIndex(y=>!y.done)===i?"pri":""}" data-a="${x.a}">${esc(x.b)}</button></span>`}</li>`).join("")}</ol></section>`}
+function gsUnit(){if(!state.courses.length){courseModal();return}if(!course(ui.course))ui.course=state.courses[0].id;ui.planView="tidslinje";location.hash="planering";render();unitModal()}
+
+/* ---------- Att göra: det som behöver göras nu ---------- */
+function nextSchoolDay(){for(let i=0;i<7;i++){const ds=fmtD(addDays(TODAY,i));const o=dayOccurrences(ds).filter(x=>!x.cancel);if(o.length)return {date:ds,occ:o}}return {date:fmtD(TODAY),occ:[]}}
+function todoPanel(){if(state.example&&!state.courses.length)return "";const items=[];
+ if(!DESKTOP&&!READONLY&&dirty&&!fileHandle)items.push(`<div class="todo bad"><span class="what"><b>Osparade ändringar</b><br><span class="small muted">Spara så att inget försvinner när du stänger sidan.</span></span><button class="btn small pri" data-a="save">Spara</button></div>`);
+ const nd=nextSchoolDay();const isToday=nd.date===fmtD(TODAY);const when=isToday?"Idag":cap(DAY[parseD(nd.date).getDay()])+" "+shortD(nd.date);
+ const noPlan=nd.occ.filter(o=>!(o.lesson&&(o.lesson.plan||o.lesson.title)));
+ if(nd.occ.length)items.push(`<div class="todo ${noPlan.length?"warn":"ok"}"><span class="what"><b>${when}: ${nd.occ.length} ${nd.occ.length===1?"lektion":"lektioner"}${noPlan.length?`, ${noPlan.length} utan plan`:", alla har en plan"}</b>${noPlan.length?`<br><span class="small">${noPlan.map(o=>`<button class="linkish" data-a="occ" data-slot="${o.slot.id}" data-date="${o.date}">${esc(o.slot.start)} ${esc(o.course.name)}</button>`).join(" · ")}</span>`:""}</span><a class="btn small ghost" href="#schema">Schema</a></div>`);
+ const due=state.assessments.filter(a=>a.date<=fmtD(TODAY)&&group(a.groupId)).map(a=>{const g=group(a.groupId);const miss=g.students.filter(s=>!((state.grades[a.id]||{})[s.id]||{}).k).length;return {a,miss,n:g.students.length}}).filter(x=>x.miss).sort((x,y)=>x.a.date<y.a.date?1:-1);
+ if(due.length)items.push(`<div class="todo warn"><span class="what"><b>${due.length} ${due.length===1?"uppgift":"uppgifter"} att bedöma</b><br><span class="small">${due.slice(0,4).map(x=>`<button class="linkish" data-a="goto-assess" data-id="${x.a.id}">${esc(x.a.title)} (${x.miss} av ${x.n} kvar)</button>`).join(" · ")}${due.length>4?` · och ${due.length-4} till`:""}</span></span><a class="btn small ghost" href="#bedomning">Bedömning</a></div>`);
+ const seen=new Set();const ad=nd.occ.filter(o=>{const g=o.course.groupId;if(!g||seen.has(g))return false;seen.add(g);return adaptSummary(group(g)).length});
+ const nAd=ad.reduce((n,o)=>n+adaptSummary(group(o.course.groupId)).length,0);
+ if(nAd)items.push(`<div class="todo info"><span class="what"><b>${when}: ${nAd} ${nAd===1?"elev":"elever"} med anpassningar</b><br><span class="small muted">${ad.map(o=>esc(group(o.course.groupId).name)).join(", ")}. Se listan längre ner.</span></span><button class="btn small ghost" data-a="goto-adapt">Visa</button></div>`);
+ return `<section class="panel"><div class="panel-h"><h2>Att göra</h2></div>${items.length?`<div class="todos">${items.join("")}</div>`:`<p class="small muted" style="margin:0">Inget som väntar just nu. Alla lektioner har en plan och alla uppgifter är bedömda.</p>`}</section>`}
+function gotoAssess(id){const a=state.assessments.find(x=>x.id===id);if(!a)return;ui.group=a.groupId;ui.acourse=a.courseId;saveUI();location.hash="bedomning";render();
+ setTimeout(()=>{const th=document.querySelector(`.mx [data-aid="${id}"]`);if(th)th.scrollIntoView({block:"nearest",inline:"center"})},50)}
+
+/* ===== 05j-quickgrade.js ===== */
+/* ---------- omdömen med tangentbordet, som i ett kalkylark ----------
+   Klick markerar en ruta, klick igen eller Enter öppnar rutan för omdöme och anteckning.
+   Skriv nivån (t.ex. C, eller G/EG) så sparas den och markeringen flyttar ned till nästa elev.
+   Piltangenter flyttar, Delete tar bort omdömet. */
+let SEL_CELL=null,QG_BUF="",QG_T=null;
+const finePointer=()=>window.matchMedia&&window.matchMedia("(pointer:fine)").matches;
+const cellKey=el=>el.dataset.as+"|"+el.dataset.st;
+function selectCell(el){document.querySelectorAll(".mx .cell.sel").forEach(x=>x.classList.remove("sel"));if(!el)return;el.classList.add("sel");SEL_CELL=cellKey(el);el.focus({preventScroll:false})}
+function gradeKeys(aid){const a=state.assessments.find(x=>x.id===aid);return a&&a.mode==="gk"?["G","EG"]:scale().levels.map(l=>l.k)}
+function quickGrade(aid,sid,k){const cur=(state.grades[aid]||{})[sid]||{};state.grades[aid]=state.grades[aid]||{};
+ const keep=cur.note||(cur.asp&&Object.keys(cur.asp).length)||cur.p!=null;
+ if(!k){if(keep)state.grades[aid][sid]=Object.assign({},cur,{k:""});else delete state.grades[aid][sid]}
+ else state.grades[aid][sid]=Object.assign({},cur,{k},cur.asp&&Object.keys(cur.asp).length?{manual:true}:{});
+ const a=state.assessments.find(x=>x.id===aid);if(a)ui.lastCourse=a.courseId;commit()}
+function cellAt(el,dr,dc){const td=el.closest("td"),tr=td.closest("tr");const ci=[...tr.children].indexOf(td);const rows=[...tr.parentElement.children];const ri=rows.indexOf(tr);
+ const r=rows[ri+dr];if(!r)return null;const t=r.children[ci+dc];return t?t.querySelector(".cell"):null}
+function refocus(key,dr){const [aid,sid]=key.split("|");const el=document.querySelector(`.mx .cell[data-as="${aid}"][data-st="${sid}"]`);if(!el)return;selectCell(dr?cellAt(el,dr,0)||el:el)}
+document.addEventListener("keydown",e=>{const el=e.target;if(!el||!el.classList||!el.classList.contains("cell")||!el.closest(".mx")||e.ctrlKey||e.metaKey||e.altKey)return;
+ const mv={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+ if(mv){e.preventDefault();const n=cellAt(el,mv[0],mv[1]);if(n)selectCell(n);return}
+ if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();gradeModal(el.dataset.as,el.dataset.st);return}
+ if(e.key==="Delete"||e.key==="Backspace"){e.preventDefault();const k=cellKey(el);quickGrade(el.dataset.as,el.dataset.st,"");refocus(k,0);return}
+ if(e.key.length!==1||READONLY)return;
+ const keys=gradeKeys(el.dataset.as);QG_BUF+=e.key.toUpperCase();clearTimeout(QG_T);
+ const exact=keys.find(k=>k.toUpperCase()===QG_BUF);const pre=keys.filter(k=>k.toUpperCase().startsWith(QG_BUF));
+ if(!pre.length){QG_BUF="";if(!exact){el.classList.add("nope");setTimeout(()=>el.classList.remove("nope"),300);return}}
+ e.preventDefault();
+ const done=k=>{QG_BUF="";const key=cellKey(el);quickGrade(el.dataset.as,el.dataset.st,k);refocus(key,1)};
+ if(pre.length===1){done(pre[0]);return}
+ if(exact){QG_T=setTimeout(()=>done(exact),600);return}
+ QG_T=setTimeout(()=>{QG_BUF=""},900)},true);
+document.addEventListener("mousedown",e=>{const el=e.target&&e.target.closest&&e.target.closest(".mx .cell");if(el)el.dataset.was=el.classList.contains("sel")?"1":""},true);
+document.addEventListener("focusin",e=>{const el=e.target;if(el&&el.classList&&el.classList.contains("cell")&&el.closest(".mx")){document.querySelectorAll(".mx .cell.sel").forEach(x=>x!==el&&x.classList.remove("sel"));el.classList.add("sel");SEL_CELL=cellKey(el)}});
+
 /* ===== 06-modals.js ===== */
 /* ---------- modaler ---------- */
 let onClose=null;
@@ -2720,11 +2810,12 @@ function welcomeModal(){modal("Välkommen till Lärarbordet",`<p style="margin:0
  <div style="display:grid;gap:10px">
   <button class="btn pri" id="w-blank" style="justify-content:center;padding:12px">Börja med ett tomt Lärarbordet</button>
   <button class="btn" id="w-ex" style="justify-content:center;padding:12px">Titta runt med exempeldata först</button>
+  <details class="more-open"><summary>Fler sätt att öppna</summary><div style="display:grid;gap:10px;margin-top:10px">
   ${DESKTOP||canPick?`<button class="btn" data-a="open-file" style="justify-content:center;padding:12px">Öppna en befintlig fil</button><span class="small muted" style="margin-top:-4px">Om du redan använder Lärarbordet på en annan dator och filen ligger i skolans Drive eller OneDrive.</span>`:""}
-  <button class="btn ghost" data-a="sync-guide" style="justify-content:center">Så synkar du mellan datorer och telefonen</button>
-  ${DESKTOP?"":`<button class="btn" data-a="open-ro" style="justify-content:center;padding:12px">Öppna min fil i läsläge</button><span class="small muted" style="margin-top:-4px">För telefonen: välj din lararbordet.json eller lararbordet.html, till exempel från skolans Drive. Inget kan ändras eller skrivas över.</span>`}</div>
- <p class="small muted" style="margin:0">Exempeldatan kan du ta bort när som helst under Inställningar → Rensa allt.</p>`,m=>{
-  m.querySelector("#w-blank").onclick=()=>{const y=state.year;state=emptyState();state.year=y;closeModal();commit();pickerModal()};
+  ${DESKTOP?"":`<button class="btn" data-a="open-ro" style="justify-content:center;padding:12px">Öppna min fil i läsläge</button><span class="small muted" style="margin-top:-4px">För telefonen: välj din lararbordet.json eller lararbordet.html, till exempel från skolans Drive. Inget kan ändras eller skrivas över.</span>`}
+  <button class="btn ghost" data-a="sync-guide" style="justify-content:center">Så synkar du mellan datorer och telefonen</button></div></details></div>
+ <p class="small muted" style="margin:0">Börjar du med ett tomt Lärarbordet visar Översikt fyra steg som hjälper dig igång.</p>`,m=>{
+  m.querySelector("#w-blank").onclick=()=>{const y=state.year;state=emptyState();state.year=y;delete ui.startHidden;closeModal();location.hash="oversikt";commit()};
   m.querySelector("#w-ex").onclick=()=>closeModal()})}
 
 /* ---------- nytt läsår ---------- */
@@ -2818,7 +2909,7 @@ const A={
  "clear-example":()=>A.wipe(),
  "load-example":()=>confirmBox("Exempeldata ersätter allt du har lagt in. Exportera först om du vill spara något.",()=>{state=exampleState();state.example=true;commit()},"Visa exempel"),
  wipe:()=>confirmBox("Allt tas bort: kurser, arbetsområden, händelser, elever, omdömen och valda ämnen. Du får ett helt tomt Lärarbordet. Det går inte att ångra.",()=>{state=emptyState();ui=Object.assign(ui,{course:null,group:null,subject:null,subjFilter:"all",acourse:"all",wheel:"all"});commit();pickerModal()},"Rensa allt"),
- picker:()=>pickerModal(),
+ picker:()=>pickerModal(), "gs-unit":()=>gsUnit(), "gs-hide":()=>{ui.startHidden=true;commit(true);render();toast("Kom igång-listan är dold. Visa den igen under Inställningar → Flikar.")}, "gs-show":()=>{delete ui.startHidden;commit(true);location.hash="oversikt";render()}, "goto-assess":el=>gotoAssess(el.dataset.id), "goto-adapt":()=>{const e=document.getElementById("adaptpanel");if(e)e.scrollIntoView({behavior:"smooth",block:"start"})},
  "open-ro":()=>pickReadOnly(),
  "p-go":el=>pGo(el.dataset.t,el.dataset.id),
  "p-update-check":()=>pCheckUpdate(),
@@ -2856,7 +2947,7 @@ const A={
  "sel-course-go":el=>{closeModal();ui.course=el.dataset.id;ui.planView="tidslinje";if(location.hash!=="#planering")location.hash="planering";else render()},
  "student-go":el=>{const [g,st]=el.dataset.id.split("|");studentModal(g,st)},
  "proc-go":el=>{closeModal();const p=(state.process||[]).find(x=>x.id===el.dataset.id);if(!p)return;ui.pgroup=p.groupId;ui.proc=p.id;if(location.hash!=="#process")location.hash="process";else render()}, undo:()=>{TOAST_ON=false;undo()}, unlock:()=>unlockStart(), protect:()=>protectModal(), unprotect:()=>unprotect(), backups:()=>backupsModal(), "bk-dir":()=>pickBackupDir(),
- "reveal-file":()=>{try{T.opener.revealItemInDir(filePath)}catch(e){}}, "tab-move":el=>{const o=tabsOrdered().map(t=>t[0]).filter(x=>x!=="installningar");const i=o.indexOf(el.dataset.id),j=i+ +el.dataset.d;if(i<0||j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];ui.tabOrder=o;commit(true);render()}, "tab-reset":()=>{delete ui.tabOrder;commit(true);render()}, "rot-setup":()=>rotModal(), "rot-view":el=>{ui.rotView=+el.dataset.v;render()}, "import-ics":()=>icsModal(), "export-ics":()=>offerFile("lararbordet-schema.ics",buildICS(state),"text/calendar"), "del-course":el=>{const c=course(el.dataset.id);if(!c)return;confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden, lektioner, uppgifter och omdömen? Det går inte att ångra.`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);const uids=state.units.filter(u=>u.courseId===c.id).map(u=>u.id);state.lessons=state.lessons.filter(l=>!uids.includes(l.unitId)&&l.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.schedule=(state.schedule||[]).filter(x=>x.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);if(ui.course===c.id)ui.course=null;commit()})},
+ "reveal-file":()=>{try{T.opener.revealItemInDir(filePath)}catch(e){}}, "tab-move":el=>{const o=tabsOrdered().map(t=>t[0]).filter(x=>x!=="installningar");const i=o.indexOf(el.dataset.id),j=i+ +el.dataset.d;if(i<0||j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];ui.tabOrder=o;commit(true);render()}, "tab-reset":()=>{delete ui.hiddenTabs;delete ui.tabOrder;commit(true);render()}, "rot-setup":()=>rotModal(), "rot-view":el=>{ui.rotView=+el.dataset.v;render()}, "import-ics":()=>icsModal(), "export-ics":()=>offerFile("lararbordet-schema.ics",buildICS(state),"text/calendar"), "del-course":el=>{const c=course(el.dataset.id);if(!c)return;confirmBox(`Ta bort kursen “${esc(c.name)}” med alla dess arbetsområden, lektioner, uppgifter och omdömen? Det går inte att ångra.`,()=>{const aids=state.assessments.filter(a=>a.courseId===c.id).map(a=>a.id);aids.forEach(a=>delete state.grades[a]);state.assessments=state.assessments.filter(a=>a.courseId!==c.id);const uids=state.units.filter(u=>u.courseId===c.id).map(u=>u.id);state.lessons=state.lessons.filter(l=>!uids.includes(l.unitId)&&l.courseId!==c.id);state.units=state.units.filter(u=>u.courseId!==c.id);state.schedule=(state.schedule||[]).filter(x=>x.courseId!==c.id);state.courses=state.courses.filter(x=>x!==c);if(ui.course===c.id)ui.course=null;commit()})},
  "sel-sgroup":el=>{ui.sgroup=el.dataset.id;ui.student=null;saveUI();render()}, "sel-student":el=>{ui.student=el.dataset.id;saveUI();render();window.scrollTo(0,0)},
  "sel-pgroup":el=>{ui.pgroup=el.dataset.id;ui.proc=null;saveUI();render()}, "sel-proc":el=>{ui.proc=el.dataset.id;saveUI();render()},
  "new-proc":()=>procModal(), "edit-proc":el=>procModal(el.dataset.id), "add-pcol":()=>pcolModal(), "edit-pcol":el=>pcolModal(el.dataset.id),
@@ -2868,7 +2959,7 @@ const A={
  wheel:el=>{ui.wheel=el.dataset.id;saveUI();render()},
  wheelmode:el=>{ui.wheelMode=el.dataset.v;render()},
  "new-event":()=>eventModal(), "edit-event":el=>eventModal(el.dataset.id),
- "goto-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter=covGroupNow()==="all"?"all":"g:"+covGroupNow();ui.gapsOnly=true;saveUI();location.hash="innehall"},
+ "goto-subject":el=>{ui.subject=el.dataset.id;ui.subjFilter=covGroupNow()==="all"?"all":"g:"+covGroupNow();ui.gapsOnly=true;saveUI();if(tabHidden("innehall")){ui.planView="innehall";location.hash="planering";render()}else location.hash="innehall"},
  "sel-subject":el=>{ui.subject=el.dataset.id;if(!String(ui.subjFilter).startsWith("g:"))ui.subjFilter="all";saveUI();render()},
  gaps:el=>{ui.gapsOnly=el.dataset.v==="1";saveUI();render()},
  "toggle-manual":el=>{const id=el.dataset.id,g=el.dataset.g,k=g?g+"|"+id:id;if(state.manual[id])delete state.manual[id];else if(state.manual[k])delete state.manual[k];else state.manual[k]=true;commit()},
@@ -2878,7 +2969,7 @@ const A={
  "edit-group":el=>groupModal(el.dataset.id),
  "new-assess":()=>{if(!state.courses.length){modal("Skapa en kurs först",`<p style="margin:0">En bedömning hör till en kurs.</p><div class="actions"><a class="btn pri" href="#planering" data-a="close">Till planeringen</a></div>`);return}assessModal()},
  "edit-assess":el=>assessModal(el.dataset.id),
- grade:el=>gradeModal(el.dataset.as,el.dataset.st),
+ grade:el=>{if(finePointer()&&el.dataset.was!=="1"){selectCell(el);return}gradeModal(el.dataset.as,el.dataset.st)},
  student:el=>studentModal(el.dataset.g,el.dataset.id),
  "export-csv":()=>offerFile("omdomen-"+(group(ui.group)||{name:"grupp"}).name+".csv","﻿"+csv(),"text/csv"),
  "export-json":async()=>offerFile("lararbordet-"+fmtD(TODAY)+".json",await serialize(true),"application/json"),
@@ -2891,7 +2982,7 @@ const A={
   Object.values(state.grades).forEach(m=>Object.values(m).forEach(v=>{const i=from.levels.findIndex(l=>l.k===v.k);if(i>=0)v.k=to.levels[Math.round(i/(from.levels.length-1)*(to.levels.length-1))].k}));state.scale=el.value;commit()}
 };
 document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const f=A[el.dataset.a];if(!f)return;if(el.dataset.a==="scale")return;if(el.dataset.a==="ov"){if(e.target===el)closeModal();return}if(el.tagName!=="A")e.preventDefault();f(el,e)});
-document.addEventListener("change",e=>{if(e.target.id==="subjfilter"){ui.subjFilter=e.target.value;if(e.target.value.startsWith("g:"))ui.covGroup=e.target.value.slice(2);saveUI();render()}if(e.target.id==="covgroup"){ui.covGroup=e.target.value;saveUI();render()}if(e.target.id==="acourse"){ui.acourse=e.target.value;saveUI();render()}if(e.target.dataset.a==="scale")A.scale(e.target);if(e.target.id==="chkupd"){state.checkUpdates=e.target.checked;commit()}});
+document.addEventListener("change",e=>{if(e.target&&e.target.dataset&&e.target.dataset.tabshow){const id=e.target.dataset.tabshow;const h=hiddenTabs().filter(x=>x!==id);if(!e.target.checked)h.push(id);ui.hiddenTabs=h;commit(true);render();return}if(e.target.id==="subjfilter"){ui.subjFilter=e.target.value;if(e.target.value.startsWith("g:"))ui.covGroup=e.target.value.slice(2);saveUI();render()}if(e.target.id==="covgroup"){ui.covGroup=e.target.value;saveUI();render()}if(e.target.id==="acourse"){ui.acourse=e.target.value;if(e.target.value!=="all")ui.lastCourse=e.target.value;saveUI();render()}if(e.target.dataset.a==="scale")A.scale(e.target);if(e.target.id==="chkupd"){state.checkUpdates=e.target.checked;commit()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();if((e.key==="Enter"||e.key===" ")&&e.target.matches(".arc,[data-a='edit-event']")){e.preventDefault();e.target.dispatchEvent(new MouseEvent("click",{bubbles:true}))}});
 $("#importfile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{state=await loadText(await f.text(),f.name);state.example=false;commit();modal("Importerat",`<p style="margin:0">Datan är inläst: ${state.courses.length} kurser, ${state.units.length} arbetsområden, ${state.assessments.length} bedömningar.</p><div class="actions"><button class="btn pri" data-a="close">Klart</button></div>`)}catch(err){modal("Kunde inte importera",`<p style="margin:0">Filen kommer inte från Lärarbordet. Välj en exporterad .json eller en sparad lararbordet.html.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`)}e.target.value=""});
 window.addEventListener("hashchange",()=>{closeModal();render();window.scrollTo(0,0)});

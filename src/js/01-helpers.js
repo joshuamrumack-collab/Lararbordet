@@ -50,5 +50,8 @@ function normTime(v){v=String(v||"").trim();if(!v)return "";let m=v.match(/^(\d{
 if(typeof document!=="undefined")document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("tm")){const n=normTime(t.value);if(n!==t.value){t.value=n;t.dispatchEvent(new Event("change",{bubbles:true}))}}});
 const atypeL=a=>a.type==="annat"&&a.typeOther?a.typeOther:(ATYPES[a.type]||"");
 /* flikarnas ordning kan ändras under Inställningar */
+/* dolda flikar: Innehåll ligger som standard under Planering */
+const hiddenTabs=()=>(typeof ui!=="undefined"&&Array.isArray(ui.hiddenTabs))?ui.hiddenTabs:["innehall"];
+const tabHidden=id=>id!=="installningar"&&hiddenTabs().includes(id);
 function tabsOrdered(){const o=(typeof ui!=="undefined"&&Array.isArray(ui.tabOrder))?ui.tabOrder:[];const ix=id=>{const k=o.indexOf(id);return k<0?100+TABS.findIndex(t=>t[0]===id):k};
  return [...TABS].sort((a,b)=>a[0]==="installningar"?1:b[0]==="installningar"?-1:ix(a[0])-ix(b[0]))}

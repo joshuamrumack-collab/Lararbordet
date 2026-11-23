@@ -1,0 +1,27 @@
+/* ---------- Kom igång: fyra steg på Översikt ---------- */
+function startSteps(){return [
+ {k:"amnen",done:state.mine.length>0,t:"Välj dina ämnen",d:"Kursplaner, centralt innehåll och betygskriterier hämtas in för dem.",a:"picker",b:"Välj ämnen"},
+ {k:"schema",done:(state.schedule||[]).length>0,t:"Importera ditt schema",d:"Från en PDF (t.ex. Skola24) eller en kalenderfil. Du kan också lägga in lektionerna för hand.",a:"import-ics",b:"Importera schema",b2:["new-slot","Lägg in för hand"]},
+ {k:"klass",done:state.groups.length>0,t:"Lägg in din klass",d:"Namnen på eleverna, gärna med anpassningar. Klistra in en lista från t.ex. Excel.",a:"edit-group",b:"Lägg in klassen"},
+ {k:"omrade",done:state.units.length>0,t:"Skapa ditt första arbetsområde",d:state.courses.length?"Välj vilket centralt innehåll det täcker och planera lektionerna.":"Först skapar du en kurs, till exempel Svenska 8B, sedan arbetsområdet.",a:"gs-unit",b:state.courses.length?"Nytt arbetsområde":"Skapa kurs"}]}
+function startPanel(){if(state.example||READONLY||ui.startHidden)return "";const st=startSteps();const n=st.filter(x=>x.done).length;if(n===st.length)return "";
+ return `<section class="panel start"><div class="panel-h"><h2>Kom igång</h2><span class="small muted num">${n} av ${st.length} klara</span><span class="sp"></span><button class="btn ghost small" data-a="gs-hide">Dölj</button></div>
+ <div class="yearbar" style="margin:0 0 12px"><i style="width:${n/st.length*100}%"></i></div>
+ <ol class="steps">${st.map((x,i)=>`<li class="${x.done?"done":""}"><span class="sn">${x.done?CHECK:i+1}</span><span class="what"><b>${esc(x.t)}</b><br><span class="small muted">${esc(x.d)}</span></span>${x.done?"":`<span class="row-b">${x.b2?`<button class="btn small ghost" data-a="${x.b2[0]}">${esc(x.b2[1])}</button>`:""}<button class="btn small ${st.findIndex(y=>!y.done)===i?"pri":""}" data-a="${x.a}">${esc(x.b)}</button></span>`}</li>`).join("")}</ol></section>`}
+function gsUnit(){if(!state.courses.length){courseModal();return}if(!course(ui.course))ui.course=state.courses[0].id;ui.planView="tidslinje";location.hash="planering";render();unitModal()}
+
+/* ---------- Att göra: det som behöver göras nu ---------- */
+function nextSchoolDay(){for(let i=0;i<7;i++){const ds=fmtD(addDays(TODAY,i));const o=dayOccurrences(ds).filter(x=>!x.cancel);if(o.length)return {date:ds,occ:o}}return {date:fmtD(TODAY),occ:[]}}
+function todoPanel(){if(state.example&&!state.courses.length)return "";const items=[];
+ if(!DESKTOP&&!READONLY&&dirty&&!fileHandle)items.push(`<div class="todo bad"><span class="what"><b>Osparade ändringar</b><br><span class="small muted">Spara så att inget försvinner när du stänger sidan.</span></span><button class="btn small pri" data-a="save">Spara</button></div>`);
+ const nd=nextSchoolDay();const isToday=nd.date===fmtD(TODAY);const when=isToday?"Idag":cap(DAY[parseD(nd.date).getDay()])+" "+shortD(nd.date);
+ const noPlan=nd.occ.filter(o=>!(o.lesson&&(o.lesson.plan||o.lesson.title)));
+ if(nd.occ.length)items.push(`<div class="todo ${noPlan.length?"warn":"ok"}"><span class="what"><b>${when}: ${nd.occ.length} ${nd.occ.length===1?"lektion":"lektioner"}${noPlan.length?`, ${noPlan.length} utan plan`:", alla har en plan"}</b>${noPlan.length?`<br><span class="small">${noPlan.map(o=>`<button class="linkish" data-a="occ" data-slot="${o.slot.id}" data-date="${o.date}">${esc(o.slot.start)} ${esc(o.course.name)}</button>`).join(" · ")}</span>`:""}</span><a class="btn small ghost" href="#schema">Schema</a></div>`);
+ const due=state.assessments.filter(a=>a.date<=fmtD(TODAY)&&group(a.groupId)).map(a=>{const g=group(a.groupId);const miss=g.students.filter(s=>!((state.grades[a.id]||{})[s.id]||{}).k).length;return {a,miss,n:g.students.length}}).filter(x=>x.miss).sort((x,y)=>x.a.date<y.a.date?1:-1);
+ if(due.length)items.push(`<div class="todo warn"><span class="what"><b>${due.length} ${due.length===1?"uppgift":"uppgifter"} att bedöma</b><br><span class="small">${due.slice(0,4).map(x=>`<button class="linkish" data-a="goto-assess" data-id="${x.a.id}">${esc(x.a.title)} (${x.miss} av ${x.n} kvar)</button>`).join(" · ")}${due.length>4?` · och ${due.length-4} till`:""}</span></span><a class="btn small ghost" href="#bedomning">Bedömning</a></div>`);
+ const seen=new Set();const ad=nd.occ.filter(o=>{const g=o.course.groupId;if(!g||seen.has(g))return false;seen.add(g);return adaptSummary(group(g)).length});
+ const nAd=ad.reduce((n,o)=>n+adaptSummary(group(o.course.groupId)).length,0);
+ if(nAd)items.push(`<div class="todo info"><span class="what"><b>${when}: ${nAd} ${nAd===1?"elev":"elever"} med anpassningar</b><br><span class="small muted">${ad.map(o=>esc(group(o.course.groupId).name)).join(", ")}. Se listan längre ner.</span></span><button class="btn small ghost" data-a="goto-adapt">Visa</button></div>`);
+ return `<section class="panel"><div class="panel-h"><h2>Att göra</h2></div>${items.length?`<div class="todos">${items.join("")}</div>`:`<p class="small muted" style="margin:0">Inget som väntar just nu. Alla lektioner har en plan och alla uppgifter är bedömda.</p>`}</section>`}
+function gotoAssess(id){const a=state.assessments.find(x=>x.id===id);if(!a)return;ui.group=a.groupId;ui.acourse=a.courseId;saveUI();location.hash="bedomning";render();
+ setTimeout(()=>{const th=document.querySelector(`.mx [data-aid="${id}"]`);if(th)th.scrollIntoView({block:"nearest",inline:"center"})},50)}
