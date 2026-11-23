@@ -411,3 +411,21 @@ test("täckning per klass", () => {
   assert.equal(run('covSummary("GRGRSVE01/7-9","g:g8b")').covered, b.covered);
   assert.equal(run('covSummary("GRGRSVE01/7-9","all")').covered, all.covered + 1);
 });
+
+test("rullande schema: A/B/C-veckor och sammanslagning", () => {
+  const run = load();
+  run('state.rotation={n:3,start:"2026-08-17"}');
+  assert.equal(run('rotWeek(parseD("2026-08-19"),3)'), 1);
+  assert.equal(run('rotWeek(parseD("2026-08-24"),3)'), 2);
+  assert.equal(run('rotWeek(parseD("2026-09-07"),3)'), 1, "börjar om efter tre veckor");
+  assert.equal(run('rotWeek(parseD("2026-08-10"),3)'), 3, "veckan före A är C");
+  run('state.schedule=[{id:"x",courseId:"c-sv",day:1,start:"08:00",end:"09:00",weeks:"r:3:2"}];state.removed={}');
+  const d = run('slotDates(state,state.schedule[0],"2026-08-17","2026-09-30")');
+  assert.deepEqual(d, ["2026-08-24", "2026-09-14"]);
+  assert.equal(run('mergeWeeks("r:3:1","r:3:2")'), "r:3:1,2");
+  assert.equal(run('mergeWeeks("r:3:1,2","r:3:3")'), "alla");
+  assert.equal(run('mergeWeeks("jamna","udda")'), "alla");
+  assert.equal(run('mergeWeeks("r:2:1","jamna")'), null);
+  assert.equal(run('weeksLabel("r:3:1,3")'), "A och C-veckor (3-veckorsschema)");
+  assert.equal(run('weeksLabel("r:2:2")'), "B-veckor");
+});

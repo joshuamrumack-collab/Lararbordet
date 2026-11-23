@@ -1,3 +1,25 @@
+/* ---------- rullande schema (A/B-veckor m.m.) ---------- */
+const rotN=()=>(state.rotation&&state.rotation.n)||0;
+const hasRot=()=>(state.schedule||[]).some(x=>parseRot(x.weeks));
+/* måndagen i den vecka med nummer wn som ligger närmast idag inom läsåret */
+function mondayOfWeekNo(wn){let best=null;for(let d=mondayOf(parseD(state.year.start));fmtD(d)<=state.year.end;d=addDays(d,7))if(isoWeek(d)===+wn){if(!best||Math.abs(d-TODAY)<Math.abs(best-TODAY))best=d}return best?fmtD(best):fmtD(mondayOf(TODAY))}
+function weeksOptions(cur,n){n=n||rotN();const o=Object.entries(WEEKS_LABEL).map(([k,l])=>[k,l]);
+ if(n)for(let k=1;k<=n;k++)o.push([rotStr(n,[k]),weeksLabel(rotStr(n,[k]))]);if(cur&&!o.some(x=>x[0]===cur))o.push([cur,weeksLabel(cur)]);
+ return o.map(([k,l])=>`<option value="${k}" ${cur===k?"selected":""}>${esc(l)}</option>`).join("")}
+/* Inställning: hur många veckor schemat rullar och vilken vecka som är A */
+function rotFields(n,start){const wn=isoWeek(parseD(start||rotStart()));return `<div class="row"><div class="f"><label for="rtn">Antal olika veckor</label><select id="rtn">${[2,3,4,5,6].map(k=>`<option value="${k}" ${k===n?"selected":""}>${k} (${ROT_L.slice(0,k).split("").join("/")})</option>`).join("")}</select></div>
+ <div class="f"><label for="rtw">A-veckan är vecka</label><input type="number" id="rtw" min="1" max="53" value="${wn}" style="width:90px"></div></div>
+ <p class="small muted" style="margin:0" id="rtinfo"></p>`}
+function bindRotFields(m,onChange){const n=m.querySelector("#rtn"),w=m.querySelector("#rtw"),info=m.querySelector("#rtinfo");
+ const upd=()=>{const nn=+n.value,start=mondayOfWeekNo(w.value);const cur=rotWeek(TODAY,nn,{rotation:{start},year:state.year});info.textContent=`Den här veckan (v.${isoWeek(TODAY)}) blir ${ROT_L[cur-1]}-vecka. Schemat upprepas var ${nn}:e vecka, också över lov.`;if(onChange)onChange(nn,start)};
+ n.onchange=upd;w.oninput=upd;upd();return ()=>({n:+n.value,start:mondayOfWeekNo(w.value)})}
+function rotModal(){const r=state.rotation||{n:2,start:fmtD(mondayOf(TODAY))};
+ modal("Rullande schema",`<p style="margin:0">Har du olika scheman olika veckor, till exempel A- och B-veckor, anger du här hur de rullar. Sedan väljer du för varje lektion vilka veckor den går.</p>${rotFields(r.n,r.start)}
+ <div class="actions">${state.rotation?`<button class="btn danger" id="rtoff">Sluta använda</button>`:""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="rtok">Spara</button></div>`,m=>{
+  const get=bindRotFields(m);m.querySelector("#rtok").onclick=()=>{const v=get();
+   (state.schedule||[]).forEach(sl=>{const p=parseRot(sl.weeks);if(p&&p.n!==v.n){const ks=p.ks.filter(k=>k<=v.n);sl.weeks=ks.length?rotStr(v.n,ks):"alla"}});
+   state.rotation=v;closeModal();commit()};
+  const off=m.querySelector("#rtoff");if(off)off.onclick=()=>confirmBox("Sluta använda rullande schema?","Lektioner som bara går vissa veckor går då varje vecka.","Sluta använda",()=>{(state.schedule||[]).forEach(sl=>{if(parseRot(sl.weeks))sl.weeks="alla"});delete state.rotation;commit()})})}
 /* ---------- schema: veckoschema, en vecka i taget, inställda lektioner och kalendarium ---------- */
 const DAYS5=[1,2,3,4,5];
 const slotsOnDay=day=>(state.schedule||[]).filter(x=>+x.day===day&&course(x.courseId)).sort((a,b)=>a.start<b.start?-1:1);
@@ -14,7 +36,10 @@ const occCard=(o,compact)=>`<button class="occ ${o.cancel?"cancelled":""}" data-
 function vSchedule(){
  const has=(state.schedule||[]).length;
  const week=addDays(mondayOf(TODAY),7*(ui.schedWeek||0));const wn=isoWeek(week);
- const grid=`<div class="sgrid">${DAYS5.map(d=>`<div class="scol"><div class="sday">${cap(DAY[d])}</div>${slotsOnDay(d).map(sl=>{const c=course(sl.courseId);return `<button class="slot" data-a="edit-slot" data-id="${sl.id}" style="--cc:${c.color}"><span class="num occ-t">${esc(sl.start)}–${esc(sl.end)}</span><b>${esc(c.name)}</b><span class="small muted">${esc(sl.room||"")}${sl.weeks&&sl.weeks!=="alla"?(sl.room?" · ":"")+WEEKS_LABEL[sl.weeks]:""}</span>${sl.note?`<span class="occ-p">${esc(sl.note)}</span>`:""}</button>`}).join("")||'<span class="small muted">–</span>'}</div>`).join("")}</div>`;
+ const rn=hasRot()?rotN()||Math.max(...state.schedule.map(x=>(parseRot(x.weeks)||{n:0}).n)):0;const rv=rn&&ui.rotView&&ui.rotView<=rn?ui.rotView:0;
+ const rotTabs=rn?`<div class="chips" style="margin:-2px 0 10px">${[0,...Array.from({length:rn},(_,i)=>i+1)].map(k=>`<button class="chip" aria-pressed="${rv===k}" data-a="rot-view" data-v="${k}">${k?ROT_L[k-1]+"-vecka":"Alla veckor"}</button>`).join("")}</div>`:"";
+ const showSl=sl=>{if(!rv)return true;const p=parseRot(sl.weeks);return !p||p.ks.includes(rv)};
+ const grid=rotTabs+`<div class="sgrid">${DAYS5.map(d=>`<div class="scol"><div class="sday">${cap(DAY[d])}</div>${slotsOnDay(d).filter(showSl).map(sl=>{const c=course(sl.courseId);return `<button class="slot" data-a="edit-slot" data-id="${sl.id}" style="--cc:${c.color}"><span class="num occ-t">${esc(sl.start)}–${esc(sl.end)}</span><b>${esc(c.name)}</b><span class="small muted">${esc(sl.room||"")}${sl.weeks&&sl.weeks!=="alla"?(sl.room?" · ":"")+weeksLabel(sl.weeks):""}</span>${sl.note?`<span class="occ-p">${esc(sl.note)}</span>`:""}</button>`}).join("")||'<span class="small muted">–</span>'}</div>`).join("")}</div>`;
  const weekView=`<div class="sgrid">${DAYS5.map(d=>{const date=fmtD(addDays(week,d-1));const occ=dayOccurrences(date);const ev=eventsIn(parseD(date),parseD(date));
    return `<div class="scol ${date===fmtD(TODAY)?"today":""}"><div class="sday">${cap(DAY[d]).slice(0,3)} <span class="muted small">${parseD(date).getDate()}/${parseD(date).getMonth()+1}</span></div>${ev.length?`<div class="mev" style="margin:0 0 6px">${ev.map(evTag).join("")}</div>`:""}${occ.map(o=>occCard(o,true)).join("")||'<span class="small muted">Inga lektioner</span>'}</div>`}).join("")}</div>`;
  const withSched=state.courses.filter(c=>hasSchedule(state,c.id));
@@ -24,8 +49,8 @@ function vSchedule(){
    ${past?`<p class="small muted" style="margin:6px 0 0">${past} inställda tidigare i läsåret.</p>`:""}</div>`}).join("");
  const ev=[...state.events].sort((a,b)=>a.start<b.start?-1:1);
  const affects=e=>{const tid=e.from&&e.to?`${e.from}–${e.to}`:"hela dagen";return !CANCELS[e.type]?`Påverkar inte lektioner${e.from&&e.to?" · "+tid:""}`:e.type!=="aktivitet"?`Alla lektioner ställs in, ${tid}`:`${(e.groups||[]).length?e.groups.map(g=>(group(g)||{}).name).filter(Boolean).join(", "):"Alla grupper"}, ${tid}`};
- return `${has?`<section class="panel"><div class="panel-h"><button class="btn ghost" data-a="sched-week" data-v="-1" aria-label="Föregående vecka">‹</button><h2>Vecka ${wn}</h2><button class="btn ghost" data-a="sched-week" data-v="1" aria-label="Nästa vecka">›</button>${ui.schedWeek?`<button class="btn ghost" data-a="sched-week" data-v="0">Den här veckan</button>`:""}<span class="sp"></span><span class="small muted">Tryck på en lektion för att skriva planen eller ställa in den.</span><button class="btn" data-a="weekplan">Veckoplanering till elever</button></div>${weekView}</section>`:""}
- <section class="panel"><div class="panel-h"><h2>Mitt veckoschema</h2><span class="sp"></span><button class="btn" data-a="import-ics">Importera schema</button>${has?`<button class="btn" data-a="export-ics">Exportera till kalender</button>`:""}<button class="btn pri" data-a="new-slot">+ Lektion i schemat</button></div>
+ return `${has?`<section class="panel"><div class="panel-h"><button class="btn ghost" data-a="sched-week" data-v="-1" aria-label="Föregående vecka">‹</button><h2>Vecka ${wn}${rn?` · ${ROT_L[rotWeek(week,rn)-1]}-vecka`:""}</h2><button class="btn ghost" data-a="sched-week" data-v="1" aria-label="Nästa vecka">›</button>${ui.schedWeek?`<button class="btn ghost" data-a="sched-week" data-v="0">Den här veckan</button>`:""}<span class="sp"></span><span class="small muted">Tryck på en lektion för att skriva planen eller ställa in den.</span><button class="btn" data-a="weekplan">Veckoplanering till elever</button></div>${weekView}</section>`:""}
+ <section class="panel"><div class="panel-h"><h2>Mitt veckoschema</h2><span class="sp"></span><button class="btn" data-a="import-ics">Importera schema</button><button class="btn" data-a="rot-setup">${state.rotation?"Rullande schema":"A/B-veckor…"}</button>${has?`<button class="btn" data-a="export-ics">Exportera till kalender</button>`:""}<button class="btn pri" data-a="new-slot">+ Lektion i schemat</button></div>
   ${has?grid:`<div class="empty"><p>Lägg in dina lektioner en gång, till exempel <b>Svenska 8B, måndag 08:20–09:20</b>. Sedan räknar Lärarbordet ut vilka lektioner som blir inställda av lov, studiedagar och aktiviteter i kalendariet, och hur många lektioner varje arbetsområde faktiskt får.</p><button class="btn pri" data-a="new-slot">Lägg in första lektionen</button> <button class="btn" data-a="import-ics">Importera från PDF, Skola24, Google eller Outlook</button></div>`}</section>
  ${has?`<div class="grid2"><section class="panel"><div class="panel-h"><h2>Inställda lektioner</h2></div>${stats}</section>`:'<div class="grid2">'}
  <section class="panel"><div class="panel-h"><h2>Kalendarium</h2><span class="sp"></span><button class="btn" data-a="import-cal">Importera från Excel</button><button class="btn pri" data-a="new-event">+ Händelse</button></div>
@@ -38,7 +63,7 @@ function slotModal(id){const sl=id?(state.schedule||[]).find(x=>x.id===id):null;
  modal(sl?"Lektion i schemat":"Ny lektion i schemat",`<div class="f"><label for="slc">Kurs</label><select id="slc">${state.courses.map(c=>`<option value="${c.id}" ${d.courseId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div>
  <div class="f"><label>Dag</label><div class="chips" id="sld">${DAYS5.map(i=>`<button class="chip" aria-pressed="${+d.day===i}" data-d="${i}">${cap(DAY[i])}</button>`).join("")}</div></div>
  <div class="row"><div class="f"><label for="sls">Börjar</label><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="tt:mm" autocomplete="off" id="sls" value="${d.start}"></div><div class="f"><label for="sle">Slutar</label><input type="text" class="tm" inputmode="numeric" maxlength="5" placeholder="tt:mm" autocomplete="off" id="sle" value="${d.end}"></div></div>
- <div class="row"><div class="f"><label for="slr">Sal</label><input id="slr" value="${esc(d.room||"")}" placeholder="t.ex. B12"></div><div class="f"><label for="slw">Veckor</label><select id="slw">${Object.entries(WEEKS_LABEL).map(([k,l])=>`<option value="${k}" ${d.weeks===k?"selected":""}>${l}</option>`).join("")}</select></div></div>
+ <div class="row"><div class="f"><label for="slr">Sal</label><input id="slr" value="${esc(d.room||"")}" placeholder="t.ex. B12"></div><div class="f"><label for="slw">Veckor</label><select id="slw">${weeksOptions(d.weeks||"alla")}</select>${rotN()?"":`<span class="small muted">Olika scheman olika veckor? Välj <b>A/B-veckor…</b> i Schema.</span>`}</div></div>
  <div class="f"><label for="sln">Kommentarer till alla schemalagda lektioner</label><textarea id="sln" style="min-height:60px" placeholder="Kommentarer som påverkar alla lektionerna. Till exempel: Halvklass, klassanpassningar, rutiner">${esc(d.note||"")}</textarea><span class="small muted">Syns på lektionen varje vecka. Planen för en enskild lektion skriver du genom att trycka på lektionen i veckovyn.</span></div>
  ${sl&&Object.keys(state.removed||{}).some(k=>k.startsWith(sl.id+"|"))?`<div class="f"><label>Borttagna enstaka lektioner</label><div class="chips">${Object.keys(state.removed).filter(k=>k.startsWith(sl.id+"|")).sort().map(k=>`<button class="chip" data-rest="${esc(k)}" title="Ta tillbaka">${shortD(k.split("|")[1])} ↺</button>`).join("")}</div><span class="small muted">Tryck på ett datum för att ta tillbaka lektionen.</span></div>`:""}
  <div class="actions">${sl?'<button class="btn danger" id="sldel">Ta bort från schemat</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button>${sl?"":'<button class="btn" id="slmore">Spara och lägg till fler</button>'}<button class="btn pri" id="slok">Spara</button></div>`,m=>{
@@ -81,7 +106,8 @@ async function pdfItems(buf){const pdfjs=await loadPdfjs();const doc=await pdfjs
  for(let p=1;p<=Math.min(doc.numPages,10);p++){const page=await doc.getPage(p);const vp=page.getViewport({scale:1});const tc=await page.getTextContent();
   tc.items.forEach(it=>{if(it.str&&it.str.trim())out.push({str:it.str,x:it.transform[4],y:vp.height-it.transform[5],w:it.width||0,page:p})})}
  return out}
-function icsModal(){let rows=[];let evs=[];let src="";
+function icsModal(o){o=o||{};let rows=[];let evs=[];let src="";
+ const r0=state.rotation||{n:o.n||2,start:o.start||fmtD(mondayOf(TODAY))};let wmode=o.rotK?"rot":"alla",rk=o.rotK||1,getRot=null;
  const subjOpts=()=>usedSubjects().map(id=>`<option value="${esc(id)}">${esc(subjTitle(id))}</option>`).join("");
  const cOpts=(r)=>`<option value="">Hoppa över</option>${src==="ics"?`<option value="__event" ${r.c==="__event"?"selected":""}>Händelse i kalendariet</option>`:""}<optgroup label="Lektion i kursen">${state.courses.map(x=>`<option value="${x.id}" ${r.c===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</optgroup><option value="__new" ${r.c==="__new"?"selected":""}>+ Ny kurs…</option>`;
  const newC=(r,i)=>r.c!=="__new"?"":`<div class="imp-new"><div class="f"><label>Kursnamn</label><input data-nn="${i}" value="${esc(r.nn!=null?r.nn:r.text)}"></div>
@@ -99,10 +125,17 @@ function icsModal(){let rows=[];let evs=[];let src="";
   ${evs.length?`<label class="chk" style="margin-top:6px"><input type="checkbox" id="icsev" checked><span>Lägg ${evs.length} heldagshändelser (t.ex. lov) i kalendariet</span></label>`:""}`};
  modal("Importera schema",`<p class="small" style="margin:0">Välj en <b>PDF</b> av ditt schema, t.ex. sparad eller utskriven från Skola24 eller en annan schemavisare, eller en <b>kalenderfil (.ics)</b> från Google Kalender eller Outlook.</p>
  <ul class="small" style="margin:0;padding-left:18px;display:grid;gap:4px"><li><b>Skola24 och andra schemavisare:</b> visa en vecka och välj Skriv ut → Spara som PDF.</li><li><b>Google Kalender:</b> Inställningar → Importera och exportera → Exportera.</li><li><b>Outlook:</b> Arkiv → Spara kalender.</li></ul>
+ ${o.note?`<p class="small" style="margin:0;color:var(--ok)"><b>${esc(o.note)}</b></p>`:""}
+ <div class="f imp-weeks"><label for="imw">Schemat gäller</label><select id="imw"><option value="alla">Varje vecka</option><option value="jamna">Jämna veckor</option><option value="udda">Udda veckor</option><option value="rot" ${wmode==="rot"?"selected":""}>Olika scheman som rullar (A/B-veckor…)</option></select>
+  <div id="imrot" hidden style="display:grid;gap:8px;margin-top:6px">${rotFields(r0.n,r0.start)}<div class="f"><label for="imk">Den här filen är schemat för</label><select id="imk"></select></div><span class="small muted">Importera en fil för varje vecka. När du är klar med en vecka får du välja filen för nästa.</span></div></div>
  <div class="actions" style="justify-content:flex-start;margin:0"><label class="btn pri" style="cursor:pointer">Välj PDF eller .ics…<input type="file" id="icsf" accept=".pdf,application/pdf,.ics,text/calendar" hidden></label><span class="small muted" id="imst"></span></div>
  <div id="icsb" style="display:grid;gap:10px"></div>
  <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="icsok" disabled>Importera</button></div>`,m=>{
   m.classList.add("wide");
+  const imw=m.querySelector("#imw"),imrot=m.querySelector("#imrot"),imk=m.querySelector("#imk");
+  const fillK=n=>{imk.innerHTML=Array.from({length:n},(_,i)=>`<option value="${i+1}" ${i+1===rk?"selected":""}>${ROT_L[i]}-veckan</option>`).join("")};
+  getRot=bindRotFields(m,n=>{if(rk>n)rk=n;fillK(n)});imk.onchange=()=>{rk=+imk.value};
+  const wupd=()=>{wmode=imw.value;imrot.hidden=wmode!=="rot";imrot.style.display=wmode==="rot"?"grid":"none"};imw.onchange=wupd;wupd();
   const paint=()=>{m.querySelector("#icsb").innerHTML=draw();m.querySelector("#icsok").disabled=!rows.some(r=>r.c)&&!evs.length;bind()};
   const bind=()=>{m.querySelectorAll(".imp-row").forEach(el=>{const r=rows[+el.dataset.i];el.querySelectorAll("[data-f]").forEach(f=>f.onchange=()=>{const k=f.dataset.f;r[k]=k==="day"?+f.value:(k==="start"||k==="end")?normTime(f.value):f.value;if(k==="c"){if(f.value==="__new"&&!usedSubjects().length){toast("Välj först dina ämnen under Inställningar.")}paint()}else if(k==="text"&&!r.c){r.c=guessCourse(state,r.text);paint()}});
     const nn=el.querySelector("[data-nn]");if(nn)nn.oninput=()=>{r.nn=nn.value};const ns=el.querySelector("[data-ns]");if(ns){if(!r.ns){const tl=(r.text||"").toLowerCase();r.ns=usedSubjects().find(id=>tl.includes(((subj(id)||{}).name||"").toLowerCase()))||ns.value}ns.value=r.ns;ns.onchange=()=>{r.ns=ns.value}}
@@ -117,13 +150,18 @@ function icsModal(){let rows=[];let evs=[];let src="";
      rows=Object.values(map).sort((a,b)=>a.day-b.day||(a.start<b.start?-1:1)).map(r=>Object.assign(r,{c:guessCourse(state,r.text)||(r.n<2&&!r.weekly?"__event":"")}))}
     st.textContent=f.name}catch(err){st.textContent="";src="pdf";rows=[];toast("Kunde inte läsa filen: "+(err&&err.message||err))}
    paint()};
-  m.querySelector("#icsok").onclick=()=>{let ns=0,nc=0,ne=0;const made={};
+  m.querySelector("#icsok").onclick=()=>{let ns=0,nc=0,ne=0;const made={};let weeks=wmode;
+   if(wmode==="rot"){const v=getRot();if(state.rotation&&state.rotation.n!==v.n)(state.schedule||[]).forEach(sl=>{const p=parseRot(sl.weeks);if(p&&p.n!==v.n){const ks=p.ks.filter(k=>k<=v.n);sl.weeks=ks.length?rotStr(v.n,ks):"alla"}});state.rotation=v;weeks=rotStr(v.n,[rk])}
    rows.forEach(r=>{let cid=r.c;if(!cid)return;
     if(cid==="__event"){(r.list||[]).forEach(e=>{if(!state.events.some(x=>x.title===e.summary&&x.start===e.date)){state.events.push({id:uid(),title:e.summary,start:e.date,end:e.date,type:guessType(e.summary,""),groups:[],from:e.start,to:e.end});ne++}});return}
     if(cid==="__new"){const name=(r.nn!=null?r.nn:r.text).trim()||"Ny kurs";const key=name+"|"+(r.ns||"")+"|"+(r.ng||"")+"|"+(r.ngn||"");
      if(!made[key]){let gid=r.ng||"";if(gid==="__new"){const gn=(r.ngn||"").trim()||"Ny grupp";const ex=state.groups.find(g=>g.name===gn);if(ex)gid=ex.id;else{gid=uid();state.groups.push({id:gid,name:gn,students:[]})}}
       const ncs={id:uid(),name,subjectId:r.ns||usedSubjects()[0]||"",groupId:gid,color:COLORS[state.courses.length%COLORS.length]};state.courses.push(ncs);made[key]=ncs.id;nc++}cid=made[key]}
     if(!r.start||!r.end||r.end<=r.start)return;
-    if(state.schedule.some(x=>x.courseId===cid&&+x.day===+r.day&&x.start===r.start))return;state.schedule.push({id:uid(),courseId:cid,day:+r.day,start:r.start,end:r.end,room:r.room||"",weeks:"alla"});ns++});
+    const ex=state.schedule.find(x=>x.courseId===cid&&+x.day===+r.day&&x.start===r.start&&x.end===r.end);
+    if(ex){const mw=mergeWeeks(ex.weeks||"alla",weeks);if(mw){if(mw!==ex.weeks){ex.weeks=mw;ns++}return}}
+    state.schedule.push({id:uid(),courseId:cid,day:+r.day,start:r.start,end:r.end,room:r.room||"",weeks});ns++});
    let res={added:0,updated:0};const evb=m.querySelector("#icsev");if(evb&&evb.checked)res=mergeEvents(state,evs.map(e=>({title:e.title,start:e.start,end:e.end,type:e.type})));
-   closeModal();commit();toast(`${ns} lektioner i veckoschemat${nc?`, ${nc} nya kurser`:""}${ne+res.added?`, ${ne+res.added} nya händelser`:""}${res.updated?`, ${res.updated} uppdaterade`:""}.`)}})}
+   closeModal();commit();
+   if(wmode==="rot"&&rk<state.rotation.n){icsModal({rotK:rk+1,note:`${ROT_L[rk-1]}-veckan är importerad (${ns} lektioner). Välj filen för ${ROT_L[rk]}-veckan, eller tryck Avbryt om du är klar.`});return}
+   toast(`${ns} lektioner i veckoschemat${nc?`, ${nc} nya kurser`:""}${ne+res.added?`, ${ne+res.added} nya händelser`:""}${res.updated?`, ${res.updated} uppdaterade`:""}.`)}})}

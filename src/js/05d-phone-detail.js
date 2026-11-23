@@ -20,7 +20,7 @@ function dOcc(key){const [slotId,date]=key.split("|");const o=dayOccurrences(dat
  if(o.lesson&&!o.cancel)return dLesson(o.lesson.id,o);
  return `<header class="p-hero" style="--cc:${o.course.color}"><span class="p-date">${esc(o.course.name)}</span><span class="p-week">${cap(DAY[parseD(date).getDay()])} ${shortD(date)} · ${esc(o.slot.start)}–${esc(o.slot.end)}</span></header>
  ${o.cancel?`<div class="p-card x"><span class="p-label">Inställd</span><b>${esc(o.cancel.reason)}</b><span class="p-sub">${o.cancel.type==="manuell"?"Inställd för hand":"Enligt kalendariet"}</span></div>`:`<div class="p-card"><span class="p-label">Ingen lektion planerad</span><span class="p-sub">${o.slot.note?esc(o.slot.note):"Planera den på datorn."}</span></div>${adaptReminder(o.course)}`}
- ${pKV([["Sal",esc(o.slot.room||"")],["Veckor",o.slot.weeks&&o.slot.weeks!=="alla"?WEEKS_LABEL[o.slot.weeks]:""]])}
+ ${pKV([["Sal",esc(o.slot.room||"")],["Veckor",o.slot.weeks&&o.slot.weeks!=="alla"?weeksLabel(o.slot.weeks):""]])}
  ${o.unit?pSec("Arbetsområde",unitRow(o.unit)):""}${o.lesson?pSec("Planerad lektion",lessonRow(o.lesson)):""}`}
 
 function dLesson0(id,occ){const l=(state.lessons||[]).find(x=>x.id===id);if(!l)return "";const u=unit(l.unitId)||{};const c=course(u.courseId||l.courseId)||{};const lc=lessonCancel(state,l);

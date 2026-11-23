@@ -10,7 +10,7 @@ const shiftDate=(s,days)=>s?fmtD(addDays(parseD(s),days)):s;
 function weekShift(fromStart,toStart){return Math.round((mondayOf(parseD(toStart))-mondayOf(parseD(fromStart)))/dayMs/7)*7}
 
 /* ----- läsår ----- */
-const YEAR_KEYS=["year","courses","units","events","groups","assessments","grades","manual","lessons","schedule","cancel","removed","process","kmat"];
+const YEAR_KEYS=["year","rotation","courses","units","events","groups","assessments","grades","manual","lessons","schedule","cancel","removed","process","kmat"];
 function yearLabel(y){return parseD(y.start).getFullYear()+"/"+String(parseD(y.end).getFullYear()).slice(2)}
 function snapshotYear(s){const o={id:uid(),archivedAt:fmtD(TODAY)};YEAR_KEYS.forEach(k=>o[k]=s[k]==null?(k==="process"?[]:(k==="kmat"||k==="removed")?{}:null):JSON.parse(JSON.stringify(s[k])));o.label=yearLabel(s.year);return o}
 /* Bygger ett nytt läsår. opts: {start,end,courses,lessons,assessments,groups,events} */
@@ -110,9 +110,22 @@ function aspectEvidence(s,courseId,studentId){const out={};s.assessments.filter(
 const EVENT_TYPES={lov:"Lov",studiedag:"Studiedag",aktivitet:"Aktivitet",annat:"Händelse",deadline:"Deadline"};
 const CANCELS={lov:true,studiedag:true,aktivitet:true};
 const WEEKS_LABEL={alla:"Varje vecka",jamna:"Jämna veckor",udda:"Udda veckor"};
-function slotRunsInWeek(slot,d){if(!slot.weeks||slot.weeks==="alla")return true;const w=isoWeek(d);return slot.weeks==="jamna"?w%2===0:w%2===1}
+/* Rullande schema: weeks "r:N:1,3" = går vecka A och C i ett schema som upprepas var N:e vecka.
+   s.rotation={n,start}: start är måndagen i vecka A. */
+const ROT_L="ABCDEFGH";
+const parseRot=w=>{const m=/^r:(\d+):([\d,]+)$/.exec(String(w||""));return m?{n:+m[1],ks:m[2].split(",").map(Number).filter(k=>k>=1&&k<=+m[1])}:null};
+const rotStr=(n,ks)=>{ks=[...new Set(ks)].sort((a,b)=>a-b);return ks.length>=n?"alla":"r:"+n+":"+ks.join(",")};
+function rotStart(s){s=s||state;return (s.rotation&&s.rotation.start)||fmtD(mondayOf(parseD(s.year.start)))}
+/* Vilken vecka i rotationen (1 = A) ett datum ligger i */
+function rotWeek(d,n,s){const w=Math.floor(Math.round((mondayOf(d)-mondayOf(parseD(rotStart(s))))/dayMs)/7);return ((w%n)+n)%n+1}
+function weeksLabel(w){const r=parseRot(w);if(r)return r.ks.map(k=>ROT_L[k-1]).join(", ").replace(/, ([^,]*)$/," och $1")+"-veckor"+(r.n>2?` (${r.n}-veckorsschema)`:"");return WEEKS_LABEL[w]||WEEKS_LABEL.alla}
+function slotRunsInWeek(slot,d,s){if(!slot.weeks||slot.weeks==="alla")return true;const r=parseRot(slot.weeks);if(r)return r.ks.includes(rotWeek(d,r.n,s));const w=isoWeek(d);return slot.weeks==="jamna"?w%2===0:w%2===1}
+/* Slår ihop två veckoregler för samma lektion, t.ex. A + B = varje vecka */
+function mergeWeeks(a,b){if(a===b)return a;if(!a||!b||a==="alla"||b==="alla")return "alla";
+ if((a==="jamna"&&b==="udda")||(a==="udda"&&b==="jamna"))return "alla";const ra=parseRot(a),rb=parseRot(b);
+ if(ra&&rb&&ra.n===rb.n)return rotStr(ra.n,ra.ks.concat(rb.ks));return null}
 function slotDates(s,slot,from,to){const a=from>s.year.start?from:s.year.start,b=to<s.year.end?to:s.year.end;const out=[];
- for(let d=parseD(a);fmtD(d)<=b;d=addDays(d,1))if(d.getDay()===+slot.day&&slotRunsInWeek(slot,d)&&!(s.removed||{})[slot.id+"|"+fmtD(d)])out.push(fmtD(d));return out}
+ for(let d=parseD(a);fmtD(d)<=b;d=addDays(d,1))if(d.getDay()===+slot.day&&slotRunsInWeek(slot,d,s)&&!(s.removed||{})[slot.id+"|"+fmtD(d)])out.push(fmtD(d));return out}
 /* Varför en lektion blir inställd, eller null om den blir av */
 function cancellation(s,slot,date){const c=(s.courses||[]).find(x=>x.id===slot.courseId)||{};
  const man=(s.cancel||{})[slot.id+"|"+date];if(man!=null)return {reason:man||"Inställd",type:"manuell"};
