@@ -355,3 +355,43 @@ test("anpassad gymnasieskola finns med ämnen, kurser, ämnesområden och kriter
   assert.deepEqual(run(`critFor("${o}").levels`), ["G", "F"]);
   assert.equal(run('formOf("GRGRSVE01/7-9")'), "GR");
 });
+
+test("delat arbetsområde: inga elever, veckodagar följer med, matris följer med", () => {
+  const run = load();
+  const pkg = run('exportUnit(state,"u2")');
+  const json = JSON.stringify(pkg);
+  for (const name of run("state.groups[0].students.map(s=>s.name)")) assert.ok(!json.includes(name), "elevnamn får inte följa med");
+  assert.ok(!json.includes('"grades"'));
+  assert.ok(pkg.assessments.some((a) => a.aspects.length), "betygskriterierna följer med");
+  const before = run("state.units.length");
+  const r = run(`importUnit(state,${json},"c-sv","2027-03-03","g8b")`);
+  assert.equal(run("state.units.length"), before + 1);
+  assert.equal(r.unit.start, "2027-03-01", "börjar på måndagen samma vecka");
+  const days = run(`lessonsOf("${r.unit.id}").map(l=>parseD(l.date).getDay())`);
+  const orig = run('lessonsOf("u2").map(l=>parseD(l.date).getDay())');
+  assert.deepEqual(days, orig);
+  assert.equal(r.assessments, pkg.assessments.length);
+  /* annat ämne: centralt innehåll och kriterier följer inte med */
+  const r2 = run(`importUnit(state,${json},"c-ma","2027-04-05","")`);
+  assert.equal(r2.unit.contentIds.length, 0);
+  assert.equal(r2.assessments, pkg.assessments.length, "kursens elevgrupp används");
+  assert.ok(run(`state.assessments.filter(a=>a.unitId==="${r2.unit.id}").every(a=>!a.aspects.length)`), "kriterier från ett annat ämne följer inte med");
+  run('state.courses.push({id:"cx",name:"X",subjectId:"GRGRSVE01/7-9",groupId:"",color:"#000"})');
+  assert.equal(run(`importUnit(state,${json},"cx","2027-04-05","")`).assessments, 0, "utan elevgrupp hoppas uppgifterna över");
+  assert.throws(() => run('importUnit(state,{type:"lararbordet-kurs"},"c-sv")'));
+});
+
+test("ämnesanalys hittar elever under E och obedömt innehåll", () => {
+  const run = load();
+  const an = run('analyzeGroup(state,"g8b")');
+  const sv = an.courses.find((c) => c.courseId === "c-sv");
+  assert.ok(sv.below >= 1);
+  assert.ok(sv.students.filter((s) => s.below).every((s) => s.median === "F" || s.last === "F"));
+  assert.ok(sv.content.notAssessed > 0 && sv.content.notAssessed < sv.content.total);
+  const anon = run('exportAnalysis(analyzeGroup(state,"g8b"),false)');
+  for (const name of run("state.groups[0].students.map(s=>s.name)")) assert.ok(!JSON.stringify(anon).includes(name), "utan namn: bara initialer");
+  const named = run('exportAnalysis(analyzeGroup(state,"g8b"),true)');
+  const m = run(`mergeAnalyses(analyzeGroup(state,"g8b"),[${JSON.stringify(named)}])`);
+  assert.equal(m.courses.length, an.courses.length * 2);
+  assert.ok(m.risk[0].courses.length >= 2, "samma elev i flera ämnen räknas ihop");
+});

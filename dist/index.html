@@ -1012,6 +1012,66 @@ function guessCourse(s,text){const t=String(text||"").toLowerCase();if(!t)return
   const code=String(c.subjectId||"").split("/")[0].toLowerCase();if(code&&t.includes(code.slice(0,6)))sc+=4;
   if(sc>bs){bs=sc;best=c.id}});return bs>=3?best:""}
 
+/* ===== 03z-share.js ===== */
+/* ---------- dela ett arbetsområde med en kollega (utan elever och omdömen) ---------- */
+/* Lektioner och uppgifter sparas som dagar från arbetsområdets första måndag, så att veckodagarna följer med. */
+const dayDiff=(a,b)=>Math.round((parseD(b)-parseD(a))/dayMs);
+function exportUnit(s,unitId){const u=s.units.find(x=>x.id===unitId);if(!u)return null;const c=s.courses.find(x=>x.id===u.courseId)||{};
+ const base=fmtD(mondayOf(parseD(u.start)));const sid=c.subjectId||"";const cids=new Set(u.contentIds||[]);
+ const as=s.assessments.filter(a=>a.unitId===u.id);
+ return {type:"lararbordet-arbetsomrade",v:1,exported:fmtD(TODAY),subjectId:sid,courseName:c.name||"",color:c.color||"",
+  unit:{title:u.title,days:dayDiff(base,u.end),startDay:dayDiff(base,u.start),desc:u.desc||"",contentIds:u.contentIds||[],lppGoal:u.lppGoal||"",lppWork:u.lppWork||"",easy:u.easy||{},easyGoal:u.easyGoal||"",easyWork:u.easyWork||"",easyCrit:u.easyCrit||{}},
+  lessons:(s.lessons||[]).filter(l=>l.unitId===u.id).sort((a,b)=>a.date<b.date?-1:1).map(l=>({day:dayDiff(base,l.date),title:l.title||"",plan:l.plan||"",time:l.time||""})),
+  assessments:as.map(a=>({day:dayDiff(base,a.date),title:a.title,desc:a.desc||"",type:a.type||"",typeOther:a.typeOther||"",mode:a.mode||"betyg",max:a.max==null?null:a.max,aspects:a.aspects||[],contentIds:a.contentIds||[]})),
+  extra:((s.extra||{})[sid]||[]).filter(e=>cids.has(e.id)),custom:(s.custom||{})[sid]||null}}
+/* Lägger in ett delat arbetsområde i en kurs. Startar den måndag som startDate ligger i. */
+function importUnit(s,pkg,courseId,startDate,groupId){
+ if(!pkg||pkg.type!=="lararbordet-arbetsomrade")throw new Error("Filen är inget delat arbetsområde från Lärarbordet.");
+ const c=s.courses.find(x=>x.id===courseId);if(!c)throw new Error("Välj en kurs.");
+ const same=c.subjectId===pkg.subjectId;const base=mondayOf(parseD(startDate||fmtD(TODAY)));const at=d=>fmtD(addDays(base,d||0));
+ if(same&&pkg.custom&&!s.custom[c.subjectId])s.custom[c.subjectId]=pkg.custom;
+ if(same&&pkg.extra&&pkg.extra.length){const have=new Set(((s.extra[c.subjectId])||[]).map(e=>e.id));s.extra[c.subjectId]=((s.extra[c.subjectId])||[]).concat(pkg.extra.filter(e=>!have.has(e.id)))}
+ const known=new Set(allItems(c.subjectId).map(i=>i.id));const keep=ids=>same?(ids||[]).filter(id=>known.has(id)):[];
+ const p=pkg.unit;const u={id:uid(),courseId:c.id,title:p.title,start:at(p.startDay),end:at(p.days),status:"planerad",desc:p.desc||"",contentIds:keep(p.contentIds)};
+ ["lppGoal","lppWork","easyGoal","easyWork"].forEach(k=>{if(p[k])u[k]=p[k]});
+ if(same&&p.easy&&Object.keys(p.easy).length)u.easy=Object.assign({},p.easy);if(same&&p.easyCrit&&Object.keys(p.easyCrit).length)u.easyCrit=Object.assign({},p.easyCrit);
+ s.units.push(u);s.lessons=s.lessons||[];
+ (pkg.lessons||[]).forEach(l=>s.lessons.push({id:uid(),unitId:u.id,date:at(l.day),title:l.title||"Lektion",plan:l.plan||"",note:"",done:false,...(l.time?{time:l.time}:{})}));
+ const gid=groupId||c.groupId||"";let na=0;
+ if(gid)(pkg.assessments||[]).forEach(a=>{s.assessments.push({id:uid(),courseId:c.id,groupId:gid,unitId:u.id,title:a.title,date:at(a.day),desc:a.desc||"",type:a.type||"",typeOther:a.typeOther||"",mode:a.mode||"betyg",max:a.max==null?null:a.max,aspects:same&&a.mode!=="gk"?a.aspects||[]:[],contentIds:keep(a.contentIds)});na++});
+ return {unit:u,assessments:na,sameSubject:same,lessons:(pkg.lessons||[]).length}}
+
+/* ---------- ämnesanalys för arbetslaget ---------- */
+const lowMark=k=>k==="EG"||isLow(k);
+/* Per kurs: elever som ligger under E (mediantal eller senaste omdöme) och centralt innehåll som inte bedömts. */
+function analyzeGroup(s,groupId){const g=s.groups.find(x=>x.id===groupId);if(!g)return null;const lv=scale().levels;
+ const cs=s.courses.filter(c=>c.groupId===g.id||s.assessments.some(a=>a.groupId===g.id&&a.courseId===c.id));
+ const courses=cs.map(c=>{const as=s.assessments.filter(a=>a.groupId===g.id&&a.courseId===c.id).sort((a,b)=>a.date<b.date?-1:1);
+  const students=g.students.map(st=>{const got=as.map(a=>({a,v:(s.grades[a.id]||{})[st.id]})).filter(x=>x.v&&x.v.k);
+   const idx=got.map(x=>lvIdx(x.v.k)).filter(i=>i>=0);const m=median(idx);const med=m==null?null:lv[m].k;
+   const last=got.length?got[got.length-1]:null;const lows=got.filter(x=>lowMark(x.v.k));
+   const below=(med!=null&&isLow(med))||!!(last&&lowMark(last.v.k));
+   return {id:st.id,name:st.name,median:med,last:last?last.v.k:null,lastTitle:last?last.a.title:"",low:lows.length,lowTitles:lows.map(x=>x.a.title),missing:as.length-got.length,count:got.length,below}});
+  let content=null;
+  if(subj(c.subjectId)){const cov=coverage(c.subjectId,c.id);const s2=subj(c.subjectId);
+   const areas=s2.areas.map(a=>({name:a.name,items:a.items.filter(i=>cov[i.id]&&!cov[i.id].assessed).map(i=>({id:i.id,text:i.text,state:cov[i.id].state}))})).filter(a=>a.items.length);
+   const total=Object.keys(cov).length;const notAssessed=areas.reduce((n,a)=>n+a.items.length,0);
+   content={total,assessed:total-notAssessed,notAssessed,areas}}
+  return {courseId:c.id,name:c.name,subject:subjTitle(c.subjectId),assessments:as.length,students,below:students.filter(x=>x.below).length,missing:students.reduce((n,x)=>n+x.missing,0),content}});
+ return {group:g.name,exported:fmtD(TODAY),courses}}
+/* Fil att dela i arbetslaget. Med elevnamn bara om läraren väljer det. */
+function exportAnalysis(an,withNames){const ini=n=>String(n||"").split(/\s+/).filter(Boolean).map(w=>w[0].toUpperCase()+".").join(" ");
+ return {type:"lararbordet-analys",v:1,exported:an.exported,group:an.group,names:!!withNames,
+  courses:an.courses.map(c=>({name:c.name,subject:c.subject,assessments:c.assessments,below:c.below,missing:c.missing,
+   students:c.students.filter(x=>x.below||x.missing).map(x=>({name:withNames?x.name:ini(x.name),median:x.median,last:x.last,low:x.low,missing:x.missing,below:x.below})),
+   content:c.content?{total:c.content.total,assessed:c.content.assessed,notAssessed:c.content.notAssessed,areas:c.content.areas.map(a=>({name:a.name,items:a.items.map(i=>({text:i.text,state:i.state}))}))}:null}))}}
+/* Slår ihop egen analys med kollegors filer: elever matchas på namn */
+function mergeAnalyses(own,others){const courses=own.courses.map(c=>Object.assign({},c,{from:""}));
+ (others||[]).forEach(o=>{if(!o||o.type!=="lararbordet-analys")return;(o.courses||[]).forEach(c=>courses.push(Object.assign({},c,{from:o.from||"kollega",students:(c.students||[]).map(x=>Object.assign({},x))})))});
+ const map=new Map();courses.forEach((c,ci)=>(c.students||[]).forEach(x=>{if(!x.below)return;const k=String(x.name).trim().toLowerCase();if(!map.has(k))map.set(k,{name:x.name,courses:[]});map.get(k).courses.push(ci)}));
+ const risk=[...map.values()].sort((a,b)=>b.courses.length-a.courses.length||a.name.localeCompare(b.name,"sv"));
+ return {group:own.group,courses,risk}}
+
 /* ===== 04-storage.js ===== */
 /* ---------- lagring ----------
    Två lägen med samma kod:
@@ -1384,7 +1444,7 @@ function vPlanning(){
  const all=ui.course==="all";if(!all&&!course(ui.course))ui.course=state.courses[0].id;const c=all?null:course(ui.course);const pv=ui.planView==="veckor"?"veckor":"tidslinje";
  const chips=`<button class="chip" aria-pressed="${all}" data-a="sel-course" data-id="all">Alla kurser</button>`+state.courses.map(x=>`<button class="chip" aria-pressed="${!all&&x.id===c.id}" data-a="sel-course" data-id="${x.id}"><span class="dot" style="background:${x.color}"></span>${esc(x.name)}</button>`).join("");
  const seg=`<div class="seg" role="group" aria-label="Visa planeringen som"><button aria-pressed="${pv==="tidslinje"}" data-a="planview" data-v="tidslinje">Tidslinje</button><button aria-pressed="${pv==="veckor"}" data-a="planview" data-v="veckor">Veckor</button></div>`;
- const top=`<section class="panel"><div class="toolbar">${seg}<div class="chips">${chips}</div><span class="sp"></span><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="library">Ämnesbibliotek</button><button class="btn" data-a="weekplan">Veckoplanering</button><button class="btn" data-a="import-course">Importera kurs</button><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>`;
+ const top=`<section class="panel"><div class="toolbar">${seg}<div class="chips">${chips}</div><span class="sp"></span><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="library">Ämnesbibliotek</button><button class="btn" data-a="weekplan">Veckoplanering</button><button class="btn" data-a="import-course" title="Importera en kurs eller ett arbetsområde som en kollega delat">Importera</button><button class="btn" data-a="new-course">+ Ny kurs</button></div></section>`;
  if(pv==="veckor"){const cs=all?state.courses:[c];return top+`<section class="panel"><div class="panel-h"><h1>${all?"Alla kurser":esc(c.name)}</h1><span class="sp"></span>${all?`<button class="btn" data-a="new-task">+ Uppgift</button>`:`<button class="btn" data-a="new-task" data-id="${c.id}">+ Uppgift</button><button class="btn pri" data-a="new-unit">+ Arbetsområde</button>`}</div>${weekTable(cs)}</section>`}
  if(all)return top+state.courses.map(x=>{const sm=covSummary(x.subjectId,x.id);return `<section class="panel"><div class="panel-h"><span class="dot" style="background:${x.color};width:14px;height:14px"></span><h2>${esc(x.name)}</h2><span class="small muted">${sm.pct} % genomfört · ${sm.gap} luckor</span><span class="sp"></span><button class="btn" data-a="new-task" data-id="${x.id}">+ Uppgift</button><button class="btn" data-a="sel-course" data-id="${x.id}">Öppna</button></div>${stripFor(x)}</section>`}).join("")+`<p class="small muted">Veckonummer. Randiga veckor är lov. Streckade staplar är planerade. Tryck på ett arbetsområde för att öppna det.</p>`;
  const us=state.units.filter(u=>u.courseId===c.id).sort((a,b)=>a.start<b.start?-1:1);const g=group(c.groupId);
@@ -1548,7 +1608,7 @@ function vAssess(){
  const foot=as.map(a=>{const r=resultOf(a,g);const mx=Math.max(1,...r.rows.map(x=>x.n));
   return `<td><div class="dist" title="${r.rows.map(x=>x.l+": "+x.n+" ("+x.pct+" %)").join(", ")}">${r.rows.map(x=>`<i style="height:${Math.max(2,x.n/mx*22)}px;--h:${hueT(x.t)}"></i>`).join("")}</div><span class="small muted num">${r.done}/${g.students.length}</span></td>`}).join("");
  const total=as.length*g.students.length;const done=as.reduce((n,a)=>n+g.students.filter(s=>(state.grades[a.id]||{})[s.id]).length,0);
- return `<section class="panel"><div class="toolbar"><div class="chips">${state.groups.map(x=>`<button class="chip" aria-pressed="${x.id===g.id}" data-a="sel-group" data-id="${x.id}">${esc(x.name)}</button>`).join("")}</div><button class="btn" data-a="edit-group">+ Elevgrupp</button><span class="sp"></span>
+ return `<section class="panel"><div class="toolbar"><div class="chips">${state.groups.map(x=>`<button class="chip" aria-pressed="${x.id===g.id}" data-a="sel-group" data-id="${x.id}">${esc(x.name)}</button>`).join("")}</div><button class="btn" data-a="edit-group">+ Elevgrupp</button><span class="sp"></span><button class="btn" data-a="analysis">Ämnesanalys</button>
   <select class="inline" id="acourse" aria-label="Filtrera på kurs"><option value="all">Alla kurser</option>${gcourses.map(c=>`<option value="${c.id}" ${ui.acourse===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div></section>
  <section class="panel"><div class="panel-h"><h1>${esc(g.name)}</h1><span class="muted small num">${g.students.length} elever · ${done}/${total} omdömen · skala: ${esc(sc.name)}</span><span class="sp"></span>
   <button class="btn" data-a="edit-group" data-id="${g.id}">Elever</button><button class="btn ghost" data-a="how">Så hänger det ihop</button><button class="btn" data-a="results">Resultat</button><button class="btn" data-a="export-csv">Exportera CSV</button></div>
@@ -2155,20 +2215,127 @@ document.addEventListener("keydown",e=>{if(e.key==="/"&&!e.ctrlKey&&!e.metaKey){
 /* ---------- ämnesbibliotek i arbetslaget: en delad mapp med kursfiler ---------- */
 let LIB_DIR="";try{LIB_DIR=localStorage.getItem("lb-libdir")||""}catch(e){}
 async function libFiles(){if(!DESKTOP||!LIB_DIR)return [];try{const ents=await T.fs.readDir(LIB_DIR);const out=[];
-  for(const e of ents.filter(x=>/\.lararbordet\.json$/i.test(x.name))){try{const p=await T.path.join(LIB_DIR,e.name);const pkg=JSON.parse(await T.fs.readTextFile(p));if(pkg&&pkg.type==="lararbordet-kurs")out.push({name:e.name,path:p,pkg})}catch(err){}}
-  return out.sort((a,b)=>a.pkg.course.name.localeCompare(b.pkg.course.name,"sv"))}catch(e){return []}}
+  for(const e of ents.filter(x=>/\.lararbordet\.json$/i.test(x.name))){try{const p=await T.path.join(LIB_DIR,e.name);const pkg=JSON.parse(await T.fs.readTextFile(p));if(pkg&&(pkg.type==="lararbordet-kurs"||pkg.type==="lararbordet-arbetsomrade"))out.push({name:e.name,path:p,pkg})}catch(err){}}
+  const nm=f=>f.pkg.course?f.pkg.course.name:f.pkg.unit.title;return out.sort((a,b)=>nm(a).localeCompare(nm(b),"sv"))}catch(e){return []}}
 async function libraryModal(){const files=await libFiles();
- modal("Ämnesbibliotek",`<p class="small" style="margin:0">Ett bibliotek är en <b>delad mapp</b> för arbetslaget, t.ex. i skolans Google Drive, OneDrive eller Teams. Där lägger ni kurser med arbetsområden, lektioner och uppgifter som alla kan hämta. <b>Inga elever eller omdömen följer med.</b></p>
+ modal("Ämnesbibliotek",`<p class="small" style="margin:0">Ett bibliotek är en <b>delad mapp</b> för arbetslaget, t.ex. i skolans Google Drive, OneDrive eller Teams. Där lägger ni kurser och enskilda arbetsområden med lektioner och uppgifter som alla kan hämta. Ett arbetsområde delar du från arbetsområdet med <b>Dela med kollega</b>. <b>Inga elever eller omdömen följer med.</b></p>
  ${DESKTOP?`<div class="sec-box"><b>Bibliotekets mapp</b><span class="small muted" style="word-break:break-all">${LIB_DIR?esc(LIB_DIR):"Ingen mapp vald än."}</span><div class="row-b"><button class="btn small" id="libpick">${LIB_DIR?"Byt mapp…":"Välj mapp…"}</button></div></div>
-  ${LIB_DIR?`<h3 style="margin:0">Kurser i biblioteket (${files.length})</h3>${files.length?`<div class="list">${files.map((f,i)=>`<div class="li"><span class="what"><b>${esc(f.pkg.course.name)}</b><br><span class="small muted">${esc(subjTitle(f.pkg.course.subjectId)||"")} · ${f.pkg.units.length} arbetsområden · ${(f.pkg.assessments||[]).length} uppgifter · delad ${esc(f.pkg.exported||"")}</span></span><button class="btn small" data-lib="${i}">Hämta</button></div>`).join("")}</div>`:`<p class="small muted">Biblioteket är tomt. Dela en kurs dit med knappen nedan.</p>`}
+  ${LIB_DIR?`<h3 style="margin:0">I biblioteket (${files.length})</h3>${files.length?`<div class="list">${files.map((f,i)=>f.pkg.unit?`<div class="li"><span class="what"><span class="tag">Arbetsområde</span> <b>${esc(f.pkg.unit.title)}</b><br><span class="small muted">${esc(subjTitle(f.pkg.subjectId)||"")} · ${(f.pkg.lessons||[]).length} lektioner · ${(f.pkg.assessments||[]).length} uppgifter · delad ${esc(f.pkg.exported||"")}</span></span><button class="btn small" data-lib="${i}">Hämta</button></div>`:`<div class="li"><span class="what"><span class="tag">Kurs</span> <b>${esc(f.pkg.course.name)}</b><br><span class="small muted">${esc(subjTitle(f.pkg.course.subjectId)||"")} · ${f.pkg.units.length} arbetsområden · ${(f.pkg.assessments||[]).length} uppgifter · delad ${esc(f.pkg.exported||"")}</span></span><button class="btn small" data-lib="${i}">Hämta</button></div>`).join("")}</div>`:`<p class="small muted">Biblioteket är tomt. Dela en kurs dit med knappen nedan.</p>`}
    <div class="f"><label for="libc">Lägg en av dina kurser i biblioteket</label><div class="row-b"><select id="libc" style="font:inherit;padding:6px 8px;border-radius:6px">${state.courses.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select><button class="btn small pri" id="libshare">Dela till biblioteket</button></div></div>`:""}`
- :`<p class="small" style="margin:0">I webbläsaren: spara kursen med <b>Dela kurs</b> under Planering och lägg filen i arbetslagets delade mapp. Kollegor hämtar den med <b>Importera kurs</b>. I datorappen kan du välja mappen här och se alla kurser direkt.</p>`}
+ :`<p class="small" style="margin:0">I webbläsaren: spara kursen med <b>Dela kurs</b> under Planering och lägg filen i arbetslagets delade mapp. Kollegor hämtar den med <b>Importera</b>. I datorappen kan du välja mappen här och se alla kurser direkt.</p>`}
  <div class="actions"><span class="sp"></span><button class="btn pri" data-a="close">Klart</button></div>`,m=>{
   const pk=m.querySelector("#libpick");if(pk)pk.onclick=async()=>{try{const p=await T.dialog.open({directory:true,multiple:false});if(!p)return;LIB_DIR=typeof p==="string"?p:p.path;try{localStorage.setItem("lb-libdir",LIB_DIR)}catch(e){}closeModal();libraryModal()}catch(e){toast("Kunde inte välja mappen.")}};
-  m.querySelectorAll("[data-lib]").forEach(b=>b.onclick=()=>{const f=files[+b.dataset.lib];closeModal();importCourseModal(JSON.stringify(f.pkg))});
+  m.querySelectorAll("[data-lib]").forEach(b=>b.onclick=()=>{const f=files[+b.dataset.lib];closeModal();importAnyModal(JSON.stringify(f.pkg))});
   const sh=m.querySelector("#libshare");if(sh)sh.onclick=async()=>{const id=val("libc");const pkg=exportCourse(state,id);const c=course(id);if(!pkg)return;
    const write=async p=>{try{await T.fs.writeTextFile(p,JSON.stringify(pkg,null,1));toast(`${c.name} ligger nu i biblioteket.`);libraryModal()}catch(e){toast("Kunde inte spara i mappen: "+(e&&e.message||e))}};
    try{const p=await T.path.join(LIB_DIR,"kurs-"+fileSafe(c.name)+".lararbordet.json");if(await T.fs.exists(p))confirmBox(`Det finns redan en fil för <b>${esc(c.name)}</b> i biblioteket. Ersätta den med din version?`,()=>write(p),"Ersätt");else write(p)}catch(e){toast("Kunde inte spara i mappen: "+(e&&e.message||e))}}})}
+
+/* ===== 05h-share.js ===== */
+/* ---------- dela arbetsområde, importera delade filer ---------- */
+function shareUnit(id){const pkg=exportUnit(state,id);if(!pkg)return;const u=unit(id);const name="arbetsomrade-"+fileSafe(u.title)+".lararbordet.json";const json=JSON.stringify(pkg,null,1);
+ modal("Dela arbetsområdet",`<p style="margin:0"><b>${esc(u.title)}</b> sparas som en fil med centralt innehåll, ${pkg.lessons.length} lektioner och ${pkg.assessments.length} uppgifter med deras betygskriterier (matris). LPP-texterna följer också med.</p>
+ <p class="small" style="margin:0"><b>Inga elever, omdömen eller anteckningar om elever följer med.</b> Kollegan väljer <b>Importera</b> under Planering och bestämmer själv vilken vecka arbetsområdet ska börja.</p>
+ <div class="actions"><span class="sp"></span>${DESKTOP&&LIB_DIR?`<button class="btn" id="shlib">Lägg i ämnesbiblioteket</button>`:""}<button class="btn pri" id="shfile">Spara filen</button></div>`,m=>{
+  m.querySelector("#shfile").onclick=()=>{offerFile(name,json,"application/json");closeModal()};
+  const lb=m.querySelector("#shlib");if(lb)lb.onclick=async()=>{try{const p=await T.path.join(LIB_DIR,name);await T.fs.writeTextFile(p,json);closeModal();toast(`${u.title} ligger nu i biblioteket.`)}catch(e){toast("Kunde inte spara i mappen: "+(e&&e.message||e))}}})}
+/* En fil från en kollega: kurs eller arbetsområde */
+function importAnyModal(text){let pkg;try{pkg=JSON.parse(text)}catch(e){pkg=null}
+ if(pkg&&pkg.type==="lararbordet-arbetsomrade")return importUnitModal(pkg);
+ if(pkg&&pkg.type==="lararbordet-analys"){modal("Analysfil",`<p style="margin:0">Det här är en ämnesanalys från en kollega. Öppna den under <b>Bedömning → Ämnesanalys</b> med <b>Lägg till kollegors filer</b>.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`);return}
+ return importCourseModal(text)}
+function importUnitModal(pkg){const p=pkg.unit||{};const match=state.courses.filter(c=>c.subjectId===pkg.subjectId);const ws=fmtD(mondayOf(TODAY));
+ const opts=state.courses.map(c=>`<option value="${c.id}" ${match[0]&&match[0].id===c.id?"selected":""}>${esc(c.name)}${c.subjectId===pkg.subjectId?"":" (annat ämne)"}</option>`).join("");
+ modal("Importera arbetsområde",`<p style="margin:0"><b>${esc(p.title)}</b> · ${esc(subjTitle(pkg.subjectId))}<br><span class="small muted">${(p.contentIds||[]).length} punkter centralt innehåll · ${(pkg.lessons||[]).length} lektioner · ${(pkg.assessments||[]).length} uppgifter · ${Math.ceil(((p.days||0)+1)/7)} veckor</span></p>
+ <div class="row"><div class="f"><label for="iuc">Lägg i kursen</label><select id="iuc">${opts}<option value="__new" ${match.length?"":"selected"}>+ Ny kurs: ${esc(pkg.courseName||p.title)}</option></select></div>
+  <div class="f"><label for="ius">Börjar veckan med</label><input type="date" id="ius" value="${ws}"></div></div>
+ <p class="small muted" id="iuw" style="margin:0"></p>
+ <div class="f" id="iugw"><label for="iug">Elevgrupp för uppgifterna</label><select id="iug"><option value="">Ingen, hoppa över uppgifterna</option>${state.groups.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join("")}</select></div>
+ <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="iuok">Importera</button></div>`,m=>{
+  const sel=m.querySelector("#iuc"),gs=m.querySelector("#iug");
+  const upd=()=>{const c=course(sel.value);const w=m.querySelector("#iuw");
+   w.textContent=sel.value==="__new"?"En ny kurs skapas i samma ämne.":c.subjectId===pkg.subjectId?"":"Kursen har ett annat ämne. Lektioner och uppgifter följer med, men inte centralt innehåll och betygskriterier.";
+   if(c&&c.groupId)gs.value=c.groupId};sel.onchange=upd;upd();
+  m.querySelector("#iuok").onclick=()=>{let cid=sel.value;
+   if(cid==="__new"){if(PLAN[pkg.subjectId]&&!state.mine.includes(pkg.subjectId))state.mine.push(pkg.subjectId);if(pkg.custom&&!state.custom[pkg.subjectId])state.custom[pkg.subjectId]=pkg.custom;
+    if(!subj(pkg.subjectId)){toast("Ämnet finns inte i din version av Lärarbordet. Välj en befintlig kurs.");return}
+    const c={id:uid(),name:pkg.courseName||p.title,subjectId:pkg.subjectId,groupId:val("iug"),color:pkg.color||COLORS[state.courses.length%COLORS.length]};state.courses.push(c);cid=c.id}
+   const r=importUnit(state,pkg,cid,val("ius"),val("iug"));ui.course=cid;closeModal();commit();location.hash="planering";
+   toast(`${r.unit.title} är importerat${r.assessments?` med ${r.assessments} uppgifter`:""}.`)}})}
+
+/* ---------- LPP för elever: klarspråk, bildstöd och självskattning ---------- */
+const PICT={
+ goal:`<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#fde2e2" stroke="#c0392b" stroke-width="3"/><circle cx="24" cy="24" r="12" fill="#fff" stroke="#c0392b" stroke-width="3"/><circle cx="24" cy="24" r="4" fill="#c0392b"/></svg>`,
+ work:`<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><rect x="6" y="10" width="28" height="32" rx="3" fill="#e3effb" stroke="#2f6db3" stroke-width="3"/><path d="M12 19h16M12 26h16M12 33h10" stroke="#2f6db3" stroke-width="3" stroke-linecap="round"/><path d="M36 8l6 6-14 14h-6v-6z" fill="#ffd54a" stroke="#8a6d00" stroke-width="2.5" stroke-linejoin="round"/></svg>`,
+ learn:`<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><path d="M24 6a13 13 0 0 0-8 23c2 2 3 4 3 6h10c0-2 1-4 3-6A13 13 0 0 0 24 6z" fill="#fff3c4" stroke="#b8860b" stroke-width="3"/><path d="M19 40h10M20 44h8" stroke="#b8860b" stroke-width="3" stroke-linecap="round"/></svg>`,
+ check:`<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><rect x="8" y="6" width="32" height="38" rx="4" fill="#e6f5ea" stroke="#2e7d4f" stroke-width="3"/><path d="M15 18l4 4 8-8M15 32l4 4 8-8" fill="none" stroke="#2e7d4f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ cal:`<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><rect x="6" y="10" width="36" height="32" rx="4" fill="#fff" stroke="#5b4b9a" stroke-width="3"/><path d="M6 19h36" stroke="#5b4b9a" stroke-width="3"/><path d="M15 6v8M33 6v8" stroke="#5b4b9a" stroke-width="3" stroke-linecap="round"/><rect x="13" y="25" width="7" height="6" fill="#5b4b9a"/></svg>`,
+ me:`<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><circle cx="24" cy="16" r="9" fill="#fde7cf" stroke="#a0522d" stroke-width="3"/><path d="M8 44c1-10 8-15 16-15s15 5 16 15" fill="#fde7cf" stroke="#a0522d" stroke-width="3"/></svg>`};
+const face=(k,size=30)=>{const m={sad:"M16 32q8-6 16 0",mid:"M16 30h16",happy:"M15 28q9 8 18 0"}[k];const col={sad:"#c0392b",mid:"#b8860b",happy:"#2e7d4f"}[k];
+ return `<svg viewBox="0 0 48 48" width="${size}" height="${size}" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#fff" stroke="${col}" stroke-width="3"/><circle cx="17" cy="19" r="2.6" fill="${col}"/><circle cx="31" cy="19" r="2.6" fill="${col}"/><path d="${m}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round"/></svg>`};
+const EASY_CSS=`.easy{font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:1.7}.easy h1{font-size:30px}.easy h2{font-size:22px}.easy table{font-size:16px}
+.sh{display:flex;align-items:center;gap:12px}.sh svg{flex:none}.goals{list-style:none;padding:0}.goals li{display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px solid #d8dde4;padding:8px 0}
+.rate{display:flex;gap:10px;flex:none}.rate span{display:flex;flex-direction:column;align-items:center;font-size:11px;color:#555;gap:2px}.box{display:inline-block;width:16px;height:16px;border:2px solid #555;border-radius:3px;vertical-align:middle}
+.lines{border-bottom:1px solid #999;height:34px}.cell-sa{margin-top:8px;font-size:12px;color:#555;display:flex;align-items:center;gap:6px}.lvl{font-size:13px}.pill{display:inline-block;background:#eef1f5;border-radius:99px;padding:1px 10px;font-size:13px}`;
+function lppStudentModal(unitId){const u=unit(unitId);if(!u)return;const c=course(u.courseId)||{};const s=subj(c.subjectId)||{};
+ const ls=lessonsOf(u.id).sort((a,b)=>a.date<b.date?-1:1);const as=state.assessments.filter(a=>a.unitId===u.id).sort((a,b)=>a.date<b.date?-1:1);
+ const cr=c.subjectId?critFor(c.subjectId):null;const asp=cr?[...new Set(as.flatMap(a=>a.aspects||[]))].filter(i=>cr.aspects[i]).sort((a,b)=>a-b):[];
+ const items=(u.contentIds||[]).map(id=>({id,t:itemText(c.subjectId,id)})).filter(x=>x.t);
+ const opts=`<p class="small muted" style="margin:0">Skriv med elevernas ord. Texterna sparas i arbetsområdet och följer med när du delar det. Lämnar du en rad tom används Skolverkets text.</p>
+ <div class="row"><div class="f"><label for="eg">Det här ska vi lära oss</label><textarea id="eg" data-docopt style="min-height:60px" placeholder="t.ex. Du ska lära dig att skriva en text som övertygar andra.">${esc(u.easyGoal||"")}</textarea></div>
+  <div class="f"><label for="ew">Så här ska vi jobba</label><textarea id="ew" data-docopt style="min-height:60px" placeholder="t.ex. Vi läser exempel, skriver i par och ger varandra tips.">${esc(u.easyWork||"")}</textarea></div></div>
+ ${items.length?`<details class="f"><summary><b>Målen med elevens ord</b> (${items.filter(x=>(u.easy||{})[x.id]).length} av ${items.length} skrivna)</summary><div style="display:grid;gap:8px;margin-top:8px">${items.map(x=>`<div class="f"><span class="small muted">${esc(x.t.text)}</span><input type="text" data-docopt data-easy="${esc(x.id)}" value="${esc((u.easy||{})[x.id]||"")}" placeholder="Jag ska kunna …"></div>`).join("")}</div></details>`:""}
+ ${asp.length?`<details class="f"><summary><b>Kriterierna med elevens ord</b> (${asp.filter(i=>(u.easyCrit||{})[i]).length} av ${asp.length} skrivna)</summary><div style="display:grid;gap:8px;margin-top:8px">${asp.map(i=>`<div class="f"><span class="small muted">${esc(aspectLabel(cr.aspects[i]))}</span><input type="text" data-docopt data-ecrit="${i}" value="${esc((u.easyCrit||{})[i]||"")}" placeholder="Det här betyder att du …"></div>`).join("")}</div></details>`:""}
+ <div class="row-b"><label class="chk"><input type="checkbox" id="ebs" data-docopt checked><span>Bildstöd</span></label><label class="chk"><input type="checkbox" id="ebig" data-docopt checked><span>Stor och tydlig text</span></label><label class="chk"><input type="checkbox" id="esa" data-docopt checked><span>Självskattning</span></label><label class="chk"><input type="checkbox" id="emx" data-docopt ${asp.length?"checked":""} ${asp.length?"":"disabled"}><span>Matris</span></label><label class="chk"><input type="checkbox" id="etp" data-docopt checked><span>Tidsplan</span></label></div>`;
+ const build=()=>{const on=id=>{const x=$("#"+id);return !x||x.checked};const pic=on("ebs"),sa=on("esa"),mx=on("emx")&&asp.length,tp=on("etp"),big=on("ebig");
+  const easy={};document.querySelectorAll("[data-easy]").forEach(x=>{if(x.value.trim())easy[x.dataset.easy]=x.value.trim()});
+  const ecrit={};document.querySelectorAll("[data-ecrit]").forEach(x=>{if(x.value.trim())ecrit[x.dataset.ecrit]=x.value.trim()});
+  const goal=val("eg").trim(),work=val("ew").trim();
+  if(goal!==(u.easyGoal||"")||work!==(u.easyWork||"")||JSON.stringify(easy)!==JSON.stringify(u.easy||{})||JSON.stringify(ecrit)!==JSON.stringify(u.easyCrit||{})){u.easyGoal=goal;u.easyWork=work;u.easy=easy;u.easyCrit=ecrit;commit(true)}
+  const H=(k,t)=>pic?`<h2 class="sh">${PICT[k]}<span>${t}</span></h2>`:`<h2>${t}</h2>`;
+  const rate=sa?`<span class="rate"><span>${face("sad",pic?30:20)}<i class="box"></i>Inte än</span><span>${face("mid",pic?30:20)}<i class="box"></i>Lite</span><span>${face("happy",pic?30:20)}<i class="box"></i>Ja!</span></span>`:"";
+  const goals=items.map(x=>({t:easy[x.id]||x.t.text,orig:!easy[x.id]}));
+  const lowName=cr?cr.names[cr.levels[0]]:"";
+  const body=`<div class="${big?"easy":""}"><h1>${esc(u.title)}</h1><div class="meta">${esc(c.name||"")} · ${esc(wkRange(u.start,u.end))} · ${shortD(u.start)}–${shortD(u.end)}</div>
+   ${sa?`<p style="margin-top:14px">Namn: <span style="display:inline-block;min-width:260px;border-bottom:1px solid #999">&nbsp;</span></p>`:""}
+   ${goal||u.lppGoal||u.desc?H("goal","Det här ska vi lära oss")+`<p class="pre">${esc(goal||u.lppGoal||u.desc)}</p>`:""}
+   ${work||u.lppWork?H("work","Så här ska vi jobba")+`<p class="pre">${esc(work||u.lppWork)}</p>`:""}
+   ${goals.length?H("learn",sa?"Mina mål – hur går det?":"Mina mål")+`<ul class="goals">${goals.map(g=>`<li><span>${esc(g.t)}</span>${rate}</li>`).join("")}</ul>${sa?`<p class="small">Kryssa i en ruta för varje mål. Gör det i början och i slutet av arbetsområdet.</p>`:""}`:""}
+   ${as.length?H("check","Det här ska du visa")+`<ul>${as.map(a=>`<li><b>${esc(a.title)}</b> · ${cap(DAY[parseD(a.date).getDay()])} ${shortD(a.date)}${a.type?` <span class="pill">${esc(atypeL(a))}</span>`:""}${a.desc?`<br><span class="pre">${esc(a.desc)}</span>`:""}</li>`).join("")}</ul>`:""}
+   ${mx?H("check","Så här bedömer jag")+asp.map(i=>`<h3>${esc(ecrit[i]||aspectLabel(cr.aspects[i]))}</h3><table><thead><tr>${cr.levels.map(k=>`<th>${esc(cr.names[k])}</th>`).join("")}</tr></thead><tbody><tr>${cr.levels.map(k=>`<td class="lvl">${critText(cr.aspects[i][k]||"")}${sa?`<div class="cell-sa"><i class="box"></i>Här är jag nu</div>`:""}</td>`).join("")}</tr></tbody></table>`).join("")+`<p class="small">Orden i fetstil visar skillnaden mellan nivåerna. Texten kommer från Skolverkets betygskriterier${lowName?`, som börjar på ${esc(lowName)}`:""}.</p>`:""}
+   ${tp&&ls.length?H("cal","Tidsplan")+`<table><thead><tr><th style="width:120px">Dag</th><th>Vad vi gör</th></tr></thead><tbody>${ls.map(l=>`<tr><td>${cap(DAY[parseD(l.date).getDay()])} ${shortD(l.date)}</td><td>${esc(l.title||"Lektion")}</td></tr>`).join("")}</tbody></table>`:""}
+   ${sa?H("me","Jag tänker efter")+`<p><b>Det här är jag bra på:</b></p><div class="lines"></div><div class="lines"></div><p><b>Det här vill jag öva mer på:</b></p><div class="lines"></div><div class="lines"></div><p><b>Det här kan hjälpa mig:</b></p><div class="lines"></div>`:""}</div>`;
+  return docWrap(u.title+" – för elever",body).replace("</style>",EASY_CSS+"</style>")};
+ docPreview(u.title+" – för elever",build,opts)}
+
+/* ---------- ämnesanalys: elever under E och centralt innehåll som inte bedömts ---------- */
+let AN_OTHERS=[];
+function analysisModal(gid,keep){if(!keep)AN_OTHERS=[];if(!state.groups.length){toast("Lägg till en elevgrupp först.");return}let g=gid||ui.group||state.groups[0].id;
+ const opts=`<div class="row-b" style="align-items:center"><select id="ang" data-docopt style="font:inherit;padding:4px 8px;border-radius:6px" aria-label="Elevgrupp">${state.groups.map(x=>`<option value="${x.id}" ${x.id===g?"selected":""}>${esc(x.name)}</option>`).join("")}</select>
+  <label class="chk"><input type="checkbox" id="anc" data-docopt checked><span>Centralt innehåll</span></label><span class="sp"></span><button class="btn small" id="anadd">Lägg till kollegors filer…</button><button class="btn small" id="anexp">Spara för arbetslaget…</button></div>
+  <p class="small muted" style="margin:0" id="anfrom">${AN_OTHERS.length?`Med ${AN_OTHERS.length} ${AN_OTHERS.length===1?"fil":"filer"} från kollegor. De sparas inte, utan försvinner när du stänger.`:"Under E betyder att mittvärdet av elevens omdömen eller det senaste omdömet ligger under godtagbar nivå."}</p>`;
+ const lvl=k=>k?`<b style="color:${isLow(k)||k==="EG"?"#b3261e":"inherit"}">${esc(k)}</b>`:"–";
+ const build=()=>{g=val("ang")||g;const an=analyzeGroup(state,g);if(!an)return docWrap("Ämnesanalys","");const own=exportAnalysis(an,true);own.courses.forEach((c,i)=>c.full=an.courses[i]);
+  const mg=mergeAnalyses(own,AN_OTHERS);const withC=($("#anc")||{}).checked!==false;
+  const rows=mg.courses.map(c=>`<tr><td><b>${esc(c.name)}</b>${c.from?` <span class="small">(${esc(c.from)})</span>`:""}<br><span class="small">${esc(c.subject||"")}</span></td><td>${c.assessments}</td><td style="${c.below?"color:#b3261e;font-weight:bold":""}">${c.below}</td><td>${c.missing}</td><td>${c.content?`${c.content.notAssessed} av ${c.content.total}`:"–"}</td></tr>`).join("");
+  const risk=mg.risk.length?`<table><thead><tr><th>Elev</th><th>Antal ämnen</th>${mg.courses.map(c=>`<th class="small">${esc(c.name)}</th>`).join("")}</tr></thead><tbody>${mg.risk.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${r.courses.length}</td>${mg.courses.map((c,ci)=>{const x=(c.students||[]).find(y=>String(y.name).trim().toLowerCase()===String(r.name).trim().toLowerCase());return `<td>${r.courses.includes(ci)&&x?`${lvl(x.median)}${x.last&&x.last!==x.median?` <span class="small">senast ${lvl(x.last)}</span>`:""}`:""}</td>`}).join("")}</tr>`).join("")}</tbody></table>`:`<p>Inga elever ligger under godtagbar nivå just nu.</p>`;
+  const miss=mg.courses.filter(c=>c.from===""&&c.full).map(c=>{const st=c.full.students.filter(x=>x.missing&&c.full.assessments);return st.length?`<tr><td><b>${esc(c.name)}</b></td><td>${st.map(x=>`${esc(x.name)} (${x.missing})`).join(", ")}</td></tr>`:""}).join("");
+  const cont=withC?mg.courses.filter(c=>c.content&&c.content.notAssessed).map(c=>`<h3>${esc(c.name)}${c.from?` (${esc(c.from)})`:""} · ${c.content.notAssessed} av ${c.content.total} ej bedömda</h3>${c.content.areas.map(a=>`<p class="small" style="margin:6px 0 2px"><b>${esc(a.name)}</b></p><ul>${a.items.map(i=>`<li>${esc(i.text)} <span class="small">· ${esc({gap:"inte planerat",planned:"planerat",ongoing:"pågår",covered:"genomfört men inte bedömt"}[i.state]||"")}</span></li>`).join("")}</ul>`).join("")}`).join(""):"";
+  return docWrap("Ämnesanalys "+an.group,`<h1>Ämnesanalys ${esc(an.group)}</h1><div class="meta">${shortD(an.exported)} · ${mg.courses.length} kurser${AN_OTHERS.length?` · med kollegors underlag`:""}</div>
+   <h2>Översikt</h2><table><thead><tr><th>Kurs</th><th>Bedömningar</th><th>Elever under E</th><th>Saknade omdömen</th><th>Centralt innehåll ej bedömt</th></tr></thead><tbody>${rows}</tbody></table>
+   <h2>Elever under godtagbar nivå</h2>${risk}<p class="small">Mittvärde av elevens omdömen i kursen, och det senaste omdömet om det är lägre. Det är ett underlag för samtal i arbetslaget, inte ett betyg.</p>
+   ${miss?`<h2>Saknade omdömen</h2><table><tbody>${miss}</tbody></table>`:""}
+   ${cont?`<h2>Centralt innehåll som inte bedömts än</h2>${cont}`:""}
+   <p class="small" style="margin-top:20px">Innehåller elevuppgifter. Hantera dokumentet enligt skolans rutiner för personuppgifter.</p>`)};
+ docPreview("Ämnesanalys",build,opts);
+ const m=$("#modalroot .modal");if(!m)return;
+ m.querySelector("#anadd").onclick=async()=>{const t=await pickTextFile(["json"]);if(t==null)return;let o;try{o=JSON.parse(t)}catch(e){o=null}
+  if(!o||o.type!=="lararbordet-analys"){toast("Filen är ingen ämnesanalys från Lärarbordet.");return}
+  o.from="kollega";AN_OTHERS.push(o);closeModal();analysisModal(g,true)};
+ m.querySelector("#anexp").onclick=()=>{const an=analyzeGroup(state,val("ang")||g);if(!an)return;
+  modal("Spara för arbetslaget",`<p style="margin:0">Filen innehåller en sammanfattning per kurs: antal bedömningar, elever under godtagbar nivå, saknade omdömen och centralt innehåll som inte bedömts. Inga enskilda omdömen eller anteckningar.</p>
+  <label class="chk"><input type="checkbox" id="annm" checked><span>Med elevernas namn (annars bara initialer)</span></label><p class="small muted" style="margin:0">Kollegor som läser in filen kan se er gemensamma bild av gruppen. Lägg den bara där skolan tillåter elevuppgifter.</p>
+  <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="anok">Spara filen</button></div>`,mm=>mm.querySelector("#anok").onclick=()=>{const pkg=exportAnalysis(an,mm.querySelector("#annm").checked);offerFile("analys-"+fileSafe(an.group)+"-"+fmtD(TODAY)+".lararbordet.json",JSON.stringify(pkg,null,1),"application/json");closeModal()})};
+}
 
 /* ===== 06-modals.js ===== */
 /* ---------- modaler ---------- */
@@ -2191,7 +2358,7 @@ function unitModal(id){const u=id?unit(id):null;const c=course(u?u.courseId:ui.c
  <div class="f"><label for="ust">Status</label><select id="ust">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${d.status===k?"selected":""}>${l}</option>`).join("")}</select></div>
  <div class="f"><label for="ud">Beskrivning, syfte och arbetssätt</label><textarea id="ud">${esc(d.desc||"")}</textarea></div>
  <div class="f"><label>Centralt innehåll som arbetsområdet täcker</label>${contentChecklist(c.subjectId,d.contentIds||[])}</div>
- ${u?`<div class="f"><label>Uppgifter och bedömningar i arbetsområdet</label>${asl.length?`<div class="list">${asl.map(a=>`<div class="li" style="cursor:pointer;padding:6px 0" data-a="edit-assess" data-id="${a.id}"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b> ${a.type?`<span class="tag">${esc(atypeL(a))}</span>`:""}</span></div>`).join("")}</div>`:`<span class="small muted">Inga ännu. Ett arbetsområde behöver inte ha en bedömd uppgift.</span>`}<div class="row-b"><button class="btn small" id="uas">+ Uppgift eller bedömning</button><button class="btn small" data-a="lpp" data-id="${u.id}">LPP att skriva ut eller dela</button></div></div>`:`<p class="small muted" style="margin:0">När arbetsområdet är sparat kan du lägga till lektioner och uppgifter eller bedömningar i det.</p>`}
+ ${u?`<div class="f"><label>Uppgifter och bedömningar i arbetsområdet</label>${asl.length?`<div class="list">${asl.map(a=>`<div class="li" style="cursor:pointer;padding:6px 0" data-a="edit-assess" data-id="${a.id}"><span class="when num">${shortD(a.date)}</span><span class="what"><b>${esc(a.title)}</b> ${a.type?`<span class="tag">${esc(atypeL(a))}</span>`:""}</span></div>`).join("")}</div>`:`<span class="small muted">Inga ännu. Ett arbetsområde behöver inte ha en bedömd uppgift.</span>`}<div class="row-b"><button class="btn small" id="uas">+ Uppgift eller bedömning</button><button class="btn small" data-a="lpp" data-id="${u.id}">LPP att skriva ut eller dela</button><button class="btn small" data-a="lpp-elev" data-id="${u.id}">LPP för elever</button><button class="btn small" data-a="share-unit" data-id="${u.id}">Dela med kollega</button></div></div>`:`<p class="small muted" style="margin:0">När arbetsområdet är sparat kan du lägga till lektioner och uppgifter eller bedömningar i det.</p>`}
  <div class="actions">${u?'<button class="btn danger" id="udel">Ta bort</button><button class="btn" id="ules">Lektioner ('+lessonsOf(u.id).length+')</button>':""}<span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="usave">Spara</button></div>`,m=>{
   m.querySelector("#usave").onclick=()=>{const t=val("ut").trim();if(!t){$("#ut").focus();return}let s=val("us"),e=val("ue");if(e<s)[s,e]=[e,s];
    const ids=[...m.querySelectorAll(".cl input:checked")].map(x=>x.value);const o={title:t,start:s,end:e,status:val("ust"),desc:val("ud"),contentIds:ids};
@@ -2461,9 +2628,9 @@ function newYearModal(){const ys=parseD(state.year.start),ye=parseD(state.year.e
 /* ---------- dela kurs ---------- */
 function shareCourse(id){const pkg=exportCourse(state,id);if(!pkg)return;const c=course(id);
  offerFile("kurs-"+c.name.replace(/[^\wåäöÅÄÖ-]+/g,"-").toLowerCase()+".lararbordet.json",JSON.stringify(pkg,null,1),"application/json");
- modal("Dela kurs",`<p style="margin:0">Kursen <b>${esc(c.name)}</b> sparas som en fil med ${pkg.units.length} arbetsområden, ${pkg.lessons.length} lektioner och ${pkg.assessments.length} bedömningsuppgifter.</p><p class="small" style="margin:0"><b>Inga elever, omdömen eller anteckningar om elever följer med.</b> Skicka filen till en kollega, som väljer Importera kurs under Planering.</p><div class="actions"><button class="btn pri" data-a="close">Klar</button></div>`)}
+ modal("Dela kurs",`<p style="margin:0">Kursen <b>${esc(c.name)}</b> sparas som en fil med ${pkg.units.length} arbetsområden, ${pkg.lessons.length} lektioner och ${pkg.assessments.length} bedömningsuppgifter.</p><p class="small" style="margin:0"><b>Inga elever, omdömen eller anteckningar om elever följer med.</b> Skicka filen till en kollega, som väljer Importera under Planering.</p><div class="actions"><button class="btn pri" data-a="close">Klar</button></div>`)}
 function importCourseModal(text){let pkg;try{pkg=JSON.parse(text)}catch(e){pkg=null}
- if(!pkg||pkg.type!=="lararbordet-kurs"){modal("Kunde inte importera",`<p style="margin:0">Filen är ingen delad kurs från Lärarbordet. Den ska sluta på <b>.lararbordet.json</b>.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`);return}
+ if(!pkg||pkg.type!=="lararbordet-kurs"){modal("Kunde inte importera",`<p style="margin:0">Filen är ingen delad kurs eller inget delat arbetsområde från Lärarbordet. Den ska sluta på <b>.lararbordet.json</b>.</p><div class="actions"><button class="btn pri" data-a="close">OK</button></div>`);return}
  modal("Importera kurs",`<p style="margin:0"><b>${esc(pkg.course.name)}</b> · ${esc(subjTitle(pkg.course.subjectId)||"")}<br><span class="small muted">${pkg.units.length} arbetsområden · ${(pkg.lessons||[]).length} lektioner · ${(pkg.assessments||[]).length} bedömningsuppgifter. Datumen flyttas till samma veckor i ditt läsår.</span></p>
  <div class="f"><label for="icg">Elevgrupp</label><select id="icg"><option value="">Ingen just nu</option>${state.groups.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join("")}</select><span class="small muted">Bedömningsuppgifter följer bara med om du väljer en elevgrupp.</span></div>
  <div class="actions"><span class="sp"></span><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="icok">Importera</button></div>`,m=>{
@@ -2559,13 +2726,13 @@ const A={
  "switch-year":el=>{const a=state.archive.find(x=>x.id===el.dataset.id);if(!a)return;confirmBox(`Öppna läsår ${esc(a.label)}? Läsår ${esc(yearLabel(state.year))} sparas under Tidigare läsår så att du kan byta tillbaka.`,()=>{switchYear(state,a.id);ui=Object.assign(ui,{course:null,group:null,acourse:"all",wheel:"all"});commit()},"Öppna")},
  "del-year":el=>{const a=state.archive.find(x=>x.id===el.dataset.id);if(!a)return;confirmBox(`Ta bort läsår ${esc(a.label)} med alla kurser, elever och omdömen? Det går inte att ångra. Exportera gärna en säkerhetskopia först.`,()=>{state.archive=state.archive.filter(x=>x!==a);commit()})},
  "share-course":el=>shareCourse(el.dataset.id),
- "import-course":()=>pickTextFile(["json"]).then(t=>{if(t!=null)importCourseModal(t)}),
+ "import-course":()=>pickTextFile(["json"]).then(t=>{if(t!=null)importAnyModal(t)}),
  "edit-lesson":el=>lessonModal(el.dataset.id),
  "toggle-lesson":el=>{const l=state.lessons.find(x=>x.id===el.dataset.id);if(!l)return;l.done=!l.done;commit();lessonsModal(l.unitId)},
  "bar-save":()=>barSave(),
  unmine:el=>{state.mine=state.mine.filter(x=>x!==el.dataset.id);commit()},
  "sel-course":el=>{ui.course=el.dataset.id;saveUI();render()},
- "bar-hide":()=>{BAR_HIDDEN=true;updateBar();toast("Rutan visas inte mer i dag. Kom ihåg att spara med Spara eller Ctrl/Cmd+S.")}, "import-cal":()=>importCalModal(), how:()=>howModal(), search:()=>searchModal(), library:()=>libraryModal(), lpp:el=>lppModal(el.dataset.id), weekplan:el=>weekPlanModal(el.dataset.id||(ui.course!=="all"?ui.course:"")),
+ "bar-hide":()=>{BAR_HIDDEN=true;updateBar();toast("Rutan visas inte mer i dag. Kom ihåg att spara med Spara eller Ctrl/Cmd+S.")}, "import-cal":()=>importCalModal(), how:()=>howModal(), search:()=>searchModal(), library:()=>libraryModal(), lpp:el=>lppModal(el.dataset.id), "lpp-elev":el=>lppStudentModal(el.dataset.id), "share-unit":el=>shareUnit(el.dataset.id), analysis:()=>analysisModal(ui.group), weekplan:el=>weekPlanModal(el.dataset.id||(ui.course!=="all"?ui.course:"")),
  "sel-course-go":el=>{closeModal();ui.course=el.dataset.id;ui.planView="tidslinje";if(location.hash!=="#planering")location.hash="planering";else render()},
  "student-go":el=>{const [g,st]=el.dataset.id.split("|");studentModal(g,st)},
  "proc-go":el=>{closeModal();const p=(state.process||[]).find(x=>x.id===el.dataset.id);if(!p)return;ui.pgroup=p.groupId;ui.proc=p.id;if(location.hash!=="#process")location.hash="process";else render()}, undo:()=>{TOAST_ON=false;undo()}, unlock:()=>unlockStart(), protect:()=>protectModal(), unprotect:()=>unprotect(), backups:()=>backupsModal(), "bk-dir":()=>pickBackupDir(),
