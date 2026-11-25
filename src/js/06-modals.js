@@ -1,6 +1,6 @@
 /* ---------- modaler ---------- */
 let onClose=null;
-function modal(title,body,mount){$("#modalroot").innerHTML=`<div class="ov" data-a="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-h"><h2>${esc(title)}</h2><button class="x" data-a="close" aria-label="Stäng">×</button></div>${body}</div></div>`;const f=$("#modalroot .modal input, #modalroot .modal select, #modalroot .modal textarea");if(f&&window.innerWidth>700)f.focus();mount&&mount($("#modalroot .modal"))}
+function modal(title,body,mount){$("#modalroot").innerHTML=`<div class="ov" data-a="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-h"><h2>${esc(title)}</h2><button class="x" data-a="close" aria-label="Stäng">×</button></div>${body}</div></div>`;const f=$("#modalroot .modal input, #modalroot .modal select, #modalroot .modal textarea");if(f&&window.innerWidth>700)f.focus({preventScroll:true});mount&&mount($("#modalroot .modal"))}
 function closeModal(){$("#modalroot").innerHTML=""}
 function confirmBox(text,yes,label="Ta bort"){modal("Är du säker?",`<p style="margin:0">${text}</p><div class="actions"><button class="btn" data-a="close">Avbryt</button><button class="btn pri" id="cy" style="background:var(--bad);border-color:var(--bad)">${esc(label)}</button></div>`,m=>m.querySelector("#cy").onclick=async()=>{closeModal();const before=UNDO.length;await yes();if(label==="Ta bort"&&UNDO.length>before)undoToast("Borttaget.")})}
 const val=id=>($("#"+id)||{}).value||"";

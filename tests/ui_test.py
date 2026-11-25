@@ -71,7 +71,11 @@ with sync_playwright() as pw:
             p.evaluate("closeModal()")
         steg(p, "omdöme med tangentbordet", snabbomdome)
         steg(p, "kom igång", lambda: (p.evaluate("closeModal();state=emptyState();state.mine=[];ui.startHidden=false;location.hash='oversikt';render()"), p.click("[data-a=picker]"), p.evaluate("closeModal();state=exampleState();location.hash='bedomning';render()")))
-        steg(p, "bedöm elev", lambda: (p.evaluate("(()=>{const a=state.assessments.find(x=>(x.aspects||[]).length);gradeModal(a.id,group(a.groupId).students[0].id)})()"), p.click("[data-cm] >> nth=0"), p.click("#gsave")))
+        def bedöm_elev():
+            p.evaluate("(()=>{const a=state.assessments.find(x=>(x.aspects||[]).length);gradeModal(a.id,group(a.groupId).students[0].id)})()")
+            if p.evaluate("document.querySelector('.modal').scrollTop") > 0: raise Exception("bedömningsrutan öppnas nedskrollad, elevens namn syns inte")
+            p.click("[data-cm] >> nth=0"); p.click("#gsave")
+        steg(p, "bedöm elev", bedöm_elev)
         steg(p, "resultat", lambda: p.click("[data-a=results]"))
         steg(p, "ämnesanalys", lambda: (p.click("[data-a=analysis]"), p.wait_for_timeout(300), p.uncheck("#anc"), p.wait_for_timeout(400)))
         pdf = str(pathlib.Path(__file__).resolve().parent / "fixtures" / "schema.pdf")
